@@ -53,6 +53,8 @@ Win by flipping the enemy king. This occurs when only the enemy king remains and
 
 If 10 turns pass without a king flip: the player controlling more territory wins.
 
+This meter can overflow, at a maximum of 200%.
+
 ### Territory
 
 A square belongs to whichever player has a piece closer to it (Chebyshev distance). Equidistant squares are neutral. Territory is the tiebreaker only; it does not restrict placement.
@@ -88,8 +90,7 @@ Cards do not cost actions.
 1. Opponent's defensive buffs apply to their pieces (damage reductions, immunities, Bulwark)
 2. Your offensive buffs apply to your pieces (damage amplifications)
 3. Each attacking piece deals its modified value as damage to the enemy meter
-4. If either meter hit zero, a random non-king piece flips; meter recalculates
-5. End-of-turn card triggers resolve
+4. If either meter hit zero, a random non-king piece flips; meter meter fills up again, then any remaining damage is dealt, if either meter hit zero, a piece flips again, and so on
 
 ---
 
@@ -112,7 +113,7 @@ Cards do not cost actions.
 | Piece                      | Tier            | Value | Movement                                                                                                        |
 | -------------------------- | --------------- | ----- | --------------------------------------------------------------------------------------------------------------- |
 | Bing                       | District        | 10    | Forward 1. Gains a sideways step after first damaging an enemy piece.                                           |
-| Xiang                      | District        | 20    | 2 diagonal. Cannot land in enemy territory.                                                                     |
+| Xiang                      | District        | 20    | 2 diagonal. Cannot attack in enemy territory.                                                                   |
 | Ma                         | Town            | 30    | Knight L. Blocked if any piece sits in the elbow square.                                                        |
 | Pao                        | Province        | 50    | Rook-line movement. Can only attack if exactly one piece (the screen) sits between Pao and target on that line. |
 | Liubo Diviner _(capstone)_ | Overseer reward | 100   | Teleports to any square currently threatened by any enemy piece.                                                |
@@ -156,10 +157,10 @@ Cards do not cost actions.
 
 | Piece                    | Tier            | Value | Movement                                                                                                              |
 | ------------------------ | --------------- | ----- | --------------------------------------------------------------------------------------------------------------------- |
-| Medeq                    | District        | 10    | Forward 1. Attacks diagonally. Paired-move with opposing Medeq in opening phase.                                      |
+| Medeq                    | District        | 10    | Diagonally 1, attacks forward 1 (Berolina pawn)                                                                       |
 | Makwanam                 | District        | 15    | 1 diagonal (ferz).                                                                                                    |
 | Saba                     | Town            | 20    | 2 diagonal. Unrestricted by territory.                                                                                |
-| Faras                    | Province        | 30    | Knight L.                                                                                                             |
+| Faras                    | Province        | 30    | Second square orthogonally (Dababbah).                                                                                |
 | Negus Guard _(capstone)_ | Overseer reward | 100   | Moves twice per action. When it would flip: removed from board instead, 2 friendly Medeq spawn adjacent to your king. |
 
 #### Combinations (Kewarani)
@@ -200,13 +201,13 @@ All Kewarani splitter pieces (Medeq Squad, Sultan's Levy, Negus Guard) resist fl
 
 #### Base Pieces
 
-| Piece                | Tier            | Value | Movement                                                |
-| -------------------- | --------------- | ----- | ------------------------------------------------------- |
-| Pawn                 | District        | 10    | Forward 1 (or 2 from starting row). Attacks diagonally. |
-| Knight               | District        | 30    | Knight L.                                               |
-| Bishop               | Town            | 30    | Diagonal slider.                                        |
-| Queen                | Province        | 90    | Rook and bishop combined.                               |
-| Gryphon _(capstone)_ | Overseer reward | 100   | 1 diagonal step then any distance orthogonal.           |
+| Piece                | Tier            | Value | Movement                                                      |
+| -------------------- | --------------- | ----- | ------------------------------------------------------------- |
+| Pawn                 | District        | 10    | Forward 1 (or 2 if havenâ€™t moved before). Attacks diagonally. |
+| Knight               | District        | 30    | Knight L.                                                     |
+| Bishop               | Town            | 30    | Diagonal slider.                                              |
+| Queen                | Province        | 90    | Rook and bishop combined.                                     |
+| Gryphon _(capstone)_ | Overseer reward | 100   | 1 diagonal step then any distance orthogonal.                 |
 
 #### Combinations (Caelan)
 
@@ -229,13 +230,13 @@ All Kewarani splitter pieces (Medeq Squad, Sultan's Levy, Negus Guard) resist fl
 
 Innates activate when a kingdom's Province map is entered. Before that, pieces from that kingdom have no innate.
 
-| Kingdom   | Innate                                                                                                                                     | Cost / Limit                                                 |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| Longwei   | **Bulwark**: any Longwei piece with an orthogonally adjacent friendly piece takes 50% reduced damage from all attacks that turn            | Passive                                                      |
-| Harushima | **Reclaim**: a flipped piece anywhere on the board can be immediately converted to your control on its current square                      | 30 cp and 1 action per reclaim                               |
-| Kewarani  | **Double Time**: every Kewarani piece may move twice per move action                                                                       | Kewarani pieces cost 20% more (Medeq costs 12 instead of 10) |
-| Zarqan    | **Royal Substitution**: any Zarqan piece swaps positions with the king as a free action                                                    | Once per battle                                              |
-| Caelan    | **Conqueror's Reward**: when a Caelan piece contributes to a flip, its value permanently gains 50% (rounded up) for the rest of the battle | Slow snowball                                                |
+| Kingdom   | Innate                                                                                                                                     | Cost / Limit                                                                |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| Longwei   | **Bulwark**: any Longwei piece with an orthogonally adjacent friendly piece takes 50% reduced damage from all attacks that turn            | Passive                                                                     |
+| Harushima | **Reclaim**: a flipped piece anywhere on the board can be immediately converted to your control on its current square                      | 30 cp and 1 action per reclaim                                              |
+| Kewarani  | **Double Time**: every Kewarani piece may move twice per move action                                                                       | Kewarani pieces has no home kingdom discount and foreign penalty is now 40% |
+| Zarqan    | **Royal Substitution**: any Zarqan piece swaps positions with the king as a free action                                                    | Once per battle                                                             |
+| Caelan    | **Conqueror's Reward**: when a Caelan piece contributes to a flip, its value permanently gains 50% (rounded up) for the rest of the battle | Slow snowball                                                               |
 
 Bulwark is distinct from the Pao screen mechanic. A Pao screen is a piece between the Pao and its target that enables the attack. Bulwark is damage reduction for adjacent Longwei pieces.
 
@@ -245,14 +246,14 @@ Bulwark is distinct from the Pao screen mechanic. A Pao screen is a piece betwee
 
 ### Format
 
-- 3 cards drawn per turn. All 3 must be played or sold by end of turn.
+- 3 cards drawn at the beginning of the turn. All 3 must be played or sold by end of turn.
 - Cards never carry over between turns or battles.
 - Cards do not cost actions.
 - Unsold cards auto-sell at their sell value.
 
 ### Card Set
 
-The **card set** is the collection of distinct cards that can be drawn each turn. Each turn, 3 cards are chosen at random from this set.
+The **card set** is the collection of distinct cards that can be drawn each turn. Each turn, 3 or more cards are chosen at random from this set.
 
 The set contains every card from tiers you have unlocked via map progress. It grows as you enter new maps. It cannot be added to by events or relics. It only grows through progression and can only shrink through the Offering node.
 
@@ -269,20 +270,20 @@ At run start: 3 Universal District cards + each kingdom's District cards (12 car
 
 ### Universal Cards
 
-| Card         | Tier     | Play / Sell | Effect                                                                                       |
-| ------------ | -------- | ----------- | -------------------------------------------------------------------------------------------- |
-| Pawn Storm   | District | - / 15      | Buy up to 3 pawns this turn; the third is free.                                              |
-| Revitalize   | District | 80 / 15     | Restore 50 to your meter.                                                                    |
-| Hostage      | District | - / 20      | Passive. Next flip to your side: your meter gains 20 bonus.                                  |
-| Last Stand   | Town     | - / 30      | This turn, your meter cannot trigger a flip. Damage still applies; excess is discarded.      |
-| Sacrifice    | Town     | - / 25      | Remove one of your pieces. Gain its value x2 as meter.                                       |
-| Reforge      | Town     | - / 30      | Passive. Next time one of your pieces flips, it returns to your side next turn at 80% value. |
-| Mercy        | Province | - / 45      | Passive. Next flip on your side: you choose which piece flips.                               |
-| Bloodletting | Province | - / 45      | This turn, all your attacks deal extra damage equal to 50% of your missing meter.            |
-| Counter Coup | Province | - / 50      | This turn, all damage you take echoes back at 50% to enemy meter.                            |
-| Spite        | Country  | - / 70      | Passive. Next time you lose a piece, deal its value x3 to enemy meter.                       |
-| Chain Break  | Country  | 100 / 70    | Force-flip one enemy piece of your choice.                                                   |
-| Hydra        | Country  | - / 80      | Passive. Next time one of your pieces flips, 2 friendly pawns spawn adjacent to your king.   |
+| Card         | Tier     | Play / Sell | Effect                                                                                                                  |
+| ------------ | -------- | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Pawn Storm   | District | - / 15      | Buy up to 3 pawns this turn; the third is free.                                                                         |
+| Revitalize   | District | 80 / 15     | Restore 50 to your meter.                                                                                               |
+| Hostage      | District | - / 20      | Passive. Next flip to your side: your meter gains 20 bonus.                                                             |
+| Last Stand   | Town     | - / 30      | This turn, your meter cannot trigger a flip. Damage still applies.                                                      |
+| Sacrifice    | Town     | - / 25      | Remove one of your pieces. Gain its value x2 as meter.                                                                  |
+| Reforge      | Town     | - / 30      | Passive. Next time one of your pieces flips, the cost for the firstpiece of that type cost is discounted 30% next turn. |
+| Mercy        | Province | - / 45      | Target which piece flips next, overrides any previous uses.                                                             |
+| Bloodletting | Province | - / 45      | This turn, all your attacks deal extra damage equal to 50% of your missing meter.                                       |
+| Counter Coup | Province | - / 50      | This turn, all damage you take echoes back at 50% to enemy meter.                                                       |
+| Spite        | Country  | 15 / 70     | Passive. Next time you lose a piece, deal its value x3 to enemy meter.                                                  |
+| Chain Break  | Country  | 100 / 70    | Force-flip one enemy piece of your choice.                                                                              |
+| Hydra        | Country  | - / 80      | Passive. Next time one of your pieces flips, 2 friendly pawns spawn adjacent to your king.                              |
 
 ### Longwei Cards
 
@@ -294,30 +295,30 @@ At run start: 3 Universal District cards + each kingdom's District cards (12 car
 | Divination    | Town     | - / 25      | Reveal the enemy's intended moves and cards for next turn.                        |
 | Cannon Volley | Province | 30 / 45     | Target Pao attacks every enemy on its row and column this turn, ignoring screens. |
 | Palace Decree | Province | - / 50      | Enemy king restricted to a 3x3 zone for 2 turns.                                  |
-| Mandate       | Country  | - / 75      | Remove one of your pieces. Reduce enemy meter by its value x3.                    |
+| Mandate       | Country  | - / 75      | Remove one of your pieces. Deal damage to enemy meter by its value x3.            |
 
 ### Harushima Cards
 
 | Card          | Tier     | Play / Sell | Effect                                                                                                                  |
 | ------------- | -------- | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Ronin         | District | - / 15      | Passive. Next time the targeted piece flips, refund its full value to you.                                              |
+| Ronin         | District | - / 15      | Passive. Next time the targeted piece flips, refund its full value in to you.                                           |
 | Resurrection  | Town     | - / 25      | Reclaim any flipped piece on the board to your control for free.                                                        |
 | Gold Standard | Town     | - / 25      | Target piece moves like a Kinsho this turn only.                                                                        |
 | Promotion     | Town     | - / 30      | Target piece permanently gains Ginsho movement for this battle.                                                         |
 | Dual Drop     | Province | 30 / 45     | Reclaim up to 2 flipped pieces at 30 cp total. If fewer than 2 exist, place free Fuhyo pieces for each missing reclaim. |
 | Force Drop    | Province | - / 50      | Place any unlocked piece of value up to 50 on any unoccupied square for free.                                           |
-| Bushido       | Country  | - / 70      | Passive. When the targeted piece flips, deal its value x2 to enemy meter.                                               |
+| Bushido       | Country  | - / 60      | Passive. When the targeted piece flips, deal its value x2 to enemy meter.                                               |
 
 ### Kewarani Cards
 
 | Card          | Tier     | Play / Sell | Effect                                                                                                                            |
 | ------------- | -------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Sultan's Gold | District | - / 20      | Gain 60 cp.                                                                                                                       |
-| March         | District | - / 15      | Every friendly pawn moves forward 1 square, no action cost.                                                                       |
+| March         | District | - / 15      | Every friendly pawn moves that can move forward 1 square, no action cost.                                                         |
 | Double Time   | Town     | - / 30      | Target piece (any kingdom) makes one additional move this turn. Kewarani pieces with the innate active gain a third move instead. |
 | Salt Road     | Town     | - / 35      | Gain 10 cp at the start of every remaining turn this battle.                                                                      |
-| Caravan       | Province | - / 45      | All pieces in a straight line move 1 square together, no individual action cost.                                                  |
-| Doublestrike  | Province | - / 50      | Two of your pieces each take a full move action, counting as only 1 action total.                                                 |
+| Caravan       | Province | - / 45      | All pieces in a straight line move 1 square forward together, no individual action cost.                                          |
+| Doublestrike  | Province | - / 50      | Move two of your pieces with 1 action cost                                                                                        |
 | Hajj          | Country  | - / 70      | Target piece teleports to any unoccupied square on the board. Does not count as an attack.                                        |
 
 ### Zarqan Cards
@@ -341,7 +342,7 @@ At run start: 3 Universal District cards + each kingdom's District cards (12 car
 | Queen's Gambit | District | - / 20      | Sacrifice a pawn. Draw 3 additional cards immediately; all must be played or sold this turn. |
 | Vengeance      | Town     | - / 30      | Deal 2x damage to an enemy piece that moved adjacent to one of your pieces last turn.        |
 | Queen's Decree | Town     | - / 50      | Your next attack this turn deals double damage.                                              |
-| Cathedral      | Province | - / 45      | Passive. Enemy attacks crossing a friendly Bishop's diagonal deal half damage this turn.     |
+| Cathedral      | Province | - / 45      | Passive. Friendly pieces that are defended by a friendly bishop gets 40% damage reduction.   |
 | Coronation     | Province | - / 55      | Promote a pawn to Queen in place.                                                            |
 | Crusade        | Country  | - / 70      | Target Knight makes 3 consecutive L-moves this turn, each attacking on resolution.           |
 | Divine Right   | Country  | - / 75      | Your king attacks as a Queen this turn.                                                      |
@@ -372,8 +373,8 @@ Playing cards from the same kingdom in one turn:
 | Map      | Board Scale | Notes                                               |
 | -------- | ----------- | --------------------------------------------------- |
 | Town     | 12x12       | Entry point. Street-level scale.                    |
-| Province | 14x15       | Shows the town as one node among several.           |
-| Country  | 16x18       | Shows provinces as regions. Ends with the Overseer. |
+| Province | 14x14-15x15 | Shows the town as one node among several.           |
+| Country  | 16x16-18x18 | Shows provinces as regions. Ends with the Overseer. |
 
 Each map has 5-7 battle nodes plus event nodes. Total run: 25-35 battles, 5 Overseers, Vorath.
 
@@ -789,14 +790,14 @@ There are 26 unique relics. The offer pool never includes a relic already held â
 
 #### Economy
 
-| Relic             | Effect                                                   |
-| ----------------- | -------------------------------------------------------- |
-| Merchant's Ledger | Card sell values +5 cp                                   |
-| Minted Coin       | +5 cp at start of every turn                             |
-| Tax Stamp         | +10 cp whenever you play a card with a play cost         |
-| Bulk Discount     | When buying 3+ pieces in one turn, the cheapest is free  |
-| War Chest         | Unspent cp at end of turn carries over, up to 30         |
-| Trade Routes      | The foreign kingdom markup is removed for the entire run |
+| Relic             | Effect                                                     |
+| ----------------- | ---------------------------------------------------------- |
+| Merchant's Ledger | Card sell values +5 cp                                     |
+| Minted Coin       | +5 cp at start of every turn                               |
+| Tax Stamp         | +10 cp whenever you play a card with a play cost           |
+| Bulk Discount     | When buying 3+ pieces in one turn, the cheapest is free    |
+| War Chest         | Unspent cp at end of turn adds 20% itâ€™s value to the meter |
+| Trade Routes      | The foreign kingdom markup is removed for the entire run   |
 
 #### Meter
 
@@ -821,12 +822,12 @@ There are 26 unique relics. The offer pool never includes a relic already held â
 
 #### Combinations
 
-| Relic               | Effect                                                                     |
-| ------------------- | -------------------------------------------------------------------------- |
-| Alchemist's Kit     | Combinations cost 0 actions                                                |
-| Master's Notes      | Archive nodes reveal 2 recipes instead of 1                                |
-| Philosopher's Stone | Once per run, a combined piece permanently gains +20 value for that battle |
-| Inherited Power     | All combined pieces gain +5 value above their normal result value          |
+| Relic               | Effect                                                                        |
+| ------------------- | ----------------------------------------------------------------------------- |
+| Alchemist's Kit     | Combinations cost 0 actions                                                   |
+| Master's Notes      | Archive nodes reveal 2 recipes instead of 1                                   |
+| Philosopher's Stone | Once per battle, a combined piece permanently gains +20 value for that battle |
+| Inherited Power     | All combined pieces gain +5 value above their normal result value             |
 
 #### Board
 
@@ -904,13 +905,12 @@ Valid rewards: relics, recipe reveals, piece bonuses (run-wide), card set remova
 | Vorath's Decree     | Remove 1 card from card set; reduce Global Vorath Counter by 3 | Refuse. Global Counter +2.        |
 | The Deserter        | Remove 1 card from card set; all pawns gain +3 value this run  | Reduce Global Vorath Counter by 2 |
 | The Archive         | Reveal 2 combination recipes                                   | Choose 1 relic from 2             |
-| Rest                | No reward. Lore text only.                                     |                                   |
 
 ---
 
 ### Board Traits
 
-Active on 50% of battles in their kingdom. Revealed before entering the node.
+Split 50/50 of battles in their kingdom. Revealed before entering the node.
 
 #### Longwei
 
@@ -956,7 +956,7 @@ Active on 50% of battles in their kingdom. Revealed before entering the node.
 | Longwei   | Siege Engineer: sets up Pao screens; buys Ma early; sacrifices meter to establish 3-piece lines                        | Buys cheapest pieces to rebuild meter       |
 | Harushima | Reclaimer: lets low-value pieces flip then reclaims them; hoards cp early; plays defensively                           | Switches to aggressive high-value purchases |
 | Kewarani  | The Tide: floods Medeq and Makwanam; never buys above 30 cp; moves all 3 actions every turn; sells most cards          | Mass-attacks highest-value player pieces    |
-| Zarqan    | Trickster: saves Royal Substitution for committed attacks; repositions constantly; plays cards over buying             | Switches to high-value purchases            |
+| Zarqan    | Trickster: saves Royal Substitution for committed attacks; repositions constantly; plays cards over selling            | Switches to high-value purchases            |
 | Caelan    | The Hammer: hoards cp for 1 large turn with 2 high-value buys; focuses all attacks on the player's most valuable piece | Floods pawns as defensive stall             |
 
 ---
@@ -994,7 +994,7 @@ Mastery-3 starting power upgrades:
 
 - **Mingzhu** (Longwei): The free starting Pao applies in all kingdoms' territory, not just Longwei. The out-of-kingdom +20 cp fallback is replaced by the universal Pao.
 - **Tomohito** (Harushima): Reclaim costs 5 cp instead of 10 for the entire run.
-- **Selassie** (Kewarani): The Double Time +20% piece cost penalty is waived.
+- **Selassie** (Kewarani): The Double Time +40% piece cost penalty is waived.
 - **Timur** (Zarqan): Royal Substitution is usable three times per battle instead of twice.
 - **Isabella** (Caelan): The guaranteed first-turn card upgrades from Province-tier to Country-tier.
 
