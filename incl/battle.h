@@ -90,15 +90,15 @@ typedef struct {
             int      dmg;
         } dealt_damage;
         struct {
-            Side s;
+            Side side;
             int  old_val, new_val;
         } meter;
         struct {
-            Side s;
+            Side side;
             int  old_val, new_val;
         } cp;
         struct {
-            Side     s;
+            Side     side;
             uint16_t card_tmpl_id;
         } card;
         struct {
@@ -151,7 +151,7 @@ typedef struct BattleState {
 /// - BattleState* bs -> battle state to initialize
 /// - const BattleConfig* cfg -> battle configuration
 ///
-void         battle_init(BattleState* bs, const BattleConfig* cfg);
+void battle_init(BattleState* bs, const BattleConfig* cfg);
 
 /// battle_destroy
 ///
@@ -160,7 +160,7 @@ void         battle_init(BattleState* bs, const BattleConfig* cfg);
 /// Params:
 /// - BattleState* bs -> battle state to destroy
 ///
-void         battle_destroy(BattleState* bs);
+void battle_destroy(BattleState* bs);
 
 /// battle_check_end
 ///
@@ -181,7 +181,7 @@ BattleResult battle_check_end(const BattleState* bs);
 /// Params:
 /// - BattleState* bs -> battle state to modify
 ///
-void         battle_turn_start(BattleState* bs);
+void battle_turn_start(BattleState* bs);
 
 /// battle_turn_end
 ///
@@ -190,7 +190,7 @@ void         battle_turn_start(BattleState* bs);
 /// Params:
 /// - BattleState* bs -> battle state to modify
 ///
-void         battle_turn_end(BattleState* bs);
+void battle_turn_end(BattleState* bs);
 
 /*--------------------------------------------------------------------------*\
                               STATE ACCESSORS
@@ -235,7 +235,7 @@ const PieceState* battle_piece_by_id(const BattleState* bs, uint32_t id);
 /// Return:
 /// size_t -> number of pieces written
 ///
-size_t            battle_pieces(
+size_t battle_pieces(
     const BattleState* bs,
     Side               side,
     const PieceState** out,
@@ -253,7 +253,7 @@ size_t            battle_pieces(
 /// Return:
 /// Side -> SIDE_PLAYER, SIDE_ENEMY, or SIDE_NEUTRAL
 ///
-Side   battle_territory(const BattleState* bs, Position p);
+Side battle_territory(const BattleState* bs, Position p);
 
 /// battle_threat_count
 ///
@@ -267,7 +267,7 @@ Side   battle_territory(const BattleState* bs, Position p);
 /// Return:
 /// int -> number of threatening pieces
 ///
-int    battle_threat_count(const BattleState* bs, Position p, Side attacker);
+int battle_threat_count(const BattleState* bs, Position p, Side attacker);
 
 /// battle_hand
 ///
@@ -299,7 +299,7 @@ size_t battle_hand(
 /// Return:
 /// const CardTemplate* -> template or NULL
 ///
-const CardTemplate*  battle_card_tmpl(uint16_t id);
+const CardTemplate* battle_card_tmpl(uint16_t id);
 
 /// battle_piece_tmpl
 ///
@@ -677,6 +677,6 @@ size_t battle_drain_events(BattleState* bs, Event* out, size_t cap);
 /// Params:
 /// - BattleState* bs -> battle state to modify
 ///
-void   battle_clear_events(BattleState* bs);
+void battle_clear_events(BattleState* bs);
 
 #endif /* BATTLE_H */

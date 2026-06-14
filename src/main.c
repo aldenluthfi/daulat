@@ -40,16 +40,16 @@ static void print_board(const BattleState* bs) {
 static void print_pieces(const BattleState* bs) {
     log_info("  Pieces:");
     for (uint16_t i = 0; i < bs->piece_count; i++) {
-        const PieceState* p = &bs->pieces[i];
-        const char* side    = (p->owner == SIDE_PLAYER) ? "PLAYER" : "ENEMY ";
+        const PieceState* piece = &bs->pieces[i];
+        const char* side = (piece->owner == SIDE_PLAYER) ? "PLAYER" : "ENEMY ";
         log_info(
             "    [%u] %s (%s) at (%d,%d) val=%d",
-            p->id,
-            p->tmpl->name,
+            piece->id,
+            piece->tmpl->name,
             side,
-            p->pos.x,
-            p->pos.y,
-            piece_value(p)
+            piece->pos.x,
+            piece->pos.y,
+            piece_value(piece)
         );
     }
 }
@@ -69,12 +69,12 @@ static void print_state(const BattleState* bs) {
     );
 }
 
-static void print_hand(const BattleState* bs, Side s) {
-    const char* side = (s == SIDE_PLAYER) ? "PLAYER" : "ENEMY ";
-    uint8_t     n    = bs->hand_count[s];
-    log_info("  %s hand (%d cards):", side, n);
-    for (uint8_t i = 0; i < n; i++) {
-        const CardTemplate* tmpl = bs->hand[s][i].tmpl;
+static void print_hand(const BattleState* bs, Side side) {
+    const char* side_str = (side == SIDE_PLAYER) ? "PLAYER" : "ENEMY ";
+    uint8_t     count    = bs->hand_count[side];
+    log_info("  %s hand (%d cards):", side_str, count);
+    for (uint8_t i = 0; i < count; i++) {
+        const CardTemplate* tmpl = bs->hand[side][i].tmpl;
         log_info(
             "    [%u] %s cost=%d sell=%d",
             i,

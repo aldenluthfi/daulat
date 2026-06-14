@@ -37,30 +37,30 @@ piece_spawn(BattleState* bs, uint16_t tmpl_id, Position pos, Side owner) {
         log_warn("piece_spawn: unknown template id %u\n", tmpl_id);
         return 0;
     }
-    PieceState* p           = &bs->pieces[bs->piece_count++];
-    p->id                   = bs->next_piece_id++;
-    p->tmpl                 = tmpl;
-    p->owner                = owner;
-    p->pos                  = pos;
-    p->value_mod            = 0;
-    p->buff_count           = 0;
-    p->moves_used           = 0;
-    p->flags                = 0;
-    p->streak_attack        = 0;
-    p->move_override.func   = NULL;
-    p->threat_override.func = NULL;
-    board_place(&bs->board, p, pos);
+    PieceState* piece           = &bs->pieces[bs->piece_count++];
+    piece->id                   = bs->next_piece_id++;
+    piece->tmpl                 = tmpl;
+    piece->owner                = owner;
+    piece->pos                  = pos;
+    piece->value_mod            = 0;
+    piece->buff_count           = 0;
+    piece->moves_used           = 0;
+    piece->flags                = 0;
+    piece->streak_attack        = 0;
+    piece->move_override.func   = NULL;
+    piece->threat_override.func = NULL;
+    board_place(&bs->board, piece, pos);
     for (uint8_t i = 0; i < tmpl->passive_count; i++) {
-        Effect e    = tmpl->passives[i];
-        e.source_id = p->id;
-        e.owner     = owner;
-        bus_register(&bs->bus, &e);
+        Effect effect    = tmpl->passives[i];
+        effect.source_id = piece->id;
+        effect.owner     = owner;
+        bus_register(&bs->bus, &effect);
     }
     struct EffectCtx ctx = {0};
-    ctx.as.piece.piece   = p;
+    ctx.as.piece.piece   = piece;
     ctx.as.piece.pos     = &pos;
     bus_emit(&bs->bus, bs, TRIGGER_PIECE_PLACED, &ctx);
-    return p->id;
+    return piece->id;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -76,13 +76,13 @@ piece_spawn(BattleState* bs, uint16_t tmpl_id, Position pos, Side owner) {
 /// - uint32_t piece_id -> runtime id of piece to remove
 ///
 void piece_remove(BattleState* bs, uint32_t piece_id) {
-    PieceState* p = piece_by_id(bs, piece_id);
-    if (p == NULL)
+    PieceState* piece = piece_by_id(bs, piece_id);
+    if (piece == NULL)
         return;
-    board_remove(&bs->board, p->pos);
+    board_remove(&bs->board, piece->pos);
     bus_evict_by_source(&bs->bus, piece_id);
     struct EffectCtx ctx = {0};
-    ctx.as.piece.piece   = p;
+    ctx.as.piece.piece   = piece;
     bus_emit(&bs->bus, bs, TRIGGER_PIECE_REMOVED, &ctx);
     for (uint16_t i = 0; i < bs->piece_count; i++) {
         if (bs->pieces[i].id == piece_id) {
@@ -105,21 +105,21 @@ void piece_remove(BattleState* bs, uint32_t piece_id) {
 /// - uint32_t piece_id -> runtime id of piece to flip
 ///
 void piece_flip(BattleState* bs, uint32_t piece_id) {
-    PieceState* p = piece_by_id(bs, piece_id);
-    if (p == NULL)
+    PieceState* piece = piece_by_id(bs, piece_id);
+    if (piece == NULL)
         return;
     struct EffectCtx ctx = {0};
-    ctx.as.piece.piece   = p;
+    ctx.as.piece.piece   = piece;
     bus_emit(&bs->bus, bs, TRIGGER_PIECE_FLIPPED, &ctx);
-    p->owner = side_opposite(p->owner);
-    board_remove(&bs->board, p->pos);
-    board_place(&bs->board, p, p->pos);
+    piece->owner = side_opposite(piece->owner);
+    board_remove(&bs->board, piece->pos);
+    board_place(&bs->board, piece, piece->pos);
     bus_evict_by_source(&bs->bus, piece_id);
-    for (uint8_t i = 0; i < p->tmpl->passive_count; i++) {
-        Effect e    = p->tmpl->passives[i];
-        e.source_id = p->id;
-        e.owner     = p->owner;
-        bus_register(&bs->bus, &e);
+    for (uint8_t i = 0; i < piece->tmpl->passive_count; i++) {
+        Effect effect    = piece->tmpl->passives[i];
+        effect.source_id = piece->id;
+        effect.owner     = piece->owner;
+        bus_register(&bs->bus, &effect);
     }
 }
 

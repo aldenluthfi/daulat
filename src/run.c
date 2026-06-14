@@ -71,13 +71,13 @@ void run_apply_chain(RunState* run, uint8_t level) {
 ///
 /// Params:
 /// - const RunState* run -> run state to query
-/// - Kingdom k -> kingdom to check
+/// - Kingdom kingdom -> kingdom to check
 ///
 /// Return:
 /// bool -> true if the kingdom has been cleared
 ///
-bool run_kingdom_cleared(const RunState* run, Kingdom k) {
-    if (k >= 5)
+bool run_kingdom_cleared(const RunState* run, Kingdom kingdom) {
+    if (kingdom >= 5)
         return false;
-    return run->cleared_kingdoms[k];
+    return run->cleared_kingdoms[kingdom];
 }

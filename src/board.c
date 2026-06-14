@@ -91,9 +91,9 @@ PieceState* board_remove(Board* board, Position pos) {
     if (!pos_in_bounds(pos, board->width, board->height))
         return NULL;
     int         idx     = board_index(board, pos);
-    PieceState* p       = board->squares[idx];
+    PieceState* piece   = board->squares[idx];
     board->squares[idx] = NULL;
-    return p;
+    return piece;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -135,11 +135,11 @@ void board_compute_territory(const Board* board, Side territory[]) {
     }
     for (int y = 0; y < board->height; y++) {
         for (int x = 0; x < board->width; x++) {
-            Position    pos = {x, y};
-            PieceState* p   = board_at(board, pos);
-            if (p != NULL) {
+            Position    pos   = {x, y};
+            PieceState* piece = board_at(board, pos);
+            if (piece != NULL) {
                 int idx        = board_index(board, pos);
-                territory[idx] = p->owner;
+                territory[idx] = piece->owner;
             }
         }
     }
@@ -159,12 +159,12 @@ void board_territory_counts(const Board* board, int counts[3]) {
     counts[SIDE_NEUTRAL] = 0;
     for (int y = 0; y < board->height; y++) {
         for (int x = 0; x < board->width; x++) {
-            Position    pos = {x, y};
-            PieceState* p   = board_at(board, pos);
-            if (p == NULL) {
+            Position    pos   = {x, y};
+            PieceState* piece = board_at(board, pos);
+            if (piece == NULL) {
                 counts[SIDE_NEUTRAL]++;
             } else {
-                counts[p->owner]++;
+                counts[piece->owner]++;
             }
         }
     }
@@ -188,15 +188,19 @@ void board_threat_map(const Board* board, int threats[]) {
     }
     for (int y = 0; y < board->height; y++) {
         for (int x = 0; x < board->width; x++) {
-            Position    pos = {x, y};
-            PieceState* p   = board_at(board, pos);
-            if (p == NULL)
+            Position    pos   = {x, y};
+            PieceState* piece = board_at(board, pos);
+            if (piece == NULL)
                 continue;
-            MoveList ml = {0};
-            mg_generate_threat(p, NULL, &ml);
-            for (uint8_t j = 0; j < ml.count; j++) {
-                if (pos_in_bounds(ml.squares[j], board->width, board->height)) {
-                    int idx = board_index(board, ml.squares[j]);
+            MoveList move_list = {0};
+            mg_generate_threat(piece, NULL, &move_list);
+            for (uint8_t j = 0; j < move_list.count; j++) {
+                if (pos_in_bounds(
+                        move_list.squares[j],
+                        board->width,
+                        board->height
+                    )) {
+                    int idx = board_index(board, move_list.squares[j]);
                     threats[idx]++;
                 }
             }

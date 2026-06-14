@@ -32,12 +32,12 @@ void rng_init(Rng* rng, uint64_t seed) {
 /// uint64_t -> raw random value
 ///
 uint64_t rng_next(Rng* rng) {
-    uint64_t x = rng->state;
-    x ^= x >> 12;
-    x ^= x << 25;
-    x ^= x >> 27;
-    rng->state = x;
-    return x * 0x2545F4914F6CDD1DULL;
+    uint64_t value = rng->state;
+    value ^= value >> 12;
+    value ^= value << 25;
+    value ^= value >> 27;
+    rng->state = value;
+    return value * 0x2545F4914F6CDD1DULL;
 }
 
 /// rng_bound
@@ -59,11 +59,11 @@ uint64_t rng_bound(Rng* rng, uint64_t bound) {
     mask |= mask >> 8;
     mask |= mask >> 16;
     mask |= mask >> 32;
-    uint64_t x;
+    uint64_t value;
     do {
-        x = rng_next(rng) & mask;
-    } while (x >= bound);
-    return x;
+        value = rng_next(rng) & mask;
+    } while (value >= bound);
+    return value;
 }
 
 /// rng_range

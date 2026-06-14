@@ -54,10 +54,10 @@ static void ai_execute_action(BattleState* bs, const Action* a) {
 void ai_play_turn(BattleState* bs) {
     uint8_t actions = bs->actions_left;
     while (actions > 0 && !bs->battle_ended) {
-        Action a = ai_pick_one(bs);
-        if (a.kind == ACTION_END_TURN)
+        Action action = ai_pick_one(bs);
+        if (action.kind == ACTION_END_TURN)
             break;
-        ai_execute_action(bs, &a);
+        ai_execute_action(bs, &action);
         actions--;
     }
 }
@@ -76,16 +76,16 @@ Action ai_pick_one(BattleState* bs) {
     Action best = {.kind = ACTION_END_TURN};
 
     for (uint16_t i = 0; i < bs->piece_count; i++) {
-        const PieceState* p = &bs->pieces[i];
-        if (p->owner != bs->active_side)
+        const PieceState* piece = &bs->pieces[i];
+        if (piece->owner != bs->active_side)
             continue;
-        MoveList ml = {0};
-        mg_generate(p, bs, &ml);
-        if (ml.count > 0) {
-            uint64_t idx          = rng_range(&bs->rng, ml.count);
+        MoveList move_list = {0};
+        mg_generate(piece, bs, &move_list);
+        if (move_list.count > 0) {
+            uint64_t idx          = rng_range(&bs->rng, move_list.count);
             best.kind             = ACTION_MOVE;
-            best.as.move.piece_id = p->id;
-            best.as.move.to       = ml.squares[idx];
+            best.as.move.piece_id = piece->id;
+            best.as.move.to       = move_list.squares[idx];
             return best;
         }
     }

@@ -23,14 +23,14 @@
 ///
 void meta_apply_relics(BattleState* bs, const RunState* run) {
     for (uint8_t i = 0; i < run->relic_count; i++) {
-        const RelicTemplate* r = run->relics[i];
-        if (r == NULL)
+        const RelicTemplate* relic = run->relics[i];
+        if (relic == NULL)
             continue;
-        for (uint8_t j = 0; j < r->effect_count; j++) {
-            Effect e         = r->effects[j];
-            e.owner          = SIDE_PLAYER;
-            e.duration_turns = -1;
-            bus_register(&bs->bus, &e);
+        for (uint8_t j = 0; j < relic->effect_count; j++) {
+            Effect effect         = relic->effects[j];
+            effect.owner          = SIDE_PLAYER;
+            effect.duration_turns = -1;
+            bus_register(&bs->bus, &effect);
         }
     }
 }
@@ -48,14 +48,14 @@ void meta_apply_relics(BattleState* bs, const RunState* run) {
 /// - Kingdom kingdom -> kingdom whose innate to apply
 ///
 void meta_apply_innate(BattleState* bs, Kingdom kingdom) {
-    const InnateTemplate* inn = innate_template(kingdom);
-    if (inn == NULL)
+    const InnateTemplate* innate = innate_template(kingdom);
+    if (innate == NULL)
         return;
-    for (uint8_t i = 0; i < inn->effect_count; i++) {
-        Effect e         = inn->effects[i];
-        e.owner          = SIDE_PLAYER;
-        e.duration_turns = -1;
-        bus_register(&bs->bus, &e);
+    for (uint8_t i = 0; i < innate->effect_count; i++) {
+        Effect effect         = innate->effects[i];
+        effect.owner          = SIDE_PLAYER;
+        effect.duration_turns = -1;
+        bus_register(&bs->bus, &effect);
     }
 }
 
@@ -89,13 +89,13 @@ void meta_apply_mastery(BattleState* bs, uint8_t level) {
 /// - uint8_t level -> chain level
 ///
 void meta_apply_chain(BattleState* bs, uint8_t level) {
-    const Chain* ch = chain_template(level);
-    if (ch == NULL)
+    const Chain* chain = chain_template(level);
+    if (chain == NULL)
         return;
-    for (uint8_t i = 0; i < ch->penalty_count; i++) {
-        Effect e    = ch->penalties[i];
-        e.owner    = SIDE_PLAYER;
-        bus_register(&bs->bus, &e);
+    for (uint8_t i = 0; i < chain->penalty_count; i++) {
+        Effect effect = chain->penalties[i];
+        effect.owner  = SIDE_PLAYER;
+        bus_register(&bs->bus, &effect);
     }
 }
 
@@ -112,11 +112,11 @@ void meta_apply_chain(BattleState* bs, uint8_t level) {
 /// - Kingdom cleared -> cleared kingdom
 ///
 void meta_apply_synergy(BattleState* bs, Kingdom cleared) {
-    const Synergy* syn = synergy_template(cleared);
-    if (syn == NULL)
+    const Synergy* synergy = synergy_template(cleared);
+    if (synergy == NULL)
         return;
-    Effect e         = syn->bonus;
-    e.owner          = SIDE_PLAYER;
-    e.duration_turns = -1;
-    bus_register(&bs->bus, &e);
+    Effect effect         = synergy->bonus;
+    effect.owner          = SIDE_PLAYER;
+    effect.duration_turns = -1;
+    bus_register(&bs->bus, &effect);
 }

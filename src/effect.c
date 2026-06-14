@@ -30,19 +30,22 @@ void bus_init(EffectBus* bus) {
 
 /// bus_register
 ///
-/// Append a copy of `*e` to the bus as a fresh active slot.
+/// Append a copy of `*effect` to the bus as a fresh active slot.
 ///
 /// Params:
 /// - EffectBus* bus -> destination bus
-/// - const Effect* e -> effect to register
+/// - const Effect* effect -> effect to register
 ///
-void bus_register(EffectBus* bus, const Effect* e) {
+void bus_register(EffectBus* bus, const Effect* effect) {
     if (bus->count >= MAX_EFFECTS) {
-        log_warn("EffectBus full, dropping effect (trigger=%d)\n", e->trigger);
+        log_warn(
+            "EffectBus full, dropping effect (trigger=%d)\n",
+            effect->trigger
+        );
         return;
     }
-    bus->slots[bus->count].effect          = e;
-    bus->slots[bus->count].remaining_turns = e->duration_turns;
+    bus->slots[bus->count].effect          = effect;
+    bus->slots[bus->count].remaining_turns = effect->duration_turns;
     bus->slots[bus->count].active          = true;
     bus->count++;
 }
@@ -139,14 +142,14 @@ void bus_tick_turn_start(EffectBus* bus) {
 /// Return:
 /// size_t -> number of active matching slots
 ///
-size_t bus_query_count(const EffectBus* bus, EffectTrigger t) {
-    size_t n = 0;
+size_t bus_query_count(const EffectBus* bus, EffectTrigger trigger) {
+    size_t count = 0;
     for (uint16_t i = 0; i < bus->count; i++) {
-        if (bus->slots[i].active && bus->slots[i].effect->trigger == t) {
-            n++;
+        if (bus->slots[i].active && bus->slots[i].effect->trigger == trigger) {
+            count++;
         }
     }
-    return n;
+    return count;
 }
 
 /*--------------------------------------------------------------------------*\

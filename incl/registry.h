@@ -39,7 +39,7 @@ const PieceTemplate* piece_template(uint16_t id);
 /// Return:
 /// size_t -> piece id cardinality
 ///
-size_t               piece_count(void);
+size_t piece_count(void);
 
 /*--------------------------------------------------------------------------*\
                               CARD REGISTRY
@@ -64,7 +64,7 @@ const CardTemplate* card_template(uint16_t id);
 /// Return:
 /// size_t -> card id cardinality
 ///
-size_t              card_count(void);
+size_t card_count(void);
 
 /*--------------------------------------------------------------------------*\
                               RECIPE REGISTRY
@@ -90,7 +90,7 @@ const Recipe* recipe_find(uint16_t a, uint16_t b);
 /// Return:
 /// size_t -> recipe array length
 ///
-size_t        recipe_count(void);
+size_t recipe_count(void);
 
 /*--------------------------------------------------------------------------*\
                               RELIC REGISTRY
@@ -115,7 +115,7 @@ const RelicTemplate* relic_template(uint16_t id);
 /// Return:
 /// size_t -> relic array length
 ///
-size_t               relic_count(void);
+size_t relic_count(void);
 
 /*--------------------------------------------------------------------------*\
                               INNATE REGISTRY
@@ -172,7 +172,7 @@ const Modifier* modifier_template(uint16_t id);
 /// Return:
 /// size_t -> modifier array length
 ///
-size_t          modifier_count(void);
+size_t modifier_count(void);
 
 /*--------------------------------------------------------------------------*\
                               TRAIT REGISTRY
@@ -197,7 +197,7 @@ const BoardTrait* trait_template(uint16_t id);
 /// Return:
 /// size_t -> trait array length
 ///
-size_t            trait_count(void);
+size_t trait_count(void);
 
 /*--------------------------------------------------------------------------*\
                               FIGUREHEAD REGISTRY
@@ -254,6 +254,6 @@ const AIArchetype* ai_archetype(Kingdom k);
 /// Return:
 /// size_t -> archetype array length
 ///
-size_t             ai_archetype_count(void);
+size_t ai_archetype_count(void);
 
 #endif /* REGISTRY_H */

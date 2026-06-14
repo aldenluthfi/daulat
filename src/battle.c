@@ -82,31 +82,31 @@ void battle_init(BattleState* bs, const BattleConfig* cfg) {
     bs->meter[SIDE_PLAYER]              = bs->meter_cap[SIDE_PLAYER];
     bs->meter[SIDE_ENEMY]               = bs->meter_cap[SIDE_ENEMY];
     for (uint8_t i = 0; i < cfg->modifier_count; i++) {
-        const Modifier* m = cfg->modifiers[i];
-        for (uint8_t j = 0; j < m->effect_count; j++) {
-            Effect e         = m->effects[j];
-            e.owner          = SIDE_PLAYER;
-            e.duration_turns = -1;
-            bus_register(&bs->bus, &e);
+        const Modifier* modifier = cfg->modifiers[i];
+        for (uint8_t j = 0; j < modifier->effect_count; j++) {
+            Effect effect         = modifier->effects[j];
+            effect.owner          = SIDE_PLAYER;
+            effect.duration_turns = -1;
+            bus_register(&bs->bus, &effect);
         }
     }
     for (uint8_t i = 0; i < cfg->trait_count; i++) {
-        const BoardTrait* t = cfg->traits[i];
-        for (uint8_t j = 0; j < t->effect_count; j++) {
-            Effect e         = t->effects[j];
-            e.owner          = SIDE_PLAYER;
-            e.duration_turns = -1;
-            bus_register(&bs->bus, &e);
+        const BoardTrait* trait = cfg->traits[i];
+        for (uint8_t j = 0; j < trait->effect_count; j++) {
+            Effect effect         = trait->effects[j];
+            effect.owner          = SIDE_PLAYER;
+            effect.duration_turns = -1;
+            bus_register(&bs->bus, &effect);
         }
     }
     if (cfg->run != NULL) {
         for (uint8_t i = 0; i < cfg->run->relic_count; i++) {
-            const RelicTemplate* r = cfg->run->relics[i];
-            for (uint8_t j = 0; j < r->effect_count; j++) {
-                Effect e         = r->effects[j];
-                e.owner          = SIDE_PLAYER;
-                e.duration_turns = -1;
-                bus_register(&bs->bus, &e);
+            const RelicTemplate* relic = cfg->run->relics[i];
+            for (uint8_t j = 0; j < relic->effect_count; j++) {
+                Effect effect         = relic->effects[j];
+                effect.owner          = SIDE_PLAYER;
+                effect.duration_turns = -1;
+                bus_register(&bs->bus, &effect);
             }
         }
     }
@@ -167,40 +167,41 @@ void battle_turn_start(BattleState* bs) {
 /// Params:
 /// - BattleState* bs -> battle state to modify
 /// - Side defender -> side taking damage
-/// - int dmg -> total damage to apply
+/// - int damage -> total damage to apply
 ///
 static void
-apply_damage_with_cascading_flips(BattleState* bs, Side defender, int dmg) {
-    while (dmg > 0) {
-        int m = bs->meter[defender];
-        if (m <= dmg) {
-            dmg -= m;
+apply_damage_with_cascading_flips(BattleState* bs, Side defender, int damage) {
+    while (damage > 0) {
+        int meter_value = bs->meter[defender];
+        if (meter_value <= damage) {
+            damage -= meter_value;
             bs->meter[defender] = 0;
             uint16_t candidates[MAX_PIECES];
-            uint16_t n = 0;
+            uint16_t count = 0;
             for (uint16_t i = 0; i < bs->piece_count; i++) {
                 if (bs->pieces[i].owner != defender)
                     continue;
                 if (bs->pieces[i].tmpl->id == PIECE_KING)
                     continue;
-                candidates[n++] = i;
+                candidates[count++] = i;
             }
-            if (n > 0) {
-                uint16_t pick = candidates[rng_range(&bs->rng, n)];
+            if (count > 0) {
+                uint16_t pick = candidates[rng_range(&bs->rng, count)];
                 uint32_t id   = bs->pieces[pick].id;
-                uint16_t idx  = (bs->event_head + bs->event_count) % MAX_EVENTS;
+                uint16_t event_index =
+                    (bs->event_head + bs->event_count) % MAX_EVENTS;
                 if (bs->event_count < MAX_EVENTS) {
-                    bs->events[idx].kind                = EVT_PIECE_FLIPPED;
-                    bs->events[idx].turn_no             = bs->turn_no;
-                    bs->events[idx].as.flipped.piece_id = id;
+                    bs->events[event_index].kind    = EVT_PIECE_FLIPPED;
+                    bs->events[event_index].turn_no = bs->turn_no;
+                    bs->events[event_index].as.flipped.piece_id = id;
                     bs->event_count++;
                 }
                 piece_flip(bs, id);
             }
             bs->meter[defender] = bs->meter_cap[defender];
         } else {
-            bs->meter[defender] -= dmg;
-            dmg = 0;
+            bs->meter[defender] -= damage;
+            damage = 0;
         }
         if (battle_check_end(bs) != BATTLE_IN_PROGRESS) {
             bs->battle_ended = true;
@@ -231,25 +232,29 @@ void battle_resolve(BattleState* bs) {
     bus_emit(&bs->bus, bs, TRIGGER_RESOLVE_ATTACK, &ctx);
     int total_damage = 0;
     for (uint16_t i = 0; i < bs->piece_count; i++) {
-        PieceState* p = &bs->pieces[i];
-        if (p->owner != active)
+        PieceState* piece = &bs->pieces[i];
+        if (piece->owner != active)
             continue;
-        MoveList threats = {0};
-        mg_generate_threat(p, bs, &threats);
-        for (uint8_t j = 0; j < threats.count; j++) {
-            const PieceState* target = board_at(&bs->board, threats.squares[j]);
-            if (target == NULL)
+        MoveList move_list = {0};
+        mg_generate_threat(piece, bs, &move_list);
+        for (uint8_t j = 0; j < move_list.count; j++) {
+            const PieceState* threat_target =
+                board_at(&bs->board, move_list.squares[j]);
+            if (threat_target == NULL)
                 continue;
-            if (target->owner == passive) {
-                int dmg = piece_value(p);
-                total_damage += dmg;
-                uint16_t idx = (bs->event_head + bs->event_count) % MAX_EVENTS;
+            if (threat_target->owner == passive) {
+                int piece_damage = piece_value(piece);
+                total_damage += piece_damage;
+                uint16_t event_index =
+                    (bs->event_head + bs->event_count) % MAX_EVENTS;
                 if (bs->event_count < MAX_EVENTS) {
-                    bs->events[idx].kind    = EVT_PIECE_DEALT_DAMAGE;
-                    bs->events[idx].turn_no = bs->turn_no;
-                    bs->events[idx].as.dealt_damage.attacker    = p->id;
-                    bs->events[idx].as.dealt_damage.victim_side = passive;
-                    bs->events[idx].as.dealt_damage.dmg         = dmg;
+                    bs->events[event_index].kind    = EVT_PIECE_DEALT_DAMAGE;
+                    bs->events[event_index].turn_no = bs->turn_no;
+                    bs->events[event_index].as.dealt_damage.attacker =
+                        piece->id;
+                    bs->events[event_index].as.dealt_damage.victim_side =
+                        passive;
+                    bs->events[event_index].as.dealt_damage.dmg = piece_damage;
                     bs->event_count++;
                 }
             }
@@ -329,15 +334,15 @@ BattleResult battle_check_end(const BattleState* bs) {
 /// bool -> true if the move is legal
 ///
 bool battle_can_move(const BattleState* bs, uint32_t piece_id, Position to) {
-    const PieceState* p = piece_by_id((BattleState*)bs, piece_id);
-    if (p == NULL)
+    const PieceState* piece = piece_by_id((BattleState*)bs, piece_id);
+    if (piece == NULL)
         return false;
-    if (p->owner != bs->active_side)
+    if (piece->owner != bs->active_side)
         return false;
-    MoveList ml = {0};
-    mg_generate(p, bs, &ml);
-    for (uint8_t i = 0; i < ml.count; i++) {
-        if (pos_equal(ml.squares[i], to))
+    MoveList move_list = {0};
+    mg_generate(piece, bs, &move_list);
+    for (uint8_t i = 0; i < move_list.count; i++) {
+        if (pos_equal(move_list.squares[i], to))
             return true;
     }
     return false;
@@ -358,27 +363,27 @@ bool battle_can_move(const BattleState* bs, uint32_t piece_id, Position to) {
 bool battle_action_move(BattleState* bs, uint32_t piece_id, Position to) {
     if (!battle_can_move(bs, piece_id, to))
         return false;
-    PieceState* p    = piece_by_id(bs, piece_id);
-    Position    from = p->pos;
+    PieceState* piece = piece_by_id(bs, piece_id);
+    Position    from  = piece->pos;
     board_remove(&bs->board, from);
-    board_place(&bs->board, p, to);
-    p->moves_used++;
-    p->flags |= PSF_HAS_MOVED;
+    board_place(&bs->board, piece, to);
+    piece->moves_used++;
+    piece->flags |= PSF_HAS_MOVED;
     bs->actions_left--;
-    uint16_t idx = (bs->event_head + bs->event_count) % MAX_EVENTS;
+    uint16_t event_index = (bs->event_head + bs->event_count) % MAX_EVENTS;
     if (bs->event_count < MAX_EVENTS) {
-        bs->events[idx].kind              = EVT_PIECE_MOVED;
-        bs->events[idx].turn_no           = bs->turn_no;
-        bs->events[idx].as.moved.piece_id = piece_id;
-        bs->events[idx].as.moved.from     = from;
-        bs->events[idx].as.moved.to       = to;
+        bs->events[event_index].kind              = EVT_PIECE_MOVED;
+        bs->events[event_index].turn_no           = bs->turn_no;
+        bs->events[event_index].as.moved.piece_id = piece_id;
+        bs->events[event_index].as.moved.from     = from;
+        bs->events[event_index].as.moved.to       = to;
         bs->event_count++;
     }
     struct EffectCtx ctx = {0};
-    ctx.as.piece.piece   = p;
+    ctx.as.piece.piece   = piece;
     bus_emit(&bs->bus, bs, TRIGGER_PIECE_MOVED, &ctx);
-    Side enemy = side_opposite(p->owner);
-    if (board_at(&bs->board, p->pos)->owner == enemy) {
+    Side enemy = side_opposite(piece->owner);
+    if (board_at(&bs->board, piece->pos)->owner == enemy) {
         bus_emit(&bs->bus, bs, TRIGGER_PIECE_ENTERED_ENEMY_TERR, &ctx);
     }
     return true;
@@ -515,10 +520,10 @@ bool battle_play_card(BattleState* bs, uint8_t idx, const TargetSpec* tgt) {
     const CardTemplate* tmpl = bs->hand[bs->active_side][idx].tmpl;
     bs->cp[bs->active_side] -= tmpl->play_cost;
     for (uint8_t i = 0; i < tmpl->play_effect_count; i++) {
-        Effect e    = tmpl->on_play[i];
-        e.owner     = bs->active_side;
-        e.source_id = (uint32_t)tmpl->id;
-        bus_register(&bs->bus, &e);
+        Effect effect    = tmpl->on_play[i];
+        effect.owner     = bs->active_side;
+        effect.source_id = (uint32_t)tmpl->id;
+        bus_register(&bs->bus, &effect);
     }
     card_remove_from_hand(bs, bs->active_side, idx);
     bs->actions_left--;
@@ -557,10 +562,10 @@ bool battle_sell_card(BattleState* bs, uint8_t idx) {
     const CardTemplate* tmpl = bs->hand[bs->active_side][idx].tmpl;
     bs->cp[bs->active_side] += tmpl->sell_value;
     for (uint8_t i = 0; i < tmpl->sell_effect_count; i++) {
-        Effect e    = tmpl->on_sell[i];
-        e.owner     = bs->active_side;
-        e.source_id = (uint32_t)tmpl->id;
-        bus_register(&bs->bus, &e);
+        Effect effect    = tmpl->on_sell[i];
+        effect.owner     = bs->active_side;
+        effect.source_id = (uint32_t)tmpl->id;
+        bus_register(&bs->bus, &effect);
     }
     card_remove_from_hand(bs, bs->active_side, idx);
     bs->actions_left--;
@@ -631,12 +636,12 @@ size_t battle_pieces(
     const PieceState** out,
     size_t             cap
 ) {
-    size_t n = 0;
-    for (uint16_t i = 0; i < bs->piece_count && n < cap; i++) {
+    size_t count = 0;
+    for (uint16_t i = 0; i < bs->piece_count && count < cap; i++) {
         if (bs->pieces[i].owner == side)
-            out[n++] = &bs->pieces[i];
+            out[count++] = &bs->pieces[i];
     }
-    return n;
+    return count;
 }
 
 /// battle_territory
@@ -670,19 +675,19 @@ Side battle_territory(const BattleState* bs, Position p) {
 /// int -> number of threatening pieces
 ///
 int battle_threat_count(const BattleState* bs, Position p, Side attacker) {
-    int n = 0;
+    int count = 0;
     for (uint16_t i = 0; i < bs->piece_count; i++) {
-        const PieceState* pc = &bs->pieces[i];
-        if (pc->owner != attacker)
+        const PieceState* piece = &bs->pieces[i];
+        if (piece->owner != attacker)
             continue;
-        MoveList ml = {0};
-        mg_generate_threat(pc, bs, &ml);
-        for (uint8_t j = 0; j < ml.count; j++) {
-            if (pos_equal(ml.squares[j], p))
-                n++;
+        MoveList move_list = {0};
+        mg_generate_threat(piece, bs, &move_list);
+        for (uint8_t j = 0; j < move_list.count; j++) {
+            if (pos_equal(move_list.squares[j], p))
+                count++;
         }
     }
-    return n;
+    return count;
 }
 
 /// battle_hand
@@ -704,12 +709,12 @@ size_t battle_hand(
     const CardInstance** out,
     size_t               cap
 ) {
-    size_t n = bs->hand_count[side];
-    if (n > cap)
-        n = cap;
-    for (size_t i = 0; i < n; i++)
+    size_t count = bs->hand_count[side];
+    if (count > cap)
+        count = cap;
+    for (size_t i = 0; i < count; i++)
         out[i] = &bs->hand[side][i];
-    return n;
+    return count;
 }
 
 /// battle_card_tmpl
@@ -758,12 +763,12 @@ const PieceTemplate* battle_piece_tmpl(uint16_t id) {
 ///
 size_t
 battle_legal_moves(const BattleState* bs, uint32_t piece_id, MoveList* out) {
-    const PieceState* p = piece_by_id((BattleState*)bs, piece_id);
-    if (p == NULL) {
+    const PieceState* piece = piece_by_id((BattleState*)bs, piece_id);
+    if (piece == NULL) {
         out->count = 0;
         return 0;
     }
-    mg_generate(p, bs, out);
+    mg_generate(piece, bs, out);
     return out->count;
 }
 
@@ -1000,14 +1005,14 @@ int battle_projected_flips(const BattleState* bs, Side attacker) {
 /// size_t -> number of events drained
 ///
 size_t battle_drain_events(BattleState* bs, Event* out, size_t cap) {
-    size_t n = (bs->event_count < cap) ? bs->event_count : cap;
-    for (size_t i = 0; i < n; i++) {
-        uint16_t idx = (bs->event_head + i) % MAX_EVENTS;
-        out[i]       = bs->events[idx];
+    size_t count = (bs->event_count < cap) ? bs->event_count : cap;
+    for (size_t i = 0; i < count; i++) {
+        uint16_t event_index = (bs->event_head + i) % MAX_EVENTS;
+        out[i]               = bs->events[event_index];
     }
-    bs->event_head = (bs->event_head + n) % MAX_EVENTS;
-    bs->event_count -= n;
-    return n;
+    bs->event_head = (bs->event_head + count) % MAX_EVENTS;
+    bs->event_count -= count;
+    return count;
 }
 
 /// battle_clear_events
