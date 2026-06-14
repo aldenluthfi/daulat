@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "log.h"
+#include "profile.h"
 #include "registry.h"
 #include "save.h"
 
@@ -123,6 +124,9 @@ static bool write_run_chunk(SaveWriter* w, const RunState* run) {
     for (size_t i = 0; i < KINGDOM_COUNT; i++)
         if (!save_write_bool(w, run->cleared_kingdoms[i]))
             return false;
+    for (size_t i = 0; i < KINGDOM_COUNT; i++)
+        if (!save_write_bool(w, run->mastery_disqualified[i]))
+            return false;
     if (!save_write_bytes(w, run->mastery_l3, sizeof(run->mastery_l3)))
         return false;
 
@@ -190,6 +194,9 @@ static bool read_run_chunk(SaveReader* r, RunState* run) {
                 return false;
     for (size_t i = 0; i < KINGDOM_COUNT; i++)
         if (!save_read_bool(r, &run->cleared_kingdoms[i]))
+            return false;
+    for (size_t i = 0; i < KINGDOM_COUNT; i++)
+        if (!save_read_bool(r, &run->mastery_disqualified[i]))
             return false;
     if (!save_read_bytes(r, run->mastery_l3, sizeof(run->mastery_l3)))
         return false;
@@ -259,4 +266,35 @@ void run_delete(void) {
         return;
     if (!SDL_RemovePath(path))
         log_warn("run_delete: SDL_RemovePath failed: %s", SDL_GetError());
+}
+
+/*--------------------------------------------------------------------------*\
+                              END-OF-RUN
+\*--------------------------------------------------------------------------*/
+
+void run_finalize(RunState* run, RunEnd outcome) {
+    Profile* profile = run->profile;
+    if (profile == NULL) {
+        log_warn("run_finalize: no profile attached; skipping pass");
+        run_delete();
+        return;
+    }
+
+    if (outcome == RUN_END_VORATH_WIN) {
+        profile->vorath_defeat_count++;
+        profile->total_wins++;
+        if (profile->prestige_tier < 1)
+            profile->prestige_tier = 1;
+        for (size_t k = 0; k < KINGDOM_COUNT; k++) {
+            if (run->mastery_disqualified[k])
+                continue;
+            if (profile->mastery_levels[k] < 3)
+                profile->mastery_levels[k]++;
+        }
+    } else {
+        profile->total_losses++;
+    }
+
+    profile_save(profile);
+    run_delete();
 }

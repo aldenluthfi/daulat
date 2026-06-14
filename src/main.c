@@ -255,6 +255,39 @@ static int cli_dump_save(const char* path) {
     return save_dump(path);
 }
 
+/// cli_debug_jump_results
+///
+/// Simulate a Vorath defeat: load the profile, build a synthetic
+/// completed run with no chain disqualification, run the end-of-run
+/// pass via run_finalize, and persist the profile. Used to verify
+/// mastery advancement, prestige unlock, and run.regsav cleanup.
+///
+static int cli_debug_jump_results(bool won) {
+    Profile profile;
+    if (!profile_load(&profile))
+        profile_new(&profile);
+    RunState run;
+    run_init(&run, 0xC1A1C1A1A0A1A1A1ULL);
+    run.profile = &profile;
+    /* Pretend every kingdom was cleared without chains so mastery
+     * advances across the board on Vorath defeat. */
+    for (size_t k = 0; k < KINGDOM_COUNT; k++) {
+        run.cleared_kingdoms[k]     = true;
+        run.mastery_disqualified[k] = false;
+    }
+    RunEnd outcome = won ? RUN_END_VORATH_WIN : RUN_END_LOSS;
+    run_finalize(&run, outcome);
+    log_info(
+        "--debug-jump-results: prestige=%u defeats=%u "
+        "wins=%u losses=%u",
+        profile.prestige_tier, profile.vorath_defeat_count,
+        profile.total_wins, profile.total_losses
+    );
+    for (size_t k = 0; k < KINGDOM_COUNT; k++)
+        log_info("  mastery[%zu]=%u", k, profile.mastery_levels[k]);
+    return 0;
+}
+
 /// cli_debug_map
 ///
 /// Generate a map for the given (kingdom, tier) pair and print its
@@ -398,6 +431,13 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
         }
         if (strcmp(argv[i], "--debug-map") == 0 && i + 2 < argc) {
             int rc = cli_debug_map(argv[i + 1], argv[i + 2]);
+            exit(rc);
+        }
+        if (strcmp(argv[i], "--debug-jump-results") == 0) {
+            bool won = true;
+            if (i + 1 < argc && strcmp(argv[i + 1], "loss") == 0)
+                won = false;
+            int rc = cli_debug_jump_results(won);
             exit(rc);
         }
     }

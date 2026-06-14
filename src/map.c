@@ -262,6 +262,7 @@ void map_on_battle_lost(struct App* app) {
     if (run->chain_levels[k] < 3)
         run->chain_levels[k]++;
     run->vorath_counter++;
+    run->mastery_disqualified[k] = true;
     if (run->chain_levels[k] >= 3 && !run->subjugated[k]) {
         run->subjugated[k] = true;
         for (Kingdom other = 0; other < KINGDOM_COUNT; other++) {

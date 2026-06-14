@@ -53,6 +53,7 @@ typedef struct RunState {
     /* Progression flags */
     bool    cleared_maps[KINGDOM_COUNT][TIER_PER_KINGDOM];
     bool    cleared_kingdoms[KINGDOM_COUNT];
+    bool    mastery_disqualified[KINGDOM_COUNT];
     uint8_t mastery_l3[KINGDOM_COUNT];
 
     /* Recipe state */
@@ -182,5 +183,34 @@ bool run_save(const RunState* run);
 /// Remove `run.regsav` from disk (used at run-end).
 ///
 void run_delete(void);
+
+/*--------------------------------------------------------------------------*\
+                              END-OF-RUN
+\*--------------------------------------------------------------------------*/
+
+/// RunEnd
+///
+/// Outcome of a run, consulted by run_finalize when updating the
+/// Profile's mastery / prestige / win-loss counters.
+///
+typedef enum {
+    RUN_END_VORATH_WIN,
+    RUN_END_LOSS
+} RunEnd;
+
+/// run_finalize
+///
+/// End-of-run pass: walk the run's per-kingdom flags and update the
+/// Profile accordingly. On Vorath defeat, eligible kingdoms (no
+/// chain ever) advance one mastery level, vorath_defeat_count
+/// increments, and prestige_tier unlocks to at least 1. On loss,
+/// only total_losses bumps. In both cases, the profile is saved
+/// and `run.regsav` is deleted.
+///
+/// Params:
+/// - RunState* run    -> completed run (read-only intent)
+/// - RunEnd    outcome -> RUN_END_VORATH_WIN or RUN_END_LOSS
+///
+void run_finalize(RunState* run, RunEnd outcome);
 
 #endif /* RUN_H */
