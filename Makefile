@@ -18,18 +18,29 @@ TARGET = $(BIN_DIR)/regnum
 # Common flags
 INC_FLAGS = $(addprefix -I, $(INC_DIR))
 
+# SDL3 linkage (prefer pkg-config; fall back to SDL_PATH override)
+SDL3_CFLAGS = $(shell pkg-config --cflags sdl3 2>/dev/null)
+SDL3_LIBS   = $(shell pkg-config --libs sdl3 2>/dev/null)
+ifeq ($(SDL3_CFLAGS),)
+SDL_PATH   ?= /opt/homebrew
+SDL3_CFLAGS = -I$(SDL_PATH)/include
+SDL3_LIBS   = -L$(SDL_PATH)/lib -Wl,-rpath,$(SDL_PATH)/lib -lSDL3
+endif
+
 # =============================================================================
 # Debug mode: symbols, no optimization, assertions enabled, strict warnings
 # =============================================================================
 debug: CFLAGS += -g -O0 -DDEBUG -Wall -Wextra -Werror -std=c11
-debug: CFLAGS += $(INC_FLAGS)
+debug: CFLAGS += $(INC_FLAGS) $(SDL3_CFLAGS)
+debug: LDFLAGS += $(SDL3_LIBS)
 debug: all
 
 # =============================================================================
 # Release mode: optimized, no debug info, stripped
 # =============================================================================
 release: CFLAGS += -O3 -ffast-math -DNDEBUG -Wall -std=c11
-release: CFLAGS += $(INC_FLAGS)
+release: CFLAGS += $(INC_FLAGS) $(SDL3_CFLAGS)
+release: LDFLAGS += $(SDL3_LIBS)
 release: all
 
 # =============================================================================

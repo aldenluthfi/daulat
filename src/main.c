@@ -1,12 +1,18 @@
 //!
 //! main.c
 //!
-//! Demo: 2-turn scripted battle trace. Validates the API end-to-end.
-//! battle_init → 2 player turns + 2 AI turns → battle_resolve.
-//! Smoke test: make debug && ./bin/regnum prints a deterministic trace.
+//! SDL3 entry point. Uses the `SDL_MAIN_USE_CALLBACKS` pattern to
+//! hand control to the four `SDL_App*` callbacks. The application
+//! state lives in `src/app.c`.
+//!
+//! Define `SMOKE_TEST` at build time to compile the original two-
+//! turn battle-trace demo instead. Useful for engine-only validation
+//! without an SDL3 window.
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
+
+#ifdef SMOKE_TEST
 
 #include "prelude.h"
 #include <stdio.h>
@@ -86,7 +92,7 @@ static void print_hand(const BattleState* bs, Side side) {
 }
 
 /*--------------------------------------------------------------------------*\
-                              DEMO
+                              SMOKE TEST
 \*--------------------------------------------------------------------------*/
 
 int main(void) {
@@ -201,3 +207,39 @@ int main(void) {
     log_info("=== Demo complete ===");
     return 0;
 }
+
+#else /* !SMOKE_TEST: SDL3 app entry */
+
+#define SDL_MAIN_USE_CALLBACKS 1
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+
+#include "app.h"
+
+/*--------------------------------------------------------------------------*\
+                              CALLBACKS
+\*--------------------------------------------------------------------------*/
+
+SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
+    (void)argc;
+    (void)argv;
+    App*          app    = NULL;
+    SDL_AppResult result = app_init(&app);
+    *appstate = app;
+    return result;
+}
+
+SDL_AppResult SDL_AppIterate(void* appstate) {
+    return app_iterate((App*)appstate);
+}
+
+SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
+    return app_event((App*)appstate, event);
+}
+
+void SDL_AppQuit(void* appstate, SDL_AppResult result) {
+    (void)result;
+    app_quit((App*)appstate);
+}
+
+#endif /* SMOKE_TEST */
