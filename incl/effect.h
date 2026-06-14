@@ -66,6 +66,22 @@ typedef enum {
 } EffectTrigger;
 
 /*--------------------------------------------------------------------------*\
+                              EFFECT FUNC IDS
+\*--------------------------------------------------------------------------*/
+
+/// EffectFuncId
+///
+/// Stable identifier for every concrete `EffectFunc` body. Used on
+/// disk in place of the live pointer; reseated to `apply` on load
+/// via `eff_lookup`. Phase 3 grows this enum as meta-layer bodies
+/// land; until then only EFFECT_FUNC_TODO is populated.
+///
+typedef enum {
+    EFFECT_FUNC_TODO = 0,
+    EFFECT_FUNC_COUNT
+} EffectFuncId;
+
+/*--------------------------------------------------------------------------*\
                               EFFECT
 \*--------------------------------------------------------------------------*/
 
@@ -84,12 +100,14 @@ typedef void (*EffectFunc)(
 /// Effect
 ///
 /// Behaviour entry registered with the bus. Combines a trigger key,
-/// the handler function, typed arguments, a duration in turns, the
-/// owner side, and an opaque source id used for selective eviction
-/// (piece removal, card discard, relic loss).
+/// a stable `func_id` for serialization, the handler function,
+/// typed arguments, a duration in turns, the owner side, and an
+/// opaque source id used for selective eviction (piece removal,
+/// card discard, relic loss).
 ///
 typedef struct {
     EffectTrigger trigger;
+    EffectFuncId  func_id;
     EffectFunc    apply;
     EffectArg     args[MAX_EFFECT_ARGS];
     uint8_t       arg_count;
@@ -97,6 +115,17 @@ typedef struct {
     Side          owner;
     uint32_t      source_id;
 } Effect;
+
+/// EFF
+///
+/// Compact macro for the func_id + apply pair inside an Effect
+/// literal. Expands to two designated initializers; intended use:
+/// `{.trigger = TRIGGER_X, EFF(NAME, name)}`. NAME is the upper-
+/// case EffectFuncId suffix; name is the lower-case handler suffix
+/// (the C preprocessor cannot case-convert tokens, so both forms
+/// are passed explicitly).
+///
+#define EFF(NAME, name) .func_id = EFFECT_FUNC_##NAME, .apply = eff_##name
 
 /// EffectSlot
 ///
@@ -265,6 +294,25 @@ size_t bus_query_count(const EffectBus* bus, EffectTrigger t);
 /// - uint32_t   source_id -> source identifier to match
 ///
 void bus_evict_by_source(EffectBus* bus, uint32_t source_id);
+
+/*--------------------------------------------------------------------------*\
+                              FUNC LOOKUP
+\*--------------------------------------------------------------------------*/
+
+/// eff_lookup
+///
+/// Map an `EffectFuncId` back to its live `EffectFunc` pointer via
+/// the registry table in `src/effects/eff_registry.c`. Returns NULL
+/// (and logs a warning) for out-of-range ids. Used by the save/load
+/// codec to rehydrate `Effect.apply` after deserialization.
+///
+/// Params:
+/// - EffectFuncId id -> id to look up
+///
+/// Return:
+/// EffectFunc -> live function pointer, or NULL on bad id
+///
+EffectFunc eff_lookup(EffectFuncId id);
 
 /*--------------------------------------------------------------------------*\
                               SHARED PLACEHOLDER

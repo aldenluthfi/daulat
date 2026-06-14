@@ -247,7 +247,7 @@ const CardTemplate CARDS_ZARQAN[] = {
             .tier       = TIER_DISTRICT,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_PILLAGE] =
@@ -258,7 +258,7 @@ const CardTemplate CARDS_ZARQAN[] = {
             .tier       = TIER_DISTRICT,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_ROYAL_DECOY] =
@@ -269,7 +269,7 @@ const CardTemplate CARDS_ZARQAN[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_BAZAAR] =
@@ -280,7 +280,7 @@ const CardTemplate CARDS_ZARQAN[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_STEPPE_RIDERS] =
@@ -291,7 +291,7 @@ const CardTemplate CARDS_ZARQAN[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_AMBITION] =
@@ -302,7 +302,7 @@ const CardTemplate CARDS_ZARQAN[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 4,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_CITADEL] =
@@ -313,7 +313,7 @@ const CardTemplate CARDS_ZARQAN[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 4,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_CONQUEST] = {
@@ -323,7 +323,7 @@ const CardTemplate CARDS_ZARQAN[] = {
         .tier       = TIER_COUNTRY,
         .play_cost  = 5,
         .sell_value = 3,
-        .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+        .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
         .play_effect_count = 1,
     },
 };

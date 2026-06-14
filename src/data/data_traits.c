@@ -31,7 +31,7 @@ const BoardTrait TRAITS[] = {
         .name         = "River Crossing",
         .description  = "A river blocks the center.",
         .type         = TRAIT_RIVER_CROSSING,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -39,7 +39,7 @@ const BoardTrait TRAITS[] = {
         .name         = "Palace",
         .description  = "A grand palace.",
         .type         = TRAIT_PALACE,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -47,7 +47,7 @@ const BoardTrait TRAITS[] = {
         .name         = "Fog Coast",
         .description  = "Foggy coastal terrain.",
         .type         = TRAIT_FOG_COAST,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -55,7 +55,7 @@ const BoardTrait TRAITS[] = {
         .name         = "Island Chain",
         .description  = "Islands across the board.",
         .type         = TRAIT_ISLAND_CHAIN,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -63,7 +63,7 @@ const BoardTrait TRAITS[] = {
         .name         = "Trade Route",
         .description  = "A busy trade route.",
         .type         = TRAIT_TRADE_ROUTE,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -71,7 +71,7 @@ const BoardTrait TRAITS[] = {
         .name         = "Contested Market",
         .description  = "A contested marketplace.",
         .type         = TRAIT_CONTESTED_MARKET,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -79,7 +79,7 @@ const BoardTrait TRAITS[] = {
         .name         = "Sandstorm",
         .description  = "A desert sandstorm.",
         .type         = TRAIT_SANDSTORM,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -87,7 +87,7 @@ const BoardTrait TRAITS[] = {
         .name         = "Mirage",
         .description  = "An illusory mirage.",
         .type         = TRAIT_MIRAGE,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -95,7 +95,7 @@ const BoardTrait TRAITS[] = {
         .name         = "Castle Corners",
         .description  = "Fortified castle corners.",
         .type         = TRAIT_CASTLE_CORNERS,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -103,7 +103,7 @@ const BoardTrait TRAITS[] = {
         .name         = "Siege Trench",
         .description  = "Trenches from a siege.",
         .type         = TRAIT_SIEGE_TRENCH,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
 };

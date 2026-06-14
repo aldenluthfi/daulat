@@ -32,7 +32,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Lean Times",
         .description  = "Reduced starting centipawns.",
         .type         = MODIFIER_LEAN_TIMES,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -40,7 +40,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Windfall",
         .description  = "Both sides gain bonus centipawns at start.",
         .type         = MODIFIER_WINDFALL,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -48,7 +48,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Open Market",
         .description  = "Foreign-kingdom markup reduced for the battle.",
         .type         = MODIFIER_OPEN_MARKET,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     /* Meter */
@@ -57,7 +57,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Glass Cannon",
         .description  = "Meters halved on both sides.",
         .type         = MODIFIER_GLASS_CANNON,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -65,7 +65,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Bloodbath",
         .description  = "All damage dealt is amplified.",
         .type         = MODIFIER_BLOODBATH,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -73,7 +73,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Iron Will",
         .description  = "All damage taken is reduced.",
         .type         = MODIFIER_IRON_WILL,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     /* Cards */
@@ -82,7 +82,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Rich Hand",
         .description  = "Draw extra cards each turn.",
         .type         = MODIFIER_RICH_HAND,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -90,7 +90,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Sparse Hand",
         .description  = "Draw fewer cards each turn.",
         .type         = MODIFIER_SPARSE_HAND,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -98,7 +98,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Kingdom Purity",
         .description  = "Only same-kingdom cards may be drawn.",
         .type         = MODIFIER_KINGDOM_PURITY,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     /* Board */
@@ -107,7 +107,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Fog of War",
         .description  = "Enemy piece values hidden.",
         .type         = MODIFIER_FOG_OF_WAR,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -115,7 +115,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Dense Terrain",
         .description  = "Sliders blocked by extra terrain squares.",
         .type         = MODIFIER_DENSE_TERRAIN,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
     {
@@ -123,7 +123,7 @@ const Modifier MODIFIERS[] = {
         .name         = "Extended Front",
         .description  = "Board widened; territory baseline shifts.",
         .type         = MODIFIER_EXTENDED_FRONT,
-        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .effects[0]   = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
         .effect_count = 1,
     },
 };

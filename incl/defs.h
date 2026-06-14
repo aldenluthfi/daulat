@@ -47,6 +47,19 @@
 #define TARGET_FPS    60
 
 /*--------------------------------------------------------------------------*\
+                              SAVE FILES
+\*--------------------------------------------------------------------------*/
+
+/* Magic: ASCII 'REGN' little-endian. */
+#define SAVE_MAGIC         0x4E474552u
+#define SAVE_VERSION_MAJOR 1
+#define SAVE_VERSION_MINOR 0
+#define SAVE_BUFFER_BYTES  8192
+#define MAX_RECIPES        64
+#define KINGDOM_COUNT      5
+#define TIER_PER_KINGDOM   3
+
+/*--------------------------------------------------------------------------*\
                               VERSION
 \*--------------------------------------------------------------------------*/
 

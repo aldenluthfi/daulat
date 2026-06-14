@@ -157,7 +157,7 @@ const PieceTemplate PIECES_HARUSHIMA[] =
                      .param_count = 16},
                 .passives =
                     {
-                        {.trigger = TRIGGER_RESOLVE_FLIP, .apply = eff_todo},
+                        {.trigger = TRIGGER_RESOLVE_FLIP, EFF(TODO, todo)},
                     },
                 .passive_count = 1,
             },
@@ -195,7 +195,7 @@ const CardTemplate CARDS_HARUSHIMA[] = {
             .tier       = TIER_DISTRICT,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_RESURRECTION] =
@@ -206,7 +206,7 @@ const CardTemplate CARDS_HARUSHIMA[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_GOLD_STANDARD] =
@@ -217,7 +217,7 @@ const CardTemplate CARDS_HARUSHIMA[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_PROMOTION] =
@@ -228,7 +228,7 @@ const CardTemplate CARDS_HARUSHIMA[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_DUAL_DROP] =
@@ -239,7 +239,7 @@ const CardTemplate CARDS_HARUSHIMA[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 4,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_FORCE_DROP] =
@@ -250,7 +250,7 @@ const CardTemplate CARDS_HARUSHIMA[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 4,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_BUSHIDO] = {
@@ -260,7 +260,7 @@ const CardTemplate CARDS_HARUSHIMA[] = {
         .tier       = TIER_COUNTRY,
         .play_cost  = 5,
         .sell_value = 3,
-        .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+        .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
         .play_effect_count = 1,
     },
 };

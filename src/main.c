@@ -214,15 +214,114 @@ int main(void) {
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "app.h"
+#include "log.h"
+#include "profile.h"
+#include "run.h"
+#include "save.h"
+
+/*--------------------------------------------------------------------------*\
+                              CLI SUBCOMMANDS
+\*--------------------------------------------------------------------------*/
+
+/// cli_new_profile
+///
+/// Zero-init a Profile and persist it to disk. Used by
+/// `--new-profile` to bootstrap the pref-path file from a clean
+/// shell.
+///
+static int cli_new_profile(void) {
+    Profile profile;
+    profile_new(&profile);
+    if (!profile_save(&profile)) {
+        log_err("--new-profile: profile_save failed");
+        return 1;
+    }
+    const char* path = profile_path();
+    log_info("--new-profile: wrote %s", path != NULL ? path : "(null)");
+    return 0;
+}
+
+/// cli_dump_save
+///
+/// Pretty-print a save file's header + chunk index. Walks every
+/// chunk and reports id, length, and offset.
+///
+static int cli_dump_save(const char* path) {
+    return save_dump(path);
+}
+
+/// cli_test_save
+///
+/// Round-trip a synthetic RunState through save+load and verify
+/// every field survives memcmp. Exits non-zero on any mismatch.
+///
+static int cli_test_save(void) {
+    RunState before;
+    run_init(&before, 0xC0FFEE12345678ULL);
+    before.current_kingdom         = KINGDOM_HARUSHIMA;
+    before.current_map_tier        = TIER_TOWN;
+    before.relic_count             = 0;
+    run_add_relic(&before, RELIC_MINTED_COIN);
+    run_add_relic(&before, RELIC_IRON_KING);
+    before.chain_levels[KINGDOM_LONGWEI] = 2;
+    before.subjugated[KINGDOM_ZARQAN]    = true;
+    before.vorath_counter                = 7;
+    before.vorath_pressure               = 3;
+    before.cleared_kingdoms[KINGDOM_CAELAN] = true;
+    before.cleared_maps[KINGDOM_HARUSHIMA][TIER_TOWN] = true;
+    before.mastery_l3[KINGDOM_HARUSHIMA]  = 1;
+    before.revealed_recipes              = 0xDEADBEEFCAFEBABEULL;
+    before.forbidden_recipes             = 0x1234567890ABCDEFULL;
+    before.flags = RUN_FOREIGN_MARKUP_OFF | RUN_VISION_ENEMY_VALUES;
+    before.reclaim_cost_override         = 10;
+    before.royal_sub_per_battle          = 3;
+
+    if (!run_save(&before)) {
+        log_err("--test-save: run_save failed");
+        return 1;
+    }
+    RunState after;
+    memset(&after, 0xAA, sizeof(after));
+    if (!run_load(&after)) {
+        log_err("--test-save: run_load failed");
+        return 2;
+    }
+    /* profile pointer is intentionally not persisted */
+    before.profile = NULL;
+    after.profile  = NULL;
+    if (memcmp(&before, &after, sizeof(RunState)) != 0) {
+        log_err("--test-save: round-trip mismatch");
+        return 3;
+    }
+    log_info("--test-save: round-trip OK");
+    run_delete();
+    return 0;
+}
 
 /*--------------------------------------------------------------------------*\
                               CALLBACKS
 \*--------------------------------------------------------------------------*/
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
-    (void)argc;
-    (void)argv;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--new-profile") == 0) {
+            int rc = cli_new_profile();
+            exit(rc);
+        }
+        if (strcmp(argv[i], "--dump-save") == 0 && i + 1 < argc) {
+            int rc = cli_dump_save(argv[i + 1]);
+            exit(rc);
+        }
+        if (strcmp(argv[i], "--test-save") == 0) {
+            int rc = cli_test_save();
+            exit(rc);
+        }
+    }
+
     App*          app    = NULL;
     SDL_AppResult result = app_init(&app);
     *appstate = app;

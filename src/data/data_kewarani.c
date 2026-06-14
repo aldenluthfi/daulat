@@ -124,7 +124,7 @@ const PieceTemplate
                     .passives =
                         {
                             {.trigger = TRIGGER_PIECE_FLIPPED,
-                                .apply = eff_todo},
+                                EFF(TODO, todo)},
                         },
                     .passive_count = 1,
                 },
@@ -141,7 +141,7 @@ const PieceTemplate
                     .passives =
                         {
                             {.trigger = TRIGGER_PIECE_FLIPPED,
-                                .apply = eff_todo},
+                                EFF(TODO, todo)},
                         },
                     .passive_count = 1,
                 },
@@ -158,7 +158,7 @@ const PieceTemplate
                     .passives =
                         {
                             {.trigger = TRIGGER_PIECE_FLIPPED,
-                                .apply = eff_todo},
+                                EFF(TODO, todo)},
                         },
                     .passive_count = 1,
                 },
@@ -187,7 +187,7 @@ const CardTemplate CARDS_KEWARANI[] = {
             .tier       = TIER_DISTRICT,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_MARCH] =
@@ -198,7 +198,7 @@ const CardTemplate CARDS_KEWARANI[] = {
             .tier       = TIER_DISTRICT,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_DOUBLE_TIME] =
@@ -209,7 +209,7 @@ const CardTemplate CARDS_KEWARANI[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_SALT_ROAD] =
@@ -220,7 +220,7 @@ const CardTemplate CARDS_KEWARANI[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_CARAVAN] =
@@ -231,7 +231,7 @@ const CardTemplate CARDS_KEWARANI[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 4,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_DOUBLESTRIKE] =
@@ -242,7 +242,7 @@ const CardTemplate CARDS_KEWARANI[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 4,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_HAJJ] = {
@@ -252,7 +252,7 @@ const CardTemplate CARDS_KEWARANI[] = {
         .tier       = TIER_COUNTRY,
         .play_cost  = 5,
         .sell_value = 3,
-        .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+        .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
         .play_effect_count = 1,
     },
 };

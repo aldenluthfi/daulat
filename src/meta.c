@@ -23,7 +23,7 @@
 ///
 void meta_apply_relics(BattleState* bs, const RunState* run) {
     for (uint8_t i = 0; i < run->relic_count; i++) {
-        const RelicTemplate* relic = run->relics[i];
+        const RelicTemplate* relic = run_relic_at(run, i);
         if (relic == NULL)
             continue;
         for (uint8_t j = 0; j < relic->effect_count; j++) {

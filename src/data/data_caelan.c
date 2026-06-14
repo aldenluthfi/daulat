@@ -40,7 +40,7 @@ const PieceTemplate
                         .param_count = 0},
                     .passives =
                         {
-                            {.trigger = TRIGGER_PIECE_MOVED, .apply = eff_todo},
+                            {.trigger = TRIGGER_PIECE_MOVED, EFF(TODO, todo)},
                         },
                     .passive_count = 1,
                 },
@@ -153,7 +153,7 @@ const PieceTemplate
                         .param_count = 3},
                     .passives =
                         {
-                            {.trigger = TRIGGER_TURN_START, .apply = eff_todo},
+                            {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)},
                         },
                     .passive_count = 1,
                 },
@@ -182,7 +182,7 @@ const CardTemplate CARDS_CAELAN[] = {
             .tier       = TIER_DISTRICT,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_QUEENS_GAMBIT] =
@@ -193,7 +193,7 @@ const CardTemplate CARDS_CAELAN[] = {
             .tier       = TIER_DISTRICT,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_VENGEANCE] =
@@ -204,7 +204,7 @@ const CardTemplate CARDS_CAELAN[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_QUEENS_DECREE] =
@@ -215,7 +215,7 @@ const CardTemplate CARDS_CAELAN[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_CATHEDRAL] =
@@ -226,7 +226,7 @@ const CardTemplate CARDS_CAELAN[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 4,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_CORONATION] =
@@ -237,7 +237,7 @@ const CardTemplate CARDS_CAELAN[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 4,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_CRUSADE] =
@@ -248,7 +248,7 @@ const CardTemplate CARDS_CAELAN[] = {
             .tier       = TIER_COUNTRY,
             .play_cost  = 5,
             .sell_value = 3,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_DIVINE_RIGHT] = {
@@ -258,7 +258,7 @@ const CardTemplate CARDS_CAELAN[] = {
         .tier       = TIER_COUNTRY,
         .play_cost  = 5,
         .sell_value = 3,
-        .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+        .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
         .play_effect_count = 1,
     },
 };

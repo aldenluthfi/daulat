@@ -126,7 +126,7 @@ const PieceTemplate PIECES_LONGWEI[] =
                         .param_count = 16},
                 .passives =
                     {
-                        {.trigger = TRIGGER_RESOLVE_DEFENSE, .apply = eff_todo},
+                        {.trigger = TRIGGER_RESOLVE_DEFENSE, EFF(TODO, todo)},
                     },
                 .passive_count = 1,
             },
@@ -166,7 +166,7 @@ const CardTemplate CARDS_LONGWEI[] = {
             .tier       = TIER_DISTRICT,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_CHARGE] =
@@ -177,7 +177,7 @@ const CardTemplate CARDS_LONGWEI[] = {
             .tier       = TIER_DISTRICT,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_FORMATION] =
@@ -188,7 +188,7 @@ const CardTemplate CARDS_LONGWEI[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_DIVINATION] =
@@ -199,7 +199,7 @@ const CardTemplate CARDS_LONGWEI[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_CANNON_VOLLEY] =
@@ -210,7 +210,7 @@ const CardTemplate CARDS_LONGWEI[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 4,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_PALACE_DECREE] =
@@ -221,7 +221,7 @@ const CardTemplate CARDS_LONGWEI[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 4,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_MANDATE] = {
@@ -231,7 +231,7 @@ const CardTemplate CARDS_LONGWEI[] = {
         .tier       = TIER_COUNTRY,
         .play_cost  = 5,
         .sell_value = 3,
-        .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+        .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
         .play_effect_count = 1,
     },
 };

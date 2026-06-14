@@ -30,31 +30,31 @@ const Synergy SYNERGIES[] = {
         .cleared     = KINGDOM_LONGWEI,
         .name        = "Longwei Synergy",
         .description = "Longwei kingdom bonus.",
-        .bonus       = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .bonus       = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
     },
     {
         .cleared     = KINGDOM_HARUSHIMA,
         .name        = "Harushima Synergy",
         .description = "Harushima kingdom bonus.",
-        .bonus       = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .bonus       = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
     },
     {
         .cleared     = KINGDOM_KEWARANI,
         .name        = "Kewarani Synergy",
         .description = "Kewarani kingdom bonus.",
-        .bonus       = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .bonus       = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
     },
     {
         .cleared     = KINGDOM_ZARQAN,
         .name        = "Zarqan Synergy",
         .description = "Zarqan kingdom bonus.",
-        .bonus       = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .bonus       = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
     },
     {
         .cleared     = KINGDOM_CAELAN,
         .name        = "Caelan Synergy",
         .description = "Caelan kingdom bonus.",
-        .bonus       = {.trigger = TRIGGER_BATTLE_START, .apply = eff_todo},
+        .bonus       = {.trigger = TRIGGER_BATTLE_START, EFF(TODO, todo)},
     },
 };
 

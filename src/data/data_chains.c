@@ -28,7 +28,7 @@ const Chain CHAINS[] = {
         .level = 1,
         .penalties =
             {
-                {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
             },
         .penalty_count = 1,
     },
@@ -36,8 +36,8 @@ const Chain CHAINS[] = {
         .level = 2,
         .penalties =
             {
-                {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
-                {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
+                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
             },
         .penalty_count = 2,
     },
@@ -45,9 +45,9 @@ const Chain CHAINS[] = {
         .level = 3,
         .penalties =
             {
-                {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
-                {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
-                {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
+                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
+                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
             },
         .penalty_count = 3,
     },

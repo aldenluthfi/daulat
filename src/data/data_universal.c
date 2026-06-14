@@ -80,7 +80,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .play_cost  = 3,
             .sell_value = 1,
             .on_play =
-                {{.trigger = TRIGGER_QUERY_PIECE_COST, .apply = eff_todo}},
+                {{.trigger = TRIGGER_QUERY_PIECE_COST, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_REVITALIZE] =
@@ -91,7 +91,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_HOSTAGE] =
@@ -102,7 +102,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 4,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_LAST_STAND] =
@@ -113,7 +113,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_SACRIFICE] =
@@ -124,7 +124,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_REFORGE] =
@@ -135,7 +135,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 5,
             .sell_value = 2,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_MERCY] =
@@ -146,7 +146,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 1,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_BLOODLETTING] =
@@ -157,7 +157,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 3,
             .sell_value = 2,
-            .on_play = {{.trigger = TRIGGER_RESOLVE_ATTACK, .apply = eff_todo}},
+            .on_play = {{.trigger = TRIGGER_RESOLVE_ATTACK, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_COUNTER_COUP] =
@@ -169,7 +169,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .play_cost  = 4,
             .sell_value = 2,
             .on_play =
-                {{.trigger = TRIGGER_RESOLVE_DEFENSE, .apply = eff_todo}},
+                {{.trigger = TRIGGER_RESOLVE_DEFENSE, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_SPITE] =
@@ -180,7 +180,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .tier       = TIER_COUNTRY,
             .play_cost  = 5,
             .sell_value = 3,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_CHAIN_BREAK] =
@@ -191,7 +191,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 2,
             .sell_value = 1,
-            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_HYDRA] = {
@@ -201,7 +201,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
         .tier       = TIER_CAPSTONE,
         .play_cost  = 7,
         .sell_value = 4,
-        .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+        .on_play    = {{.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}},
         .play_effect_count = 1,
     },
 };

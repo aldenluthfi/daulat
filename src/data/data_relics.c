@@ -48,136 +48,136 @@ const RelicTemplate RELICS[] = {
     RELIC(
         RELIC_MERCHANTS_LEDGER,
         "Merchant's Ledger",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_MINTED_COIN,
         "Minted Coin",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_TAX_STAMP,
         "Tax Stamp",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_BULK_DISCOUNT,
         "Bulk Discount",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_WAR_CHEST,
         "War Chest",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_TRADE_ROUTES,
         "Trade Routes",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     /* Meter (6) */
     RELIC(
         RELIC_SOUL_SHARD,
         "Soul Shard",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_VETERANS_BOND,
         "Veteran's Bond",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_DEAD_MANS_PACT,
         "Dead Man's Pact",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_IRON_KING,
         "Iron King",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_BLOODTHIRST,
         "Bloodthirst",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_LAST_BREATH,
         "Last Breath",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     /* Cards (5) */
     RELIC(
         RELIC_TACTICIANS_SCROLL,
         "Tactician's Scroll",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_LIBRARIANS_NOTES,
         "Librarian's Notes",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_COUNTRY_SEAL,
         "Country Seal",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_DEEP_HAND,
         "Deep Hand",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_GILDED_ARCHIVE,
         "Gilded Archive",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     /* Combinations (4) */
     RELIC(
         RELIC_ALCHEMISTS_KIT,
         "Alchemist's Kit",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_MASTERS_NOTES,
         "Master's Notes",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_PHILOSOPHERS_STONE,
         "Philosopher's Stone",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_INHERITED_POWER,
         "Inherited Power",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     /* Board (5) */
     RELIC(
         RELIC_EAGLE_EYE,
         "Eagle Eye",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_SURVEYORS_MAP,
         "Surveyor's Map",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_FORWARD_COMMAND,
         "Forward Command",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_FORTIFIED_LINE,
         "Fortified Line",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
     RELIC(
         RELIC_WARLORDS_BANNER,
         "Warlord's Banner",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
     ),
 };
 

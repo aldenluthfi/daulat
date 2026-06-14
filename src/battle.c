@@ -99,17 +99,8 @@ void battle_init(BattleState* bs, const BattleConfig* cfg) {
             bus_register(&bs->bus, &effect);
         }
     }
-    if (cfg->run != NULL) {
-        for (uint8_t i = 0; i < cfg->run->relic_count; i++) {
-            const RelicTemplate* relic = cfg->run->relics[i];
-            for (uint8_t j = 0; j < relic->effect_count; j++) {
-                Effect effect         = relic->effects[j];
-                effect.owner          = SIDE_PLAYER;
-                effect.duration_turns = -1;
-                bus_register(&bs->bus, &effect);
-            }
-        }
-    }
+    if (cfg->run != NULL)
+        meta_apply_relics(bs, cfg->run);
     bs->actions_left = 3;
     push_event(bs, EVT_BATTLE_ENDED);
     struct EffectCtx ctx = {0};

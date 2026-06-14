@@ -30,7 +30,7 @@ struct Effect;
 /// - Effect effects[8] -> passive effects
 /// - uint8_t effect_count -> number of effects
 ///
-typedef struct {
+typedef struct RelicTemplate {
     uint16_t    id;
     const char* name;
     const char* description;
@@ -258,5 +258,64 @@ typedef struct {
     const char* option_text;
     Effect      effect;
 } EventOption;
+
+/*--------------------------------------------------------------------------*\
+                              META APPLICATION API
+\*--------------------------------------------------------------------------*/
+
+struct BattleState;
+struct RunState;
+
+/// meta_apply_relics
+///
+/// Register every held relic's effects onto the battle bus as
+/// run-wide (`duration_turns = -1`) entries owned by the player.
+///
+/// Params:
+/// - struct BattleState* bs  -> destination battle
+/// - const struct RunState* run -> run state holding relic ids
+///
+void meta_apply_relics(struct BattleState* bs, const struct RunState* run);
+
+/// meta_apply_innate
+///
+/// Register a kingdom's innate ability onto the bus as a run-wide
+/// effect.
+///
+/// Params:
+/// - struct BattleState* bs -> destination battle
+/// - Kingdom             k  -> kingdom whose innate to apply
+///
+void meta_apply_innate(struct BattleState* bs, Kingdom k);
+
+/// meta_apply_mastery
+///
+/// Phase 3 hook for mastery-level bodies; currently a no-op.
+///
+/// Params:
+/// - struct BattleState* bs -> destination battle
+/// - uint8_t             level -> mastery level
+///
+void meta_apply_mastery(struct BattleState* bs, uint8_t level);
+
+/// meta_apply_chain
+///
+/// Register a chain level's penalty effects.
+///
+/// Params:
+/// - struct BattleState* bs -> destination battle
+/// - uint8_t             level -> chain level (1-3)
+///
+void meta_apply_chain(struct BattleState* bs, uint8_t level);
+
+/// meta_apply_synergy
+///
+/// Register a cleared kingdom's synergy bonus onto the bus.
+///
+/// Params:
+/// - struct BattleState* bs    -> destination battle
+/// - Kingdom            cleared -> cleared kingdom id
+///
+void meta_apply_synergy(struct BattleState* bs, Kingdom cleared);
 
 #endif /* META_H */

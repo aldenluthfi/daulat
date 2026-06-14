@@ -28,7 +28,7 @@ const InnateTemplate INNATES[] = {
         .name    = "Bulwark",
         .effects =
             {
-                {.trigger = TRIGGER_RESOLVE_DEFENSE, .apply = eff_todo},
+                {.trigger = TRIGGER_RESOLVE_DEFENSE, EFF(TODO, todo)},
             },
         .effect_count = 1,
     },
@@ -37,7 +37,7 @@ const InnateTemplate INNATES[] = {
         .name    = "Reclaim",
         .effects =
             {
-                {.trigger = TRIGGER_TURN_END, .apply = eff_todo},
+                {.trigger = TRIGGER_TURN_END, EFF(TODO, todo)},
             },
         .effect_count = 1,
     },
@@ -46,7 +46,7 @@ const InnateTemplate INNATES[] = {
         .name    = "Double Time",
         .effects =
             {
-                {.trigger = TRIGGER_TURN_START, .apply = eff_todo},
+                {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)},
             },
         .effect_count = 1,
     },
@@ -65,7 +65,7 @@ const InnateTemplate INNATES[] = {
         .name    = "Conqueror's Reward",
         .effects =
             {
-                {.trigger = TRIGGER_PIECE_FLIPPED, .apply = eff_todo},
+                {.trigger = TRIGGER_PIECE_FLIPPED, EFF(TODO, todo)},
             },
         .effect_count = 1,
     },
