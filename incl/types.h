@@ -23,15 +23,15 @@ struct PieceState;
 
 /// A card instance held in a hand — template pointer plus runtime state.
 typedef struct {
-    const struct CardTemplate *tmpl;
-    uint8_t flags;
+    const struct CardTemplate* tmpl;
+    uint8_t                    flags;
 } CardInstance;
 
 /// Flags that can be set on a CardInstance.
 typedef enum {
     CIF_COMBO_SECOND = 1 << 0,
-    CIF_COMBO_THIRD = 1 << 1,
-    CIF_TARGETED = 1 << 2,
+    CIF_COMBO_THIRD  = 1 << 1,
+    CIF_TARGETED     = 1 << 2,
 } CardInstanceFlags;
 
 /*--------------------------------------------------------------------------*\
@@ -40,12 +40,12 @@ typedef enum {
 
 /// Flags that can be set on a PieceState.
 typedef enum {
-    PSF_HAS_MOVED = 1 << 0,
-    PSF_CAN_COMBINE = 1 << 1,
-    PSF_IMMUNE_FLIP = 1 << 2,
+    PSF_HAS_MOVED     = 1 << 0,
+    PSF_CAN_COMBINE   = 1 << 1,
+    PSF_IMMUNE_FLIP   = 1 << 2,
     PSF_IMMUNE_DAMAGE = 1 << 3,
-    PSF_STUNNED = 1 << 4,
-    PSF_SPLITTER = 1 << 5,
+    PSF_STUNNED       = 1 << 4,
+    PSF_SPLITTER      = 1 << 5,
 } PieceStateFlags;
 
 /*--------------------------------------------------------------------------*\
@@ -56,8 +56,8 @@ typedef enum {
 typedef struct {
     Position pos;
     uint32_t piece_id;
-    bool is_piece;
-    bool is_pos;
+    bool     is_piece;
+    bool     is_pos;
 } TargetSpec;
 
 /*--------------------------------------------------------------------------*\

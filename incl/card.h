@@ -15,11 +15,11 @@ struct BattleState;
 
 /// A function that enumerates valid targets for a card.
 typedef size_t (*TargetFunc)(
-    const struct BattleState *bs,
-    Side side,
-    const CardInstance *card,
-    TargetSpec *out,
-    size_t cap
+    const struct BattleState* bs,
+    Side                      side,
+    const CardInstance*       card,
+    TargetSpec*               out,
+    size_t                    cap
 );
 
 /*--------------------------------------------------------------------------*\
@@ -28,17 +28,17 @@ typedef size_t (*TargetFunc)(
 
 /// Immutable description of a card type. Lives in src/data/data_*.c.
 typedef struct CardTemplate {
-    uint16_t id;
-    const char *name;
-    Kingdom kingdom;
-    Tier tier;
-    int play_cost; /* -1 if no play action */
-    int sell_value;
-    Effect on_play[MAX_CARD_EFFECTS];
-    uint8_t play_effect_count;
-    Effect on_sell[MAX_CARD_EFFECTS];
-    uint8_t sell_effect_count;
-    TargetFunc target_query;
+    uint16_t    id;
+    const char* name;
+    Kingdom     kingdom;
+    Tier        tier;
+    int         play_cost; /* -1 if no play action */
+    int         sell_value;
+    Effect      on_play[MAX_CARD_EFFECTS];
+    uint8_t     play_effect_count;
+    Effect      on_sell[MAX_CARD_EFFECTS];
+    uint8_t     sell_effect_count;
+    TargetFunc  target_query;
 } CardTemplate;
 
 /*--------------------------------------------------------------------------*\
@@ -46,20 +46,20 @@ typedef struct CardTemplate {
 \*--------------------------------------------------------------------------*/
 
 /// Draw cards for a side. Returns the number drawn.
-size_t card_draw(struct BattleState *bs, Side side);
+size_t card_draw(struct BattleState* bs, Side side);
 
 /// Add a card to a side's hand.
 void card_add_to_hand(
-    struct BattleState *bs,
-    Side side,
-    const CardTemplate *tmpl
+    struct BattleState* bs,
+    Side                side,
+    const CardTemplate* tmpl
 );
 
 /// Remove a card from a side's hand by index. Returns true if removed.
-bool card_remove_from_hand(struct BattleState *bs, Side side, uint8_t idx);
+bool card_remove_from_hand(struct BattleState* bs, Side side, uint8_t idx);
 
 /// Get a card from a side's hand.
-const CardInstance *
-card_get(const struct BattleState *bs, Side side, uint8_t idx);
+const CardInstance*
+card_get(const struct BattleState* bs, Side side, uint8_t idx);
 
 #endif /* CARD_H */

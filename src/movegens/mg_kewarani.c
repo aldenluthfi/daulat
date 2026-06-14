@@ -32,11 +32,11 @@
 /// - MoveList          *out    -> destination list
 ///
 void mg_kw_berolina(
-    const PieceState *piece,
-    const BattleState *bs,
-    const EffectArg *params,
-    size_t n,
-    MoveList *out
+    const PieceState*  piece,
+    const BattleState* bs,
+    const EffectArg*   params,
+    size_t             n,
+    MoveList*          out
 ) {
     int fwd_dy = -1;
     if (n >= 1)
@@ -80,11 +80,11 @@ void mg_kw_berolina(
 /// - MoveList          *out    -> destination list
 ///
 void mg_kw_negus_guard(
-    const PieceState *piece,
-    const BattleState *bs,
-    const EffectArg *params,
-    size_t n,
-    MoveList *out
+    const PieceState*  piece,
+    const BattleState* bs,
+    const EffectArg*   params,
+    size_t             n,
+    MoveList*          out
 ) {
     (void)params;
     (void)n;
@@ -110,7 +110,7 @@ void mg_kw_negus_guard(
             if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
                 continue;
             }
-            const PieceState *at = board_at(&bs->board, to);
+            const PieceState* at = board_at(&bs->board, to);
             if (at == NULL || is_enemy(piece, at))
                 ml_push(out, to);
         }

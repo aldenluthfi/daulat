@@ -12,45 +12,45 @@
 \*--------------------------------------------------------------------------*/
 
 /// Add delta to cp. Triggers cp-changed event.
-void eff_cp_add(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
-    struct BattleState *bs = (struct BattleState *)ctx;
+void eff_cp_add(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
+    struct BattleState* bs = (struct BattleState*)ctx;
     if (n < 1)
         return;
-    int delta = (int)args[0].v.i;
-    Side s = bs->active_side;
+    int  delta = (int)args[0].v.i;
+    Side s     = bs->active_side;
     bs->cp[s] += delta;
     if (bs->cp[s] < 0)
         bs->cp[s] = 0;
 }
 
 /// Set cp to a specific value.
-void eff_cp_set(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
-    struct BattleState *bs = (struct BattleState *)ctx;
+void eff_cp_set(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
+    struct BattleState* bs = (struct BattleState*)ctx;
     if (n < 1)
         return;
-    int val = (int)args[0].v.i;
-    Side s = bs->active_side;
+    int  val  = (int)args[0].v.i;
+    Side s    = bs->active_side;
     bs->cp[s] = val;
     if (bs->cp[s] < 0)
         bs->cp[s] = 0;
 }
 
 /// Increase piece cost by delta (positive = more expensive).
-void eff_cost_mod(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_cost_mod(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;
 }
 
 /// Increase sell value by delta.
-void eff_sell_mod(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_sell_mod(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;
 }
 
 /// Increase turn income by delta.
-void eff_income_add(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_income_add(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;

@@ -31,7 +31,7 @@
 /// Return:
 /// const PieceTemplate * -> template pointer or NULL
 ///
-const PieceTemplate *piece_template(uint16_t id) {
+const PieceTemplate* piece_template(uint16_t id) {
     if (id == PIECE_KING)
         return &PIECES_UNIVERSAL[0];
     if (id >= PIECE_BING && id <= PIECE_HWACHA) {
@@ -80,7 +80,7 @@ size_t piece_count(void) {
 /// Return:
 /// const CardTemplate * -> template pointer or NULL
 ///
-const CardTemplate *card_template(uint16_t id) {
+const CardTemplate* card_template(uint16_t id) {
     if (id >= CARD_PAWN_STORM && id <= CARD_HYDRA) {
         return &CARDS_UNIVERSAL[id - CARD_PAWN_STORM];
     }
@@ -147,7 +147,7 @@ size_t recipe_count(void) {
 /// Return:
 /// const RelicTemplate * -> template pointer or NULL
 ///
-const RelicTemplate *relic_template(uint16_t id) {
+const RelicTemplate* relic_template(uint16_t id) {
     if (id >= RELICS_COUNT)
         return NULL;
     return &RELICS[id];
@@ -180,7 +180,7 @@ size_t relic_count(void) {
 /// Return:
 /// const InnateTemplate * -> template pointer or NULL
 ///
-const InnateTemplate *innate_template(Kingdom k) {
+const InnateTemplate* innate_template(Kingdom k) {
     for (size_t i = 0; i < INNATES_COUNT; i++) {
         if (INNATES[i].kingdom == k)
             return &INNATES[i];
@@ -203,7 +203,7 @@ const InnateTemplate *innate_template(Kingdom k) {
 /// Return:
 /// const Chain * -> chain pointer or NULL
 ///
-const Chain *chain_template(uint8_t level) {
+const Chain* chain_template(uint8_t level) {
     for (size_t i = 0; i < CHAINS_COUNT; i++) {
         if (CHAINS[i].level == level)
             return &CHAINS[i];
@@ -226,7 +226,7 @@ const Chain *chain_template(uint8_t level) {
 /// Return:
 /// const Modifier * -> template pointer or NULL
 ///
-const Modifier *modifier_template(uint16_t id) {
+const Modifier* modifier_template(uint16_t id) {
     if (id >= MODIFIERS_COUNT)
         return NULL;
     return &MODIFIERS[id];
@@ -258,7 +258,7 @@ size_t modifier_count(void) {
 /// Return:
 /// const BoardTrait * -> template pointer or NULL
 ///
-const BoardTrait *trait_template(uint16_t id) {
+const BoardTrait* trait_template(uint16_t id) {
     if (id >= TRAITS_COUNT)
         return NULL;
     return &TRAITS[id];
@@ -290,7 +290,7 @@ size_t trait_count(void) {
 /// Return:
 /// const Synergy * -> synergy pointer or NULL
 ///
-const Synergy *synergy_template(Kingdom cleared) {
+const Synergy* synergy_template(Kingdom cleared) {
     for (size_t i = 0; i < SYNERGIES_COUNT; i++) {
         if (SYNERGIES[i].cleared == cleared)
             return &SYNERGIES[i];
@@ -313,7 +313,7 @@ const Synergy *synergy_template(Kingdom cleared) {
 /// Return:
 /// const FigureheadPower * -> power pointer or NULL
 ///
-const FigureheadPower *figurehead_power(Kingdom k) {
+const FigureheadPower* figurehead_power(Kingdom k) {
     for (size_t i = 0; i < FIGUREHEADS_COUNT; i++) {
         if (FIGUREHEADS[i].kingdom == k)
             return &FIGUREHEADS[i];
@@ -336,7 +336,7 @@ const FigureheadPower *figurehead_power(Kingdom k) {
 /// Return:
 /// const Overseer * -> overseer pointer or NULL
 ///
-const Overseer *overseer_template(uint16_t id) {
+const Overseer* overseer_template(uint16_t id) {
     if (id >= OVERSEERS_COUNT)
         return NULL;
     return &OVERSEERS[id];
@@ -357,7 +357,7 @@ const Overseer *overseer_template(uint16_t id) {
 /// Return:
 /// const AIArchetype * -> archetype pointer or NULL
 ///
-const AIArchetype *ai_archetype(Kingdom k) {
+const AIArchetype* ai_archetype(Kingdom k) {
     for (size_t i = 0; i < ARCHETYPES_COUNT; i++) {
         if (ARCHETYPES[i].kingdom == k)
             return &ARCHETYPES[i];

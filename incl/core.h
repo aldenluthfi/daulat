@@ -85,15 +85,15 @@ typedef enum {
 typedef struct {
     EffectArgType type;
     union {
-        int i;
-        float f;
+        int      i;
+        float    f;
         uint32_t piece_id;
         uint32_t card_id;
         uint16_t tmpl_id;
-        Kingdom kingdom;
-        Tier tier;
+        Kingdom  kingdom;
+        Tier     tier;
         Position pos;
-        Side side;
+        Side     side;
         uint16_t movegen_id;
     } v;
 } EffectArg;

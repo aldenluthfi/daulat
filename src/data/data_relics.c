@@ -31,9 +31,9 @@
 ///
 #define RELIC(id_, name_, ...)                                                 \
     {                                                                          \
-        .id = id_,                                                             \
-        .name = name_,                                                         \
-        .effects = {__VA_ARGS__},                                              \
+        .id           = id_,                                                   \
+        .name         = name_,                                                 \
+        .effects      = {__VA_ARGS__},                                         \
         .effect_count = sizeof((Effect[]){__VA_ARGS__}) / sizeof(Effect),      \
     }
 

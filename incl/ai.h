@@ -45,7 +45,7 @@ typedef struct {
             uint32_t a, b;
         } combine;
         struct {
-            uint8_t hand_idx;
+            uint8_t    hand_idx;
             TargetSpec target;
         } play_card;
         struct {
@@ -74,15 +74,15 @@ typedef struct {
                               AI ARCHETYPE
 \*--------------------------------------------------------------------------*/
 
-typedef Action (*AIPickFunc)(const struct BattleState *bs);
+typedef Action (*AIPickFunc)(const struct BattleState* bs);
 
 typedef struct {
-    const char *name;
-    Kingdom kingdom;
-    AIPickFunc pick;
-    AIWeights primary;
-    AIWeights fallback;
-    int fallback_meter_diff;
+    const char* name;
+    Kingdom     kingdom;
+    AIPickFunc  pick;
+    AIWeights   primary;
+    AIWeights   fallback;
+    int         fallback_meter_diff;
 } AIArchetype;
 
 /*--------------------------------------------------------------------------*\
@@ -90,23 +90,23 @@ typedef struct {
 \*--------------------------------------------------------------------------*/
 
 /// Run the full AI half-turn.
-void ai_play_turn(struct BattleState *bs);
+void ai_play_turn(struct BattleState* bs);
 
 /// Pick a single action (for debug / step-through).
-Action ai_pick_one(struct BattleState *bs);
+Action ai_pick_one(struct BattleState* bs);
 
 /// Score a move action.
 int ai_score_move(
-    const struct BattleState *bs,
-    const Action *action,
-    const AIWeights *w
+    const struct BattleState* bs,
+    const Action*             action,
+    const AIWeights*          w
 );
 
 /// Score a buy action.
 int ai_score_buy(
-    const struct BattleState *bs,
-    const Action *action,
-    const AIWeights *w
+    const struct BattleState* bs,
+    const Action*             action,
+    const AIWeights*          w
 );
 
 #endif /* AI_H */

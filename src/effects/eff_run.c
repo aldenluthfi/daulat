@@ -30,7 +30,7 @@
 /// - const EffectArg *args -> args[0] carries the relic template id
 /// - size_t n              -> argument count from the caller
 ///
-void eff_apply_relic(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_apply_relic(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;
@@ -47,7 +47,7 @@ void eff_apply_relic(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
 /// - const EffectArg *args -> args[0] carries the chain level (1-3)
 /// - size_t n              -> argument count from the caller
 ///
-void eff_apply_chain(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_apply_chain(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;
@@ -64,7 +64,7 @@ void eff_apply_chain(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
 /// - const EffectArg *args -> args[0] carries the cleared kingdom id
 /// - size_t n              -> argument count from the caller
 ///
-void eff_apply_synergy(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_apply_synergy(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;
@@ -91,7 +91,7 @@ void eff_apply_synergy(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
 /// per-file static duplicates would make it impossible to count
 /// unimplemented effects with a single grep.
 ///
-void eff_todo(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_todo(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;

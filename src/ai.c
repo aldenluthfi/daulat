@@ -11,7 +11,7 @@
                               AI DRIVER
 \*--------------------------------------------------------------------------*/
 
-static void ai_execute_action(BattleState *bs, const Action *a) {
+static void ai_execute_action(BattleState* bs, const Action* a) {
     switch (a->kind) {
     case ACTION_MOVE:
         battle_action_move(bs, a->as.move.piece_id, a->as.move.to);
@@ -34,7 +34,7 @@ static void ai_execute_action(BattleState *bs, const Action *a) {
     }
 }
 
-void ai_play_turn(BattleState *bs) {
+void ai_play_turn(BattleState* bs) {
     uint8_t actions = bs->actions_left;
     while (actions > 0 && !bs->battle_ended) {
         Action a = ai_pick_one(bs);
@@ -45,27 +45,27 @@ void ai_play_turn(BattleState *bs) {
     }
 }
 
-Action ai_pick_one(BattleState *bs) {
+Action ai_pick_one(BattleState* bs) {
     Action best = {.kind = ACTION_END_TURN};
 
     for (uint16_t i = 0; i < bs->piece_count; i++) {
-        const PieceState *p = &bs->pieces[i];
+        const PieceState* p = &bs->pieces[i];
         if (p->owner != bs->active_side)
             continue;
         MoveList ml = {0};
         mg_generate(p, bs, &ml);
         if (ml.count > 0) {
-            uint64_t idx = rng_range(&bs->rng, ml.count);
-            best.kind = ACTION_MOVE;
+            uint64_t idx          = rng_range(&bs->rng, ml.count);
+            best.kind             = ACTION_MOVE;
             best.as.move.piece_id = p->id;
-            best.as.move.to = ml.squares[idx];
+            best.as.move.to       = ml.squares[idx];
             return best;
         }
     }
 
     if (bs->hand_count[bs->active_side] > 0) {
         uint64_t idx = rng_range(&bs->rng, bs->hand_count[bs->active_side]);
-        best.kind = ACTION_SELL_CARD;
+        best.kind    = ACTION_SELL_CARD;
         best.as.sell_card.hand_idx = (uint8_t)idx;
     }
 
@@ -77,9 +77,9 @@ Action ai_pick_one(BattleState *bs) {
 \*--------------------------------------------------------------------------*/
 
 int ai_score_move(
-    const BattleState *bs,
-    const Action *action,
-    const AIWeights *w
+    const BattleState* bs,
+    const Action*      action,
+    const AIWeights*   w
 ) {
     (void)bs;
     (void)action;
@@ -88,9 +88,9 @@ int ai_score_move(
 }
 
 int ai_score_buy(
-    const BattleState *bs,
-    const Action *action,
-    const AIWeights *w
+    const BattleState* bs,
+    const Action*      action,
+    const AIWeights*   w
 ) {
     (void)bs;
     (void)action;

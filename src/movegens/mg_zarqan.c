@@ -32,11 +32,11 @@
 /// - MoveList          *out    -> destination list
 ///
 void mg_zq_ziraafa(
-    const PieceState *piece,
-    const BattleState *bs,
-    const EffectArg *params,
-    size_t n,
-    MoveList *out
+    const PieceState*  piece,
+    const BattleState* bs,
+    const EffectArg*   params,
+    size_t             n,
+    MoveList*          out
 ) {
     (void)params;
     (void)n;
@@ -67,7 +67,7 @@ void mg_zq_ziraafa(
             if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
                 break;
             }
-            const PieceState *at = board_at(&bs->board, to);
+            const PieceState* at = board_at(&bs->board, to);
             if (at == NULL) {
                 ml_push(out, to);
                 continue;
@@ -97,17 +97,17 @@ void mg_zq_ziraafa(
 /// - MoveList          *out    -> destination list
 ///
 void mg_zq_swap_with_king(
-    const PieceState *piece,
-    const BattleState *bs,
-    const EffectArg *params,
-    size_t n,
-    MoveList *out
+    const PieceState*  piece,
+    const BattleState* bs,
+    const EffectArg*   params,
+    size_t             n,
+    MoveList*          out
 ) {
     (void)params;
     (void)n;
     Side enemy = side_opposite(piece->owner);
     for (uint16_t i = 0; i < bs->piece_count; i++) {
-        const PieceState *p = &bs->pieces[i];
+        const PieceState* p = &bs->pieces[i];
         if (p->owner != enemy)
             continue;
         if (p->tmpl->id == PIECE_KING) {
@@ -135,11 +135,11 @@ void mg_zq_swap_with_king(
 /// - MoveList          *out    -> destination list
 ///
 void mg_zq_war_elephant(
-    const PieceState *piece,
-    const BattleState *bs,
-    const EffectArg *params,
-    size_t n,
-    MoveList *out
+    const PieceState*  piece,
+    const BattleState* bs,
+    const EffectArg*   params,
+    size_t             n,
+    MoveList*          out
 ) {
     (void)params;
     (void)n;

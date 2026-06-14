@@ -19,7 +19,7 @@ typedef struct {
     uint16_t ingredient_a;
     uint16_t ingredient_b;
     uint16_t result;
-    uint8_t steps; /* 1 direct, 2 multi-step */
+    uint8_t  steps; /* 1 direct, 2 multi-step */
 } Recipe;
 
 extern const Recipe RECIPES[];
@@ -30,6 +30,6 @@ extern const size_t RECIPES_COUNT;
 \*--------------------------------------------------------------------------*/
 
 /// Look up a recipe. Returns NULL if no combination exists.
-const Recipe *recipe_find(uint16_t a, uint16_t b);
+const Recipe* recipe_find(uint16_t a, uint16_t b);
 
 #endif /* RECIPE_H */

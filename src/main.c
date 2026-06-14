@@ -15,13 +15,13 @@
                               PRINT HELPERS
 \*--------------------------------------------------------------------------*/
 
-static void print_board(const BattleState *bs) {
+static void print_board(const BattleState* bs) {
     log_info("  Board %dx%d:", bs->board.width, bs->board.height);
     for (int y = bs->board.height - 1; y >= 0; y--) {
         printf("  %2d ", y);
         for (int x = 0; x < bs->board.width; x++) {
-            Position p = {x, y};
-            PieceState *pc = board_at(&bs->board, p);
+            Position    p  = {x, y};
+            PieceState* pc = board_at(&bs->board, p);
             if (pc == NULL) {
                 printf(". ");
             } else {
@@ -37,11 +37,11 @@ static void print_board(const BattleState *bs) {
     printf("\n");
 }
 
-static void print_pieces(const BattleState *bs) {
+static void print_pieces(const BattleState* bs) {
     log_info("  Pieces:");
     for (uint16_t i = 0; i < bs->piece_count; i++) {
-        const PieceState *p = &bs->pieces[i];
-        const char *side = (p->owner == SIDE_PLAYER) ? "PLAYER" : "ENEMY ";
+        const PieceState* p = &bs->pieces[i];
+        const char* side    = (p->owner == SIDE_PLAYER) ? "PLAYER" : "ENEMY ";
         log_info(
             "    [%u] %s (%s) at (%d,%d) val=%d",
             p->id,
@@ -54,7 +54,7 @@ static void print_pieces(const BattleState *bs) {
     }
 }
 
-static void print_state(const BattleState *bs) {
+static void print_state(const BattleState* bs) {
     log_info(
         "Turn %u | Active: %s | CP: P=%d E=%d | "
         "Meter: P=%d/%d E=%d/%d",
@@ -69,12 +69,12 @@ static void print_state(const BattleState *bs) {
     );
 }
 
-static void print_hand(const BattleState *bs, Side s) {
-    const char *side = (s == SIDE_PLAYER) ? "PLAYER" : "ENEMY ";
-    uint8_t n = bs->hand_count[s];
+static void print_hand(const BattleState* bs, Side s) {
+    const char* side = (s == SIDE_PLAYER) ? "PLAYER" : "ENEMY ";
+    uint8_t     n    = bs->hand_count[s];
     log_info("  %s hand (%d cards):", side, n);
     for (uint8_t i = 0; i < n; i++) {
-        const CardTemplate *tmpl = bs->hand[s][i].tmpl;
+        const CardTemplate* tmpl = bs->hand[s][i].tmpl;
         log_info(
             "    [%u] %s cost=%d sell=%d",
             i,
@@ -93,17 +93,17 @@ int main(void) {
     log_info("=== Regnum Battle Boilerplate Demo ===");
 
     BattleConfig cfg = {
-        .width = 12,
-        .height = 12,
-        .max_turns = 10,
-        .starting_cp = 20,
-        .rng_seed = 0xDEADBEEFULL,
-        .player_side = SIDE_PLAYER,
-        .modifiers = {0},
+        .width          = 12,
+        .height         = 12,
+        .max_turns      = 10,
+        .starting_cp    = 20,
+        .rng_seed       = 0xDEADBEEFULL,
+        .player_side    = SIDE_PLAYER,
+        .modifiers      = {0},
         .modifier_count = 0,
-        .traits = {0},
-        .trait_count = 0,
-        .run = NULL,
+        .traits         = {0},
+        .trait_count    = 0,
+        .run            = NULL,
     };
 
     BattleState bs;
@@ -183,8 +183,8 @@ int main(void) {
 
     log_info("");
     log_info("--- Final State ---");
-    BattleResult res = battle_check_end(&bs);
-    const char *result_str = "UNKNOWN";
+    BattleResult res        = battle_check_end(&bs);
+    const char*  result_str = "UNKNOWN";
     if (res == BATTLE_PLAYER_WON)
         result_str = "PLAYER WON";
     else if (res == BATTLE_ENEMY_WON)

@@ -14,26 +14,26 @@
                               SIZE LIMITS
 \*--------------------------------------------------------------------------*/
 
-#define MAX_PIECES 128
-#define MAX_PIECES_PER_SIDE 64
-#define MAX_HAND 12
-#define MAX_CARDSET 96
-#define MAX_EFFECTS 256
-#define MAX_EFFECT_ARGS 6
-#define MAX_PIECE_BUFFS 8
-#define MAX_PIECE_PASSIVES 4
-#define MAX_CARD_EFFECTS 6
-#define MAX_MOVE_PARAMS 32
-#define MAX_SUB_MOVEGENS 4
-#define MAX_MOVES 64
-#define MAX_BOARD_DIM 20
-#define MAX_RELICS_HELD 26
-#define MAX_EVENTS 128
+#define MAX_PIECES           128
+#define MAX_PIECES_PER_SIDE  64
+#define MAX_HAND             12
+#define MAX_CARDSET          96
+#define MAX_EFFECTS          256
+#define MAX_EFFECT_ARGS      6
+#define MAX_PIECE_BUFFS      8
+#define MAX_PIECE_PASSIVES   4
+#define MAX_CARD_EFFECTS     6
+#define MAX_MOVE_PARAMS      32
+#define MAX_SUB_MOVEGENS     4
+#define MAX_MOVES            64
+#define MAX_BOARD_DIM        20
+#define MAX_RELICS_HELD      26
+#define MAX_EVENTS           128
 #define MAX_BATTLE_MODIFIERS 8
-#define MAX_BOARD_TRAITS 4
-#define MAX_HANDLERS 16
-#define MAX_COMBO_KINGDOMS 5
-#define MAX_COMBO_PAIRS 32
+#define MAX_BOARD_TRAITS     4
+#define MAX_HANDLERS         16
+#define MAX_COMBO_KINGDOMS   5
+#define MAX_COMBO_PAIRS      32
 
 /*--------------------------------------------------------------------------*\
                               VERSION

@@ -12,28 +12,28 @@
 \*--------------------------------------------------------------------------*/
 
 /// Spawn a piece template at a position.
-void eff_spawn_piece(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_spawn_piece(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;
 }
 
 /// Remove a piece from the board.
-void eff_remove_piece(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_remove_piece(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;
 }
 
 /// Swap two pieces' positions.
-void eff_swap_pieces(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_swap_pieces(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;
 }
 
 /// Force-flip a piece to the opposite side.
-void eff_force_flip(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_force_flip(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;

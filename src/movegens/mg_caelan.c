@@ -31,11 +31,11 @@
 /// - MoveList          *out    -> destination list
 ///
 void mg_ca_gryphon(
-    const PieceState *piece,
-    const BattleState *bs,
-    const EffectArg *params,
-    size_t n,
-    MoveList *out
+    const PieceState*  piece,
+    const BattleState* bs,
+    const EffectArg*   params,
+    size_t             n,
+    MoveList*          out
 ) {
     (void)params;
     (void)n;
@@ -67,7 +67,7 @@ void mg_ca_gryphon(
                 if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
                     break;
                 }
-                const PieceState *at = board_at(&bs->board, to);
+                const PieceState* at = board_at(&bs->board, to);
                 if (at == NULL) {
                     ml_push(out, to);
                     continue;

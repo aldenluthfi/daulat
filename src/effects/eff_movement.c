@@ -12,7 +12,7 @@
 \*--------------------------------------------------------------------------*/
 
 /// Swap a piece's movegen to a new pattern for the rest of the battle.
-void eff_swap_movegen(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
+void eff_swap_movegen(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
     (void)n;
@@ -20,9 +20,9 @@ void eff_swap_movegen(struct EffectCtx *ctx, const EffectArg *args, size_t n) {
 
 /// Grant an extra move step to a piece this action.
 void eff_grant_extra_step(
-    struct EffectCtx *ctx,
-    const EffectArg *args,
-    size_t n
+    struct EffectCtx* ctx,
+    const EffectArg*  args,
+    size_t            n
 ) {
     (void)ctx;
     (void)args;
@@ -31,9 +31,9 @@ void eff_grant_extra_step(
 
 /// Allow a piece to move through friendly pieces this action.
 void eff_grant_friendly_pass(
-    struct EffectCtx *ctx,
-    const EffectArg *args,
-    size_t n
+    struct EffectCtx* ctx,
+    const EffectArg*  args,
+    size_t            n
 ) {
     (void)ctx;
     (void)args;

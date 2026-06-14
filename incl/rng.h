@@ -24,18 +24,18 @@ typedef struct {
 \*--------------------------------------------------------------------------*/
 
 /// Initialize RNG with a seed.
-void rng_init(Rng *rng, uint64_t seed);
+void rng_init(Rng* rng, uint64_t seed);
 
 /// Advance state and return a uint64_t.
-uint64_t rng_next(Rng *rng);
+uint64_t rng_next(Rng* rng);
 
 /// Return a uint64_t in [0, max). Never returns max itself.
-uint64_t rng_range(Rng *rng, uint64_t max);
+uint64_t rng_range(Rng* rng, uint64_t max);
 
 /// Return a float in [0.0f, 1.0f).
-float rng_float(Rng *rng);
+float rng_float(Rng* rng);
 
 /// Return true with probability p (0.0 to 1.0).
-bool rng_bool(Rng *rng, float p);
+bool rng_bool(Rng* rng, float p);
 
 #endif /* RNG_H */
