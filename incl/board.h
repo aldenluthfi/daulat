@@ -1,7 +1,9 @@
+//! board.h
 //!
 //! Board state, territory, and threat queries for the Regnum engine.
 //! Board holds a flat array of MAX_BOARD_DIM x MAX_BOARD_DIM pointers.
 //! Territory is computed from piece positions each turn.
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 

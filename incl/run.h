@@ -1,7 +1,9 @@
+//! run.h
 //!
 //! Run state skeleton for the Regnum battle engine.
 //! Holds relics, chains, mastery, figurehead powers, synergies.
 //! Full campaign loop is out of scope — this is just the container.
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 

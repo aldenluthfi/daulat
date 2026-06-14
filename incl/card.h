@@ -1,7 +1,9 @@
+//! card.h
 //!
 //! Card templates and hand management for the Regnum battle engine.
 //! Cards are bought with CP, played for effects, or sold for sell_value.
 //! Hand slots are filled from the deck on draw and freed on play or sell.
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 

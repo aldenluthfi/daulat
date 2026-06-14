@@ -1,7 +1,9 @@
+//! core.h
 //!
 //! Base types shared by all other headers.
 //! Position, EffectArg, and all enums live here to break circular deps.
 //! Layer 0 — included by every other header.
+//!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 

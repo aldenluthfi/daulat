@@ -13,6 +13,13 @@
                                  BUS INIT
 \*--------------------------------------------------------------------------*/
 
+/// bus_init
+///
+/// Zero a bus and mark every slot empty.
+///
+/// Params:
+/// - EffectBus* bus -> bus to initialize
+///
 void bus_init(EffectBus* bus) {
     bus->count = 0;
 }
@@ -21,6 +28,14 @@ void bus_init(EffectBus* bus) {
                                  BUS REGISTER
 \*--------------------------------------------------------------------------*/
 
+/// bus_register
+///
+/// Append a copy of `*e` to the bus as a fresh active slot.
+///
+/// Params:
+/// - EffectBus* bus -> destination bus
+/// - const Effect* e -> effect to register
+///
 void bus_register(EffectBus* bus, const Effect* e) {
     if (bus->count >= MAX_EFFECTS) {
         log_warn("EffectBus full, dropping effect (trigger=%d)\n", e->trigger);
@@ -36,6 +51,16 @@ void bus_register(EffectBus* bus, const Effect* e) {
                                  BUS EMIT
 \*--------------------------------------------------------------------------*/
 
+/// bus_emit
+///
+/// Invoke every active handler whose trigger matches.
+///
+/// Params:
+/// - EffectBus* bus -> bus to scan
+/// - BattleState* bs -> battle state for handler use
+/// - EffectTrigger trigger -> trigger key to dispatch
+/// - struct EffectCtx* ctx -> evidence (mutated with trigger)
+///
 void bus_emit(
     EffectBus*        bus,
     BattleState*      bs,
@@ -61,6 +86,13 @@ void bus_emit(
                                  BUS TICK TURN END
 \*--------------------------------------------------------------------------*/
 
+/// bus_tick_turn_end
+///
+/// Expire every duration-0 effect at end of turn.
+///
+/// Params:
+/// - EffectBus* bus -> bus to tick
+///
 void bus_tick_turn_end(EffectBus* bus) {
     for (uint16_t i = 0; i < bus->count; i++) {
         if (!bus->slots[i].active)
@@ -75,6 +107,13 @@ void bus_tick_turn_end(EffectBus* bus) {
                                  BUS TICK TURN START
 \*--------------------------------------------------------------------------*/
 
+/// bus_tick_turn_start
+///
+/// Decrement remaining-turn counters at start of turn.
+///
+/// Params:
+/// - EffectBus* bus -> bus to tick
+///
 void bus_tick_turn_start(EffectBus* bus) {
     for (uint16_t i = 0; i < bus->count; i++) {
         if (!bus->slots[i].active)
@@ -89,6 +128,17 @@ void bus_tick_turn_start(EffectBus* bus) {
                                  BUS QUERY COUNT
 \*--------------------------------------------------------------------------*/
 
+/// bus_query_count
+///
+/// Count how many active slots match a given trigger.
+///
+/// Params:
+/// - const EffectBus* bus -> bus to scan
+/// - EffectTrigger t -> trigger key to count
+///
+/// Return:
+/// size_t -> number of active matching slots
+///
 size_t bus_query_count(const EffectBus* bus, EffectTrigger t) {
     size_t n = 0;
     for (uint16_t i = 0; i < bus->count; i++) {
@@ -103,6 +153,15 @@ size_t bus_query_count(const EffectBus* bus, EffectTrigger t) {
                                  BUS EVICT BY SOURCE
 \*--------------------------------------------------------------------------*/
 
+/// bus_evict_by_source
+///
+/// Deactivate every slot whose effect was registered with a matching
+/// source_id.
+///
+/// Params:
+/// - EffectBus* bus -> bus to scan
+/// - uint32_t source_id -> source identifier to match
+///
 void bus_evict_by_source(EffectBus* bus, uint32_t source_id) {
     for (uint16_t i = 0; i < bus->count; i++) {
         if (bus->slots[i].effect->source_id == source_id) {

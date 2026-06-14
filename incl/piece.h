@@ -1,7 +1,9 @@
+//! piece.h
 //!
 //! Piece templates and runtime state for the Regnum battle engine.
 //! Template is immutable const data; State is per-instance mutable data.
 //! Split Kewarani behavior is a passive Effect, not an engine branch.
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 

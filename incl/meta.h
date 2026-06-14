@@ -1,7 +1,9 @@
+//! meta.h
 //!
 //! Meta layer: relics, innates, chains, modifiers, traits, events.
 //! All meta concepts are templates that own Effect[] arrays.
 //! Activation is idempotent — re-entering a kingdom re-applies the effect.
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 
@@ -17,6 +19,17 @@ struct Effect;
                               RELIC
 \*--------------------------------------------------------------------------*/
 
+/// RelicTemplate
+///
+/// Persistent item gained from battles. Applies passive effects while held.
+///
+/// Fields:
+/// - uint16_t id -> unique identifier
+/// - const char* name -> display name
+/// - const char* description -> flavor text
+/// - Effect effects[8] -> passive effects
+/// - uint8_t effect_count -> number of effects
+///
 typedef struct {
     uint16_t    id;
     const char* name;
@@ -29,6 +42,17 @@ typedef struct {
                               INNATE
 \*--------------------------------------------------------------------------*/
 
+/// InnateTemplate
+///
+/// Kingdom-specific passive ability active for the entire run.
+///
+/// Fields:
+/// - Kingdom kingdom -> owning kingdom
+/// - const char* name -> display name
+/// - const char* description -> flavor text
+/// - Effect effects[8] -> passive effects
+/// - uint8_t effect_count -> number of effects
+///
 typedef struct {
     Kingdom     kingdom;
     const char* name;
@@ -41,6 +65,17 @@ typedef struct {
                               CHAIN (penalty)
 \*--------------------------------------------------------------------------*/
 
+/// Chain
+///
+/// Penalty applied to the run based on consecutive losses.
+///
+/// Fields:
+/// - uint8_t level -> chain level (0=Bronze, 1=Silver, 2=Gold)
+/// - const char* name -> display name
+/// - const char* description -> flavor text
+/// - Effect penalties[8] -> negative effects
+/// - uint8_t penalty_count -> number of penalties
+///
 typedef struct {
     uint8_t     level; /* 0=Bronze, 1=Silver, 2=Gold */
     const char* name;
@@ -53,6 +88,18 @@ typedef struct {
                               BATTLE MODIFIER
 \*--------------------------------------------------------------------------*/
 
+/// Modifier
+///
+/// Temporary or permanent modifier affecting battle rules.
+///
+/// Fields:
+/// - uint16_t id -> unique identifier
+/// - const char* name -> display name
+/// - const char* description -> flavor text
+/// - ModifierId type -> modifier category
+/// - Effect effects[4] -> applied effects
+/// - uint8_t effect_count -> number of effects
+///
 typedef struct {
     uint16_t    id;
     const char* name;
@@ -66,6 +113,18 @@ typedef struct {
                               BOARD TRAIT
 \*--------------------------------------------------------------------------*/
 
+/// BoardTrait
+///
+/// Persistent board condition affecting all battles.
+///
+/// Fields:
+/// - uint16_t id -> unique identifier
+/// - const char* name -> display name
+/// - const char* description -> flavor text
+/// - TraitId type -> trait category
+/// - Effect effects[4] -> applied effects
+/// - uint8_t effect_count -> number of effects
+///
 typedef struct {
     uint16_t    id;
     const char* name;
@@ -79,6 +138,17 @@ typedef struct {
                               FIGUREHEAD POWER
 \*--------------------------------------------------------------------------*/
 
+/// FigureheadPower
+///
+/// Kingdom-specific power earned after clearing a kingdom.
+///
+/// Fields:
+/// - Kingdom kingdom -> owning kingdom
+/// - const char* name -> display name
+/// - const char* description -> flavor text
+/// - Effect effects[4] -> applied effects
+/// - uint8_t effect_count -> number of effects
+///
 typedef struct {
     Kingdom     kingdom;
     const char* name;
@@ -91,6 +161,16 @@ typedef struct {
                               SYNERGY
 \*--------------------------------------------------------------------------*/
 
+/// Synergy
+///
+/// Bonus granted when clearing a kingdom's overseer.
+///
+/// Fields:
+/// - Kingdom cleared -> kingdom that was cleared
+/// - const char* name -> display name
+/// - const char* description -> flavor text
+/// - Effect bonus -> synergy bonus effect
+///
 typedef struct {
     Kingdom     cleared;
     const char* name;
@@ -102,6 +182,17 @@ typedef struct {
                               OVERSEER
 \*--------------------------------------------------------------------------*/
 
+/// Overseer
+///
+/// Boss piece for a kingdom with unique mechanics.
+///
+/// Fields:
+/// - uint16_t id -> unique identifier
+/// - const char* name -> display name
+/// - const char* description -> flavor text
+/// - Effect effects[8] -> overseer abilities
+/// - uint8_t effect_count -> number of effects
+///
 typedef struct {
     uint16_t    id;
     const char* name;
@@ -121,6 +212,12 @@ typedef struct {
 /// are normal CardTemplates in the CARD_* enum, injected into the
 /// player's cardset by a level-2 hook.
 ///
+/// Fields:
+/// - Kingdom kingdom -> owning kingdom
+/// - int level -> hook level (1 or 3)
+/// - const char* name -> display name
+/// - Effect effect -> mastery effect
+///
 typedef struct {
     Kingdom     kingdom;
     int         level; /* 1 or 3 */
@@ -132,6 +229,16 @@ typedef struct {
                               EVENT
 \*--------------------------------------------------------------------------*/
 
+/// EventTemplate
+///
+/// Event encountered during the map phase.
+///
+/// Fields:
+/// - uint16_t id -> unique identifier
+/// - const char* name -> display name
+/// - const char* description -> event description
+/// - EventId type -> event category
+///
 typedef struct {
     uint16_t    id;
     const char* name;
@@ -139,6 +246,14 @@ typedef struct {
     EventId     type;
 } EventTemplate;
 
+/// EventOption
+///
+/// Single choice within an event.
+///
+/// Fields:
+/// - const char* option_text -> choice text
+/// - Effect effect -> effect when chosen
+///
 typedef struct {
     const char* option_text;
     Effect      effect;

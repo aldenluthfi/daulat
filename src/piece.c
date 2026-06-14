@@ -13,6 +13,19 @@
                               SPAWN
 \*--------------------------------------------------------------------------*/
 
+/// piece_spawn
+///
+/// Spawn a piece from a template at position. Registers passives to bus.
+///
+/// Params:
+/// - BattleState* bs -> battle state to modify
+/// - uint16_t tmpl_id -> template id to spawn
+/// - Position pos -> board position
+/// - Side owner -> owning side
+///
+/// Return:
+/// uint32_t -> runtime id of spawned piece, or 0 on failure
+///
 uint32_t
 piece_spawn(BattleState* bs, uint16_t tmpl_id, Position pos, Side owner) {
     if (bs->piece_count >= MAX_PIECES) {
@@ -54,6 +67,14 @@ piece_spawn(BattleState* bs, uint16_t tmpl_id, Position pos, Side owner) {
                               REMOVE
 \*--------------------------------------------------------------------------*/
 
+/// piece_remove
+///
+/// Remove a piece from the board and evict its passives from the bus.
+///
+/// Params:
+/// - BattleState* bs -> battle state to modify
+/// - uint32_t piece_id -> runtime id of piece to remove
+///
 void piece_remove(BattleState* bs, uint32_t piece_id) {
     PieceState* p = piece_by_id(bs, piece_id);
     if (p == NULL)
@@ -75,6 +96,14 @@ void piece_remove(BattleState* bs, uint32_t piece_id) {
                               FLIP
 \*--------------------------------------------------------------------------*/
 
+/// piece_flip
+///
+/// Flip a piece to the opposite side. Emits TRIGGER_PIECE_FLIPPED first.
+///
+/// Params:
+/// - BattleState* bs -> battle state to modify
+/// - uint32_t piece_id -> runtime id of piece to flip
+///
 void piece_flip(BattleState* bs, uint32_t piece_id) {
     PieceState* p = piece_by_id(bs, piece_id);
     if (p == NULL)
@@ -98,6 +127,17 @@ void piece_flip(BattleState* bs, uint32_t piece_id) {
                               QUERY
 \*--------------------------------------------------------------------------*/
 
+/// piece_by_id
+///
+/// Find a piece by its runtime id.
+///
+/// Params:
+/// - BattleState* bs -> battle state to search
+/// - uint32_t piece_id -> runtime id to find
+///
+/// Return:
+/// PieceState* -> piece pointer or NULL if not found
+///
 PieceState* piece_by_id(BattleState* bs, uint32_t piece_id) {
     for (uint16_t i = 0; i < bs->piece_count; i++) {
         if (bs->pieces[i].id == piece_id)
@@ -106,6 +146,16 @@ PieceState* piece_by_id(BattleState* bs, uint32_t piece_id) {
     return NULL;
 }
 
+/// piece_value
+///
+/// Compute the current value of a piece (base + modifiers).
+///
+/// Params:
+/// - const PieceState* piece -> piece to evaluate
+///
+/// Return:
+/// int -> current value
+///
 int piece_value(const PieceState* piece) {
     return piece->tmpl->base_value + piece->value_mod;
 }

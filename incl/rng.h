@@ -1,7 +1,9 @@
+//! rng.h
 //!
 //! Deterministic xorshift64 PRNG for reproducible battle traces.
 //! All randomness flows through this so re-runs are byte-identical.
 //! SplitMix64-style rejection sampling for rng_bound to avoid modulo bias.
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 

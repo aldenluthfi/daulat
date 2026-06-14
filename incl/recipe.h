@@ -1,7 +1,9 @@
+//! recipe.h
 //!
 //! Combination recipes: what two pieces combine into, if anything.
 //! Order-agnostic lookup — (a, b) == (b, a).
 //! recipe_find scans the RECIPES array for a matching (a, b) pair.
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 

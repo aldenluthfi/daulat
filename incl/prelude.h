@@ -1,7 +1,9 @@
+//! prelude.h
 //!
 //! Umbrella include: pulls every public header for the Regnum engine.
 //! Use this in new .c files instead of listing headers individually.
 //! Order matters — headers are listed in dependency order (Layer 0→5).
+//!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 

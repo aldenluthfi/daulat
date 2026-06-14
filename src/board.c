@@ -1,7 +1,9 @@
+//! board.c
 //!
 //! Board state, territory, and threat queries.
 //! Board holds a flat array of pointers; territory is king-adjacent squares.
 //! Threat map enumerates every square an attacking piece threatens.
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 
@@ -11,6 +13,17 @@
                               HELPERS
 \*--------------------------------------------------------------------------*/
 
+/// board_index
+///
+/// Convert a Position to a flat array index.
+///
+/// Params:
+/// - const Board* board -> board with dimensions
+/// - Position p -> board coordinates
+///
+/// Return:
+/// int -> index into board->squares
+///
 static int board_index(const Board* board, Position p) {
     return p.y * board->width + p.x;
 }
@@ -19,6 +32,15 @@ static int board_index(const Board* board, Position p) {
                               BOARD INIT
 \*--------------------------------------------------------------------------*/
 
+/// board_init
+///
+/// Initialize a board with given dimensions. All squares start empty.
+///
+/// Params:
+/// - Board* board -> board to initialize
+/// - int width -> board width
+/// - int height -> board height
+///
 void board_init(Board* board, int width, int height) {
     board->width  = width;
     board->height = height;
@@ -31,6 +53,18 @@ void board_init(Board* board, int width, int height) {
                               PLACE / REMOVE
 \*--------------------------------------------------------------------------*/
 
+/// board_place
+///
+/// Place a piece at a square. Returns false if square is occupied.
+///
+/// Params:
+/// - Board* board -> board to modify
+/// - PieceState* piece -> piece to place
+/// - Position pos -> destination square
+///
+/// Return:
+/// bool -> true if placement succeeded
+///
 bool board_place(Board* board, PieceState* piece, Position pos) {
     if (!pos_in_bounds(pos, board->width, board->height))
         return false;
@@ -42,6 +76,17 @@ bool board_place(Board* board, PieceState* piece, Position pos) {
     return true;
 }
 
+/// board_remove
+///
+/// Remove the piece at a square and return it.
+///
+/// Params:
+/// - Board* board -> board to modify
+/// - Position pos -> square to clear
+///
+/// Return:
+/// PieceState* -> removed piece or NULL if square was empty
+///
 PieceState* board_remove(Board* board, Position pos) {
     if (!pos_in_bounds(pos, board->width, board->height))
         return NULL;
@@ -55,6 +100,17 @@ PieceState* board_remove(Board* board, Position pos) {
                               AT
 \*--------------------------------------------------------------------------*/
 
+/// board_at
+///
+/// Return the piece at a square, or NULL if empty or out of bounds.
+///
+/// Params:
+/// - const Board* board -> board to query
+/// - Position pos -> square to query
+///
+/// Return:
+/// PieceState* -> piece at square or NULL
+///
 PieceState* board_at(const Board* board, Position pos) {
     if (!pos_in_bounds(pos, board->width, board->height))
         return NULL;
@@ -65,6 +121,14 @@ PieceState* board_at(const Board* board, Position pos) {
                               TERRITORY
 \*--------------------------------------------------------------------------*/
 
+/// board_compute_territory
+///
+/// Compute which side controls each square.
+///
+/// Params:
+/// - const Board* board -> board to analyze
+/// - Side territory[] -> output array (size: width * height)
+///
 void board_compute_territory(const Board* board, Side territory[]) {
     for (int i = 0; i < board->width * board->height; i++) {
         territory[i] = SIDE_NEUTRAL;
@@ -81,6 +145,14 @@ void board_compute_territory(const Board* board, Side territory[]) {
     }
 }
 
+/// board_territory_counts
+///
+/// Count how many squares belong to each territory.
+///
+/// Params:
+/// - const Board* board -> board to analyze
+/// - int counts[3] -> output: [SIDE_PLAYER, SIDE_ENEMY, SIDE_NEUTRAL]
+///
 void board_territory_counts(const Board* board, int counts[3]) {
     counts[SIDE_PLAYER]  = 0;
     counts[SIDE_ENEMY]   = 0;
@@ -102,6 +174,14 @@ void board_territory_counts(const Board* board, int counts[3]) {
                               THREAT MAP
 \*--------------------------------------------------------------------------*/
 
+/// board_threat_map
+///
+/// Build a threat map: for each square, how many pieces threaten it.
+///
+/// Params:
+/// - const Board* board -> board to analyze
+/// - int threats[] -> output array (size: width * height)
+///
 void board_threat_map(const Board* board, int threats[]) {
     for (int i = 0; i < board->width * board->height; i++) {
         threats[i] = 0;
@@ -128,6 +208,18 @@ void board_threat_map(const Board* board, int threats[]) {
                               LINE OF SIGHT
 \*--------------------------------------------------------------------------*/
 
+/// board_has_line_of_sight
+///
+/// Return true if a path between two positions is unobstructed.
+///
+/// Params:
+/// - const Board* board -> board to query
+/// - Position from -> starting square
+/// - Position to -> destination square
+///
+/// Return:
+/// bool -> true if the path is clear
+///
 bool board_has_line_of_sight(const Board* board, Position from, Position to) {
     int dx  = to.x - from.x;
     int dy  = to.y - from.y;

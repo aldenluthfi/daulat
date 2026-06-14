@@ -1,7 +1,9 @@
+//! defs.h
 //!
 //! Constants, limits, and identifier enums for the Regnum battle engine.
 //! No project-name prefix on macros. Size limits are #define only.
 //! Id enums are the single source of truth for all element ids.
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 

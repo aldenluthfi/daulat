@@ -1,7 +1,9 @@
+//! ai.c
 //!
 //! AI archetype dispatcher and default scorer.
 //! Normal path: weights-only scoring via dot-product.
 //! Custom AIPickFunc for distinctive logic (Reclaimer, Trickster).
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 
@@ -11,6 +13,14 @@
                               AI DRIVER
 \*--------------------------------------------------------------------------*/
 
+/// ai_execute_action
+///
+/// Execute a single action on the battle state.
+///
+/// Params:
+/// - BattleState* bs -> battle state to modify
+/// - const Action* a -> action to execute
+///
 static void ai_execute_action(BattleState* bs, const Action* a) {
     switch (a->kind) {
     case ACTION_MOVE:
@@ -34,6 +44,13 @@ static void ai_execute_action(BattleState* bs, const Action* a) {
     }
 }
 
+/// ai_play_turn
+///
+/// Run the full AI half-turn.
+///
+/// Params:
+/// - BattleState* bs -> battle state to operate on
+///
 void ai_play_turn(BattleState* bs) {
     uint8_t actions = bs->actions_left;
     while (actions > 0 && !bs->battle_ended) {
@@ -45,6 +62,16 @@ void ai_play_turn(BattleState* bs) {
     }
 }
 
+/// ai_pick_one
+///
+/// Pick a single action for the current state.
+///
+/// Params:
+/// - BattleState* bs -> battle state to evaluate
+///
+/// Return:
+/// Action -> chosen action
+///
 Action ai_pick_one(BattleState* bs) {
     Action best = {.kind = ACTION_END_TURN};
 
@@ -76,6 +103,18 @@ Action ai_pick_one(BattleState* bs) {
                               SCORING
 \*--------------------------------------------------------------------------*/
 
+/// ai_score_move
+///
+/// Score a move action. Currently a stub returning 0.
+///
+/// Params:
+/// - const BattleState* bs -> battle state (unused)
+/// - const Action* action -> action to score (unused)
+/// - const AIWeights* w -> weights (unused)
+///
+/// Return:
+/// int -> score (always 0)
+///
 int ai_score_move(
     const BattleState* bs,
     const Action*      action,
@@ -87,6 +126,18 @@ int ai_score_move(
     return 0;
 }
 
+/// ai_score_buy
+///
+/// Score a buy action. Currently a stub returning 0.
+///
+/// Params:
+/// - const BattleState* bs -> battle state (unused)
+/// - const Action* action -> action to score (unused)
+/// - const AIWeights* w -> weights (unused)
+///
+/// Return:
+/// int -> score (always 0)
+///
 int ai_score_buy(
     const BattleState* bs,
     const Action*      action,

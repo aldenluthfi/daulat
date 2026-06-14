@@ -1,7 +1,9 @@
+//! types.h
 //!
 //! Core type aliases and lightweight structs for the Regnum battle engine.
 //! CardInstance, flags, TargetSpec, and inline helpers.
 //! NOTE: Position is defined in core.h, NOT here.
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 

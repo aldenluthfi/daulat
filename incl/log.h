@@ -1,7 +1,9 @@
+//! log.h
 //!
 //! Minimal logger: info, warn, err to stderr.
 //! No formatting, no levels — just printf behind macros.
 //! Log macros are no-ops when NDEBUG is defined in release builds.
+//!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 
