@@ -32,8 +32,11 @@
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_ma(
-    const PieceState* piece, const BattleState* bs, const EffectArg* params,
-    size_t n, MoveList* out
+    const PieceState *piece,
+    const BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 ) {
     (void)params;
     (void)n;
@@ -59,17 +62,19 @@ void mg_lw_ma(
     };
     for (int i = 0; i < 8; i++) {
         Position to = {
-            piece->pos.x + DELTAS[i][0], piece->pos.y + DELTAS[i][1]
+            piece->pos.x + DELTAS[i][0],
+            piece->pos.y + DELTAS[i][1]
         };
         Position elbow = {
-            piece->pos.x + ELBOW[i][0], piece->pos.y + ELBOW[i][1]
+            piece->pos.x + ELBOW[i][0],
+            piece->pos.y + ELBOW[i][1]
         };
         if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
             continue;
         }
         if (board_at(&bs->board, elbow) != NULL)
             continue;
-        const PieceState* at = board_at(&bs->board, to);
+        const PieceState *at = board_at(&bs->board, to);
         if (is_enemy(piece, at))
             ml_push(out, to);
     }
@@ -93,8 +98,11 @@ void mg_lw_ma(
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_xiang(
-    const PieceState* piece, const BattleState* bs, const EffectArg* params,
-    size_t n, MoveList* out
+    const PieceState *piece,
+    const BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 ) {
     (void)params;
     (void)n;
@@ -106,15 +114,16 @@ void mg_lw_xiang(
     };
     for (int d = 0; d < 4; d++) {
         Position mid = {piece->pos.x + DIRS[d][0], piece->pos.y + DIRS[d][1]};
-        Position to  = {
-            piece->pos.x + DIRS[d][0] * 2, piece->pos.y + DIRS[d][1] * 2
+        Position to = {
+            piece->pos.x + DIRS[d][0] * 2,
+            piece->pos.y + DIRS[d][1] * 2
         };
         if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
             continue;
         }
         if (board_at(&bs->board, mid) != NULL)
             continue;
-        const PieceState* at = board_at(&bs->board, to);
+        const PieceState *at = board_at(&bs->board, to);
         if (at == NULL || is_enemy(piece, at))
             ml_push(out, to);
     }
@@ -138,8 +147,11 @@ void mg_lw_xiang(
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_pao(
-    const PieceState* piece, const BattleState* bs, const EffectArg* params,
-    size_t n, MoveList* out
+    const PieceState *piece,
+    const BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 ) {
     (void)params;
     (void)n;
@@ -150,7 +162,7 @@ void mg_lw_pao(
         {0, -1},
     };
     for (int d = 0; d < 4; d++) {
-        int  screens     = 0;
+        int screens = 0;
         bool found_first = false;
         for (int step = 1; step < 20; step++) {
             Position to = {
@@ -160,7 +172,7 @@ void mg_lw_pao(
             if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
                 break;
             }
-            const PieceState* at = board_at(&bs->board, to);
+            const PieceState *at = board_at(&bs->board, to);
             if (at == NULL) {
                 if (!found_first)
                     ml_push(out, to);
@@ -197,8 +209,11 @@ void mg_lw_pao(
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_hwacha(
-    const PieceState* piece, const BattleState* bs, const EffectArg* params,
-    size_t n, MoveList* out
+    const PieceState *piece,
+    const BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 ) {
     (void)params;
     (void)n;
@@ -222,7 +237,7 @@ void mg_lw_hwacha(
             if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
                 break;
             }
-            const PieceState* at = board_at(&bs->board, to);
+            const PieceState *at = board_at(&bs->board, to);
             if (at == NULL) {
                 if (!found_first)
                     ml_push(out, to);
@@ -255,8 +270,11 @@ void mg_lw_hwacha(
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_sang(
-    const PieceState* piece, const BattleState* bs, const EffectArg* params,
-    size_t n, MoveList* out
+    const PieceState *piece,
+    const BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 ) {
     (void)params;
     (void)n;
@@ -274,7 +292,8 @@ void mg_lw_sang(
     };
     for (int o = 0; o < 4; o++) {
         Position mid1 = {
-            piece->pos.x + ORTHO[o][0], piece->pos.y + ORTHO[o][1]
+            piece->pos.x + ORTHO[o][0],
+            piece->pos.y + ORTHO[o][1]
         };
         if (!pos_in_bounds(mid1, bs->board.width, bs->board.height)) {
             continue;
@@ -283,13 +302,13 @@ void mg_lw_sang(
             continue;
         for (int d = 0; d < 4; d++) {
             Position mid2 = {mid1.x + DIAG[d][0], mid1.y + DIAG[d][1]};
-            Position to   = {mid1.x + DIAG[d][0] * 2, mid1.y + DIAG[d][1] * 2};
+            Position to = {mid1.x + DIAG[d][0] * 2, mid1.y + DIAG[d][1] * 2};
             if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
                 continue;
             }
             if (board_at(&bs->board, mid2) != NULL)
                 continue;
-            const PieceState* at = board_at(&bs->board, to);
+            const PieceState *at = board_at(&bs->board, to);
             if (at == NULL || is_enemy(piece, at))
                 ml_push(out, to);
         }
@@ -314,8 +333,11 @@ void mg_lw_sang(
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_liubo(
-    const PieceState* piece, const BattleState* bs, const EffectArg* params,
-    size_t n, MoveList* out
+    const PieceState *piece,
+    const BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 ) {
     (void)params;
     (void)n;

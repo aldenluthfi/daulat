@@ -9,9 +9,11 @@
 
 #include "prelude.h"
 
-void rng_init(Rng* rng, uint64_t seed) { rng->state = (seed != 0) ? seed : 1; }
+void rng_init(Rng *rng, uint64_t seed) {
+    rng->state = (seed != 0) ? seed : 1;
+}
 
-uint64_t rng_next(Rng* rng) {
+uint64_t rng_next(Rng *rng) {
     uint64_t x = rng->state;
     x ^= x >> 12;
     x ^= x << 25;
@@ -20,7 +22,7 @@ uint64_t rng_next(Rng* rng) {
     return x * 0x2545F4914F6CDD1DULL;
 }
 
-uint64_t rng_bound(Rng* rng, uint64_t bound) {
+uint64_t rng_bound(Rng *rng, uint64_t bound) {
     uint64_t mask = bound - 1;
     mask |= mask >> 1;
     mask |= mask >> 2;
@@ -35,8 +37,10 @@ uint64_t rng_bound(Rng* rng, uint64_t bound) {
     return x;
 }
 
-uint64_t rng_range(Rng* rng, uint64_t max) { return rng_bound(rng, max); }
+uint64_t rng_range(Rng *rng, uint64_t max) {
+    return rng_bound(rng, max);
+}
 
-float rng_float(Rng* rng) {
+float rng_float(Rng *rng) {
     return (float)(rng_next(rng) >> 40) / (float)(1 << 24);
 }

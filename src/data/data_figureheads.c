@@ -24,33 +24,33 @@
 ///
 const FigureheadPower FIGUREHEADS[] = {
     {
-        .kingdom      = KINGDOM_LONGWEI,
-        .name         = "Longwei Figurehead",
-        .description  = "Longwei starting power.",
+        .kingdom = KINGDOM_LONGWEI,
+        .name = "Longwei Figurehead",
+        .description = "Longwei starting power.",
         .effect_count = 0,
     },
     {
-        .kingdom      = KINGDOM_HARUSHIMA,
-        .name         = "Harushima Figurehead",
-        .description  = "Harushima starting power.",
+        .kingdom = KINGDOM_HARUSHIMA,
+        .name = "Harushima Figurehead",
+        .description = "Harushima starting power.",
         .effect_count = 0,
     },
     {
-        .kingdom      = KINGDOM_KEWARANI,
-        .name         = "Kewarani Figurehead",
-        .description  = "Kewarani starting power.",
+        .kingdom = KINGDOM_KEWARANI,
+        .name = "Kewarani Figurehead",
+        .description = "Kewarani starting power.",
         .effect_count = 0,
     },
     {
-        .kingdom      = KINGDOM_ZARQAN,
-        .name         = "Zarqan Figurehead",
-        .description  = "Zarqan starting power.",
+        .kingdom = KINGDOM_ZARQAN,
+        .name = "Zarqan Figurehead",
+        .description = "Zarqan starting power.",
         .effect_count = 0,
     },
     {
-        .kingdom      = KINGDOM_CAELAN,
-        .name         = "Caelan Figurehead",
-        .description  = "Caelan starting power.",
+        .kingdom = KINGDOM_CAELAN,
+        .name = "Caelan Figurehead",
+        .description = "Caelan starting power.",
         .effect_count = 0,
     },
 };

@@ -25,7 +25,7 @@
 const InnateTemplate INNATES[] = {
     {
         .kingdom = KINGDOM_LONGWEI,
-        .name    = "Bulwark",
+        .name = "Bulwark",
         .effects =
             {
                 {.trigger = TRIGGER_RESOLVE_DEFENSE, .apply = eff_todo},
@@ -34,7 +34,7 @@ const InnateTemplate INNATES[] = {
     },
     {
         .kingdom = KINGDOM_HARUSHIMA,
-        .name    = "Reclaim",
+        .name = "Reclaim",
         .effects =
             {
                 {.trigger = TRIGGER_TURN_END, .apply = eff_todo},
@@ -43,7 +43,7 @@ const InnateTemplate INNATES[] = {
     },
     {
         .kingdom = KINGDOM_KEWARANI,
-        .name    = "Double Time",
+        .name = "Double Time",
         .effects =
             {
                 {.trigger = TRIGGER_TURN_START, .apply = eff_todo},
@@ -52,17 +52,17 @@ const InnateTemplate INNATES[] = {
     },
     {
         .kingdom = KINGDOM_ZARQAN,
-        .name    = "Royal Substitution",
+        .name = "Royal Substitution",
         .effects =
             {
                 {.trigger = TRIGGER_PIECE_ENTERED_ENEMY_TERR,
-                 .apply   = eff_todo},
+                 .apply = eff_todo},
             },
         .effect_count = 1,
     },
     {
         .kingdom = KINGDOM_CAELAN,
-        .name    = "Conqueror's Reward",
+        .name = "Conqueror's Reward",
         .effects =
             {
                 {.trigger = TRIGGER_PIECE_FLIPPED, .apply = eff_todo},

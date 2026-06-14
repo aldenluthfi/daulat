@@ -32,8 +32,11 @@
 /// - MoveList          *out    -> destination list
 ///
 void mg_hs_kinsho(
-    const PieceState* piece, const BattleState* bs, const EffectArg* params,
-    size_t n, MoveList* out
+    const PieceState *piece,
+    const BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 ) {
     (void)params;
     (void)n;
@@ -70,8 +73,11 @@ void mg_hs_kinsho(
 /// - MoveList          *out    -> destination list
 ///
 void mg_hs_ginsho(
-    const PieceState* piece, const BattleState* bs, const EffectArg* params,
-    size_t n, MoveList* out
+    const PieceState *piece,
+    const BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 ) {
     (void)params;
     (void)n;
@@ -108,8 +114,11 @@ void mg_hs_ginsho(
 /// - MoveList          *out    -> destination list
 ///
 void mg_hs_honorable_horse(
-    const PieceState* piece, const BattleState* bs, const EffectArg* params,
-    size_t n, MoveList* out
+    const PieceState *piece,
+    const BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 ) {
     int dir = 1;
     if (n >= 1)
@@ -145,8 +154,11 @@ void mg_hs_honorable_horse(
 /// - MoveList          *out    -> destination list
 ///
 void mg_hs_shishi(
-    const PieceState* piece, const BattleState* bs, const EffectArg* params,
-    size_t n, MoveList* out
+    const PieceState *piece,
+    const BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 ) {
     (void)params;
     (void)n;

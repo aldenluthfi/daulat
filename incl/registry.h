@@ -18,73 +18,73 @@
                               PIECE REGISTRY
 \*--------------------------------------------------------------------------*/
 
-const PieceTemplate* piece_template(uint16_t id);
-size_t               piece_count(void);
+const PieceTemplate *piece_template(uint16_t id);
+size_t piece_count(void);
 
 /*--------------------------------------------------------------------------*\
                               CARD REGISTRY
 \*--------------------------------------------------------------------------*/
 
-const CardTemplate* card_template(uint16_t id);
-size_t              card_count(void);
+const CardTemplate *card_template(uint16_t id);
+size_t card_count(void);
 
 /*--------------------------------------------------------------------------*\
                               RECIPE REGISTRY
 \*--------------------------------------------------------------------------*/
 
-const Recipe* recipe_find(uint16_t a, uint16_t b);
-size_t        recipe_count(void);
+const Recipe *recipe_find(uint16_t a, uint16_t b);
+size_t recipe_count(void);
 
 /*--------------------------------------------------------------------------*\
                               RELIC REGISTRY
 \*--------------------------------------------------------------------------*/
 
-const RelicTemplate* relic_template(uint16_t id);
-size_t               relic_count(void);
+const RelicTemplate *relic_template(uint16_t id);
+size_t relic_count(void);
 
 /*--------------------------------------------------------------------------*\
                               INNATE REGISTRY
 \*--------------------------------------------------------------------------*/
 
-const InnateTemplate* innate_template(Kingdom k);
+const InnateTemplate *innate_template(Kingdom k);
 
 /*--------------------------------------------------------------------------*\
                               CHAIN REGISTRY
 \*--------------------------------------------------------------------------*/
 
-const Chain* chain_template(uint8_t level);
+const Chain *chain_template(uint8_t level);
 
 /*--------------------------------------------------------------------------*\
                               MODIFIER REGISTRY
 \*--------------------------------------------------------------------------*/
 
-const Modifier* modifier_template(uint16_t id);
-size_t          modifier_count(void);
+const Modifier *modifier_template(uint16_t id);
+size_t modifier_count(void);
 
 /*--------------------------------------------------------------------------*\
                               TRAIT REGISTRY
 \*--------------------------------------------------------------------------*/
 
-const BoardTrait* trait_template(uint16_t id);
-size_t            trait_count(void);
+const BoardTrait *trait_template(uint16_t id);
+size_t trait_count(void);
 
 /*--------------------------------------------------------------------------*\
                               FIGUREHEAD REGISTRY
 \*--------------------------------------------------------------------------*/
 
-const FigureheadPower* figurehead_power(Kingdom k);
+const FigureheadPower *figurehead_power(Kingdom k);
 
 /*--------------------------------------------------------------------------*\
                               SYNERGY REGISTRY
 \*--------------------------------------------------------------------------*/
 
-const Synergy* synergy_template(Kingdom cleared);
+const Synergy *synergy_template(Kingdom cleared);
 
 /*--------------------------------------------------------------------------*\
                               AI ARCHETYPE REGISTRY
 \*--------------------------------------------------------------------------*/
 
-const AIArchetype* ai_archetype(Kingdom k);
-size_t             ai_archetype_count(void);
+const AIArchetype *ai_archetype(Kingdom k);
+size_t ai_archetype_count(void);
 
 #endif /* REGISTRY_H */

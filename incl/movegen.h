@@ -33,7 +33,7 @@ struct BattleState;
 ///
 typedef struct {
     Position squares[MAX_MOVES];
-    uint8_t  count;
+    uint8_t count;
 } MoveList;
 
 /*--------------------------------------------------------------------------*\
@@ -47,8 +47,11 @@ typedef struct {
 /// for tuning, and writes results into `*out`.
 ///
 typedef void (*MoveGenFunc)(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// MoveGen
@@ -60,8 +63,8 @@ typedef void (*MoveGenFunc)(
 ///
 typedef struct MoveGen {
     MoveGenFunc func;
-    EffectArg   params[MAX_MOVE_PARAMS];
-    uint8_t     param_count;
+    EffectArg params[MAX_MOVE_PARAMS];
+    uint8_t param_count;
 } MoveGen;
 
 /*--------------------------------------------------------------------------*\
@@ -77,7 +80,7 @@ typedef struct MoveGen {
 /// - MoveList *ml -> destination list
 /// - Position p   -> board square to append
 ///
-void ml_push(MoveList* ml, Position p);
+void ml_push(MoveList *ml, Position p);
 
 /// is_enemy
 ///
@@ -92,7 +95,7 @@ void ml_push(MoveList* ml, Position p);
 /// Return:
 /// bool -> true when `at` is a non-null opposing-side piece
 ///
-bool is_enemy(const struct PieceState* piece, const struct PieceState* at);
+bool is_enemy(const struct PieceState *piece, const struct PieceState *at);
 
 /// is_friendly
 ///
@@ -106,7 +109,7 @@ bool is_enemy(const struct PieceState* piece, const struct PieceState* at);
 /// Return:
 /// bool -> true when `at` shares its owner with `piece`
 ///
-bool is_friendly(const struct PieceState* piece, const struct PieceState* at);
+bool is_friendly(const struct PieceState *piece, const struct PieceState *at);
 
 /// can_move_to
 ///
@@ -123,7 +126,9 @@ bool is_friendly(const struct PieceState* piece, const struct PieceState* at);
 /// bool -> true when the move would not violate base movement rules
 ///
 bool can_move_to(
-    const struct BattleState* bs, const struct PieceState* piece, Position to
+    const struct BattleState *bs,
+    const struct PieceState *piece,
+    Position to
 );
 
 /// can_capture
@@ -140,7 +145,9 @@ bool can_move_to(
 /// bool -> true when an enemy piece sits at `to` within the board
 ///
 bool can_capture(
-    const struct BattleState* bs, const struct PieceState* piece, Position to
+    const struct BattleState *bs,
+    const struct PieceState *piece,
+    Position to
 );
 
 /// can_capture_or_empty
@@ -158,7 +165,9 @@ bool can_capture(
 /// bool -> true when the square is occupiable by `piece`
 ///
 bool can_capture_or_empty(
-    const struct BattleState* bs, const struct PieceState* piece, Position to
+    const struct BattleState *bs,
+    const struct PieceState *piece,
+    Position to
 );
 
 /*--------------------------------------------------------------------------*\
@@ -171,8 +180,11 @@ bool can_capture_or_empty(
 /// params[1] is dy. The destination must satisfy can_move_to.
 ///
 void mg_step(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_step_set
@@ -182,8 +194,11 @@ void mg_step(
 /// arbitrary one-square jump set.
 ///
 void mg_step_set(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_slide
@@ -193,8 +208,11 @@ void mg_step_set(
 /// at that square is captured.
 ///
 void mg_slide(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_slide_dirs
@@ -204,8 +222,11 @@ void mg_slide(
 /// clock-face order E SE S SW W NW N NE.
 ///
 void mg_slide_dirs(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_leap_set
@@ -215,8 +236,11 @@ void mg_slide_dirs(
 /// destinations are skipped.
 ///
 void mg_leap_set(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_blockable_leap
@@ -225,8 +249,11 @@ void mg_leap_set(
 /// squares is empty. params: dx, dy, then (mid_dx, mid_dy) pairs.
 ///
 void mg_blockable_leap(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_compound
@@ -235,8 +262,11 @@ void mg_blockable_leap(
 /// MoveList. Implementation pending; currently a no-op stub.
 ///
 void mg_compound(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_choice
@@ -245,8 +275,11 @@ void mg_compound(
 /// caller to pick from. Implementation pending; currently a no-op.
 ///
 void mg_choice(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_double_act
@@ -255,8 +288,11 @@ void mg_choice(
 /// Implementation pending; currently a no-op stub.
 ///
 void mg_double_act(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_territory_restricted
@@ -265,8 +301,11 @@ void mg_double_act(
 /// mask. Implementation pending; currently a no-op stub.
 ///
 void mg_territory_restricted(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_attack_only_subset
@@ -276,8 +315,11 @@ void mg_territory_restricted(
 /// a no-op stub.
 ///
 void mg_attack_only_subset(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_todo
@@ -288,8 +330,11 @@ void mg_attack_only_subset(
 /// replaces it.
 ///
 void mg_todo(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /*--------------------------------------------------------------------------*\
@@ -302,8 +347,11 @@ void mg_todo(
 /// "elbow" square. Used by the Longwei Ma piece.
 ///
 void mg_lw_ma(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_lw_xiang
@@ -312,8 +360,11 @@ void mg_lw_ma(
 /// movement rule including the no-attack-in-enemy-territory clause.
 ///
 void mg_lw_xiang(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_lw_pao
@@ -323,8 +374,11 @@ void mg_lw_xiang(
 /// target along the chosen line.
 ///
 void mg_lw_pao(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_lw_hwacha
@@ -333,8 +387,11 @@ void mg_lw_pao(
 /// Drives the Longwei Hwacha combo piece.
 ///
 void mg_lw_hwacha(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_lw_sang
@@ -344,8 +401,11 @@ void mg_lw_hwacha(
 /// elephant move used by the Longwei Sang combo piece.
 ///
 void mg_lw_sang(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_lw_liubo
@@ -354,8 +414,11 @@ void mg_lw_sang(
 /// Drives the Longwei Liubo Diviner capstone.
 ///
 void mg_lw_liubo(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /*--------------------------------------------------------------------------*\
@@ -369,8 +432,11 @@ void mg_lw_liubo(
 /// the Honorable Horse after it enters enemy territory.
 ///
 void mg_hs_kinsho(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_hs_ginsho
@@ -379,8 +445,11 @@ void mg_hs_kinsho(
 /// the Harushima Ginsho piece.
 ///
 void mg_hs_ginsho(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_hs_honorable_horse
@@ -390,8 +459,11 @@ void mg_hs_ginsho(
 /// mg_hs_kinsho once the piece first enters enemy territory.
 ///
 void mg_hs_honorable_horse(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_hs_shishi
@@ -401,8 +473,11 @@ void mg_hs_honorable_horse(
 /// Used by the Harushima Shishi capstone.
 ///
 void mg_hs_shishi(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /*--------------------------------------------------------------------------*\
@@ -416,8 +491,11 @@ void mg_hs_shishi(
 /// top of the board).
 ///
 void mg_kw_berolina(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_kw_negus_guard
@@ -427,8 +505,11 @@ void mg_kw_berolina(
 /// Negus Guard and the Sultan's Levy splitter.
 ///
 void mg_kw_negus_guard(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /*--------------------------------------------------------------------------*\
@@ -442,8 +523,11 @@ void mg_kw_negus_guard(
 /// destination may hold an enemy.
 ///
 void mg_zq_ziraafa(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_zq_swap_with_king
@@ -452,8 +536,11 @@ void mg_zq_ziraafa(
 /// action API can treat the Shahzadeh's free king swap uniformly.
 ///
 void mg_zq_swap_with_king(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /// mg_zq_war_elephant
@@ -463,8 +550,11 @@ void mg_zq_swap_with_king(
 /// neighbours simultaneously.
 ///
 void mg_zq_war_elephant(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /*--------------------------------------------------------------------------*\
@@ -478,8 +568,11 @@ void mg_zq_war_elephant(
 /// on the first occupant.
 ///
 void mg_ca_gryphon(
-    const struct PieceState* piece, const struct BattleState* bs,
-    const EffectArg* params, size_t n, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    const EffectArg *params,
+    size_t n,
+    MoveList *out
 );
 
 /*--------------------------------------------------------------------------*\
@@ -493,7 +586,9 @@ void mg_ca_gryphon(
 /// otherwise the template's move pattern is used.
 ///
 void mg_generate(
-    const struct PieceState* piece, const struct BattleState* bs, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    MoveList *out
 );
 
 /// mg_generate_threat
@@ -503,7 +598,9 @@ void mg_generate(
 /// matching the GDD's resolve rule for most pieces.
 ///
 void mg_generate_threat(
-    const struct PieceState* piece, const struct BattleState* bs, MoveList* out
+    const struct PieceState *piece,
+    const struct BattleState *bs,
+    MoveList *out
 );
 
 #endif /* MOVEGEN_H */

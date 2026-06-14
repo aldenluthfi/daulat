@@ -76,7 +76,9 @@ typedef enum {
 /// argument list the data file recorded for this effect entry.
 ///
 typedef void (*EffectFunc)(
-    struct EffectCtx* ctx, const EffectArg* args, size_t n
+    struct EffectCtx *ctx,
+    const EffectArg *args,
+    size_t n
 );
 
 /// Effect
@@ -88,12 +90,12 @@ typedef void (*EffectFunc)(
 ///
 typedef struct {
     EffectTrigger trigger;
-    EffectFunc    apply;
-    EffectArg     args[MAX_EFFECT_ARGS];
-    uint8_t       arg_count;
-    int16_t       duration_turns;
-    Side          owner;
-    uint32_t      source_id;
+    EffectFunc apply;
+    EffectArg args[MAX_EFFECT_ARGS];
+    uint8_t arg_count;
+    int16_t duration_turns;
+    Side owner;
+    uint32_t source_id;
 } Effect;
 
 /// EffectSlot
@@ -103,9 +105,9 @@ typedef struct {
 /// they are merely deactivated when their effect expires.
 ///
 typedef struct {
-    const Effect* effect;
-    int16_t       remaining_turns;
-    bool          active;
+    const Effect *effect;
+    int16_t remaining_turns;
+    bool active;
 } EffectSlot;
 
 /*--------------------------------------------------------------------------*\
@@ -123,31 +125,31 @@ struct EffectCtx {
     EffectTrigger trigger;
     union {
         struct {
-            struct PieceState* attacker;
-            struct PieceState* target;
-            int*               damage_out;
-            int*               damage_mult_out;
-            int*               reduction_out;
+            struct PieceState *attacker;
+            struct PieceState *target;
+            int *damage_out;
+            int *damage_mult_out;
+            int *reduction_out;
         } resolve;
         struct {
-            struct PieceState* piece;
-            Position*          pos;
+            struct PieceState *piece;
+            Position *pos;
         } piece;
         struct {
-            Side          side;
-            CardInstance* card;
-            int*          count_out;
-            int*          value_out;
+            Side side;
+            CardInstance *card;
+            int *count_out;
+            int *value_out;
         } card;
         struct {
-            int* income_out;
-            int* cost_out;
-            int* moves_out;
-            int* meter_cap_out;
+            int *income_out;
+            int *cost_out;
+            int *moves_out;
+            int *meter_cap_out;
         } query;
         struct {
-            struct PieceState* piece;
-            MoveGen*           move_out;
+            struct PieceState *piece;
+            MoveGen *move_out;
         } movement;
         struct {
             Kingdom kingdom;
@@ -170,7 +172,7 @@ struct EffectCtx {
 ///
 typedef struct {
     EffectSlot slots[MAX_EFFECTS];
-    uint16_t   count;
+    uint16_t count;
 } EffectBus;
 
 /*--------------------------------------------------------------------------*\
@@ -185,7 +187,7 @@ typedef struct {
 /// Params:
 /// - EffectBus *bus -> bus to initialise
 ///
-void bus_init(EffectBus* bus);
+void bus_init(EffectBus *bus);
 
 /// bus_register
 ///
@@ -196,7 +198,7 @@ void bus_init(EffectBus* bus);
 /// - EffectBus    *bus -> destination bus
 /// - const Effect *e   -> effect to register; copied by reference
 ///
-void bus_register(EffectBus* bus, const Effect* e);
+void bus_register(EffectBus *bus, const Effect *e);
 
 /// bus_emit
 ///
@@ -211,8 +213,10 @@ void bus_register(EffectBus* bus, const Effect* e);
 /// - struct EffectCtx  *ctx     -> evidence (mutated with trigger)
 ///
 void bus_emit(
-    EffectBus* bus, struct BattleState* bs, EffectTrigger trigger,
-    struct EffectCtx* ctx
+    EffectBus *bus,
+    struct BattleState *bs,
+    EffectTrigger trigger,
+    struct EffectCtx *ctx
 );
 
 /// bus_tick_turn_end
@@ -223,7 +227,7 @@ void bus_emit(
 /// Params:
 /// - EffectBus *bus -> bus to tick
 ///
-void bus_tick_turn_end(EffectBus* bus);
+void bus_tick_turn_end(EffectBus *bus);
 
 /// bus_tick_turn_start
 ///
@@ -234,7 +238,7 @@ void bus_tick_turn_end(EffectBus* bus);
 /// Params:
 /// - EffectBus *bus -> bus to tick
 ///
-void bus_tick_turn_start(EffectBus* bus);
+void bus_tick_turn_start(EffectBus *bus);
 
 /// bus_query_count
 ///
@@ -248,7 +252,7 @@ void bus_tick_turn_start(EffectBus* bus);
 /// Return:
 /// size_t -> number of active matching slots
 ///
-size_t bus_query_count(const EffectBus* bus, EffectTrigger t);
+size_t bus_query_count(const EffectBus *bus, EffectTrigger t);
 
 /// bus_evict_by_source
 ///
@@ -260,7 +264,7 @@ size_t bus_query_count(const EffectBus* bus, EffectTrigger t);
 /// - EffectBus *bus       -> bus to scan
 /// - uint32_t   source_id -> source identifier to match
 ///
-void bus_evict_by_source(EffectBus* bus, uint32_t source_id);
+void bus_evict_by_source(EffectBus *bus, uint32_t source_id);
 
 /*--------------------------------------------------------------------------*\
                               SHARED PLACEHOLDER
@@ -282,6 +286,6 @@ void bus_evict_by_source(EffectBus* bus, uint32_t source_id);
 /// per-file static duplicates — the placeholder must remain a single
 /// symbol so counting unimplemented effects stays trivial.
 ///
-void eff_todo(struct EffectCtx* ctx, const EffectArg* args, size_t n);
+void eff_todo(struct EffectCtx *ctx, const EffectArg *args, size_t n);
 
 #endif /* EFFECT_H */
