@@ -9,7 +9,7 @@ BUILD_DIR = build
 BIN_DIR = bin
 
 # Source files
-SRC_FILES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/**/*.c)
+SRC_FILES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*/*.c)
 OBJ_FILES = $(SRC_FILES:%=$(BUILD_DIR)/%.o)
 
 # Targets
@@ -19,16 +19,16 @@ TARGET = $(BIN_DIR)/regnum
 INC_FLAGS = $(addprefix -I, $(INC_DIR))
 
 # =============================================================================
-# Debug mode: symbols, no optimization, assertions enabled
+# Debug mode: symbols, no optimization, assertions enabled, strict warnings
 # =============================================================================
-debug: CFLAGS += -g -O0 -DDEBUG -Wall -Wextra
+debug: CFLAGS += -g -O0 -DDEBUG -Wall -Wextra -Werror -std=c11
 debug: CFLAGS += $(INC_FLAGS)
 debug: all
 
 # =============================================================================
 # Release mode: optimized, no debug info, stripped
 # =============================================================================
-release: CFLAGS += -O3 -ffast-math -DNDEBUG -Wall
+release: CFLAGS += -O3 -ffast-math -DNDEBUG -Wall -std=c11
 release: CFLAGS += $(INC_FLAGS)
 release: all
 
@@ -40,10 +40,10 @@ all: $(BUILD_DIR) $(BIN_DIR) $(TARGET)
 $(TARGET): $(OBJ_FILES)
 	$(CC) $(OBJ_FILES) -o $@ $(LDFLAGS)
 
-# Pattern rule for object files
+# Pattern rule for object files + header dependencies
 $(BUILD_DIR)/%.c.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
 
 # Create output directories
 $(BUILD_DIR):

@@ -1,0 +1,28 @@
+---
+Language: C
+
+ColumnLimit: 80
+
+IndentWidth: 4
+
+BreakBeforeBraces: Attach
+
+PointerAlignment: Left
+
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 0
+
+ReflowComments: false
+
+SortIncludes: Never
+
+IncludeBlocks: Preserve
+
+AlignAfterOpenBracket: BlockIndent
+
+AllowAllArgumentsOnNextLine: false
+
+AllowAllParametersOfDeclarationOnNextLine: false
