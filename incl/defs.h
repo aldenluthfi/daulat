@@ -14,26 +14,26 @@
                               SIZE LIMITS
 \*--------------------------------------------------------------------------*/
 
-#define MAX_PIECES 128
-#define MAX_PIECES_PER_SIDE 64
-#define MAX_HAND 12
-#define MAX_CARDSET 96
-#define MAX_EFFECTS 256
-#define MAX_EFFECT_ARGS 6
-#define MAX_PIECE_BUFFS 8
-#define MAX_PIECE_PASSIVES 4
-#define MAX_CARD_EFFECTS 6
-#define MAX_MOVE_PARAMS 32
-#define MAX_SUB_MOVEGENS 4
-#define MAX_MOVES 64
-#define MAX_BOARD_DIM 20
-#define MAX_RELICS_HELD 26
-#define MAX_EVENTS 128
+#define MAX_PIECES           128
+#define MAX_PIECES_PER_SIDE  64
+#define MAX_HAND             12
+#define MAX_CARDSET          96
+#define MAX_EFFECTS          256
+#define MAX_EFFECT_ARGS      6
+#define MAX_PIECE_BUFFS      8
+#define MAX_PIECE_PASSIVES   4
+#define MAX_CARD_EFFECTS     6
+#define MAX_MOVE_PARAMS      32
+#define MAX_SUB_MOVEGENS     4
+#define MAX_MOVES            64
+#define MAX_BOARD_DIM        20
+#define MAX_RELICS_HELD      26
+#define MAX_EVENTS           128
 #define MAX_BATTLE_MODIFIERS 8
-#define MAX_BOARD_TRAITS 4
-#define MAX_HANDLERS 16
-#define MAX_COMBO_KINGDOMS 5
-#define MAX_COMBO_PAIRS 32
+#define MAX_BOARD_TRAITS     4
+#define MAX_HANDLERS         16
+#define MAX_COMBO_KINGDOMS   5
+#define MAX_COMBO_PAIRS      32
 
 /*--------------------------------------------------------------------------*\
                               VERSION
@@ -49,7 +49,7 @@
 
 typedef enum {
     PIECE_KING = 0,
-    /* Longwei (Xiangqi/Janggi) */
+    /* Longwei (Xiangqi/Janggi): 5 base + 3 combos */
     PIECE_BING,
     PIECE_XIANG,
     PIECE_MA,
@@ -58,7 +58,7 @@ typedef enum {
     PIECE_SANG,
     PIECE_NORTHERN_CAVALRY,
     PIECE_HWACHA,
-    /* Harushima (Shogi/Chu Shogi) */
+    /* Harushima (Shogi/Chu Shogi): 5 base + 4 combos */
     PIECE_FUHYO,
     PIECE_KYOSHA,
     PIECE_GINSHO,
@@ -68,7 +68,7 @@ typedef enum {
     PIECE_PROMOTED_BISHOP,
     PIECE_DAIMYO,
     PIECE_DRAGON,
-    /* Kewarani (Senterej) */
+    /* Kewarani (Senterej): 5 base + 2 combos */
     PIECE_MEDEQ,
     PIECE_MAKWANAM,
     PIECE_SABA,
@@ -76,23 +76,23 @@ typedef enum {
     PIECE_NEGUS_GUARD,
     PIECE_MEDEQ_SQUAD,
     PIECE_SULTANS_LEVY,
-    /* Zarqan (Tamerlane/Shatranj) */
+    /* Zarqan (Tamerlane/Shatranj): 5 base + 4 combos */
     PIECE_WAZIR,
     PIECE_JAMAL,
     PIECE_TALLIYA,
-    PIECE_OLD_KING,
-    PIECE_CATAPHRACT,
     PIECE_ZIRAAFA,
     PIECE_SHAHZADEH,
+    PIECE_OLD_KING,
+    PIECE_CATAPHRACT,
+    PIECE_ROOK,
     PIECE_WAR_ELEPHANT,
-    /* Caelan (standard chess) */
+    /* Caelan (standard chess): 5 base + 2 combos */
     PIECE_PAWN,
     PIECE_KNIGHT,
     PIECE_BISHOP,
-    PIECE_ROOK,
     PIECE_QUEEN,
-    PIECE_CHANCELLOR,
     PIECE_GRYPHON,
+    PIECE_CHANCELLOR,
     PIECE_SOVEREIGN_BANNER,
     PIECE_ID_COUNT
 } PieceId;
@@ -117,46 +117,52 @@ typedef enum {
     CARD_HYDRA,
     /* Longwei (7) */
     CARD_RIVER_WADE,
-    CARD_FORTUNE_TELLER,
-    CARD_SKY_LADDERS,
+    CARD_CHARGE,
+    CARD_FORMATION,
+    CARD_DIVINATION,
+    CARD_CANNON_VOLLEY,
+    CARD_PALACE_DECREE,
     CARD_MANDATE,
-    CARD_WAR_CHARIOT,
-    CARD_BULL_RUSH,
-    CARD_WISDOM,
     /* Harushima (7) */
     CARD_RONIN,
-    CARD_TAKENOKO,
+    CARD_RESURRECTION,
+    CARD_GOLD_STANDARD,
+    CARD_PROMOTION,
+    CARD_DUAL_DROP,
+    CARD_FORCE_DROP,
     CARD_BUSHIDO,
-    CARD_HONOR,
-    CARD_STRATAGEM,
-    CARD_GLORY,
-    CARD_REVENGE,
     /* Kewarani (7) */
     CARD_SULTANS_GOLD,
-    CARD_PILGRIMAGE,
-    CARD_CORONATION,
-    CARD_JIHAD,
-    CARD_BAZAAR,
-    CARD_WAHHAB,
+    CARD_MARCH,
+    CARD_DOUBLE_TIME,
+    CARD_SALT_ROAD,
+    CARD_CARAVAN,
+    CARD_DOUBLESTRIKE,
     CARD_HAJJ,
     /* Zarqan (8) */
     CARD_COUNSEL,
+    CARD_PILLAGE,
+    CARD_ROYAL_DECOY,
+    CARD_BAZAAR,
+    CARD_STEPPE_RIDERS,
     CARD_AMBITION,
+    CARD_CITADEL,
     CARD_CONQUEST,
-    CARD_FORTUNE,
-    CARD_CRUSADE,
-    CARD_DIVINE_RIGHT,
-    CARD_INTRIGUE,
-    CARD_TREACHERY,
     /* Caelan (8) */
     CARD_CASTLING,
-    CARD_CATHEDRAL,
-    CARD_ASSEMBLY,
-    CARD_PROMOTION,
-    CARD_GOLD_STANDARD,
-    CARD_FORMATION,
+    CARD_QUEENS_GAMBIT,
+    CARD_VENGEANCE,
     CARD_QUEENS_DECREE,
-    CARD_DIVINE_INTERVENTION,
+    CARD_CATHEDRAL,
+    CARD_CORONATION,
+    CARD_CRUSADE,
+    CARD_DIVINE_RIGHT,
+    /* Mastery-2 figurehead cards (5) */
+    CARD_MINGZHUS_SEAL,
+    CARD_TOMOHITOS_PATIENCE,
+    CARD_SELASSIES_MARCH,
+    CARD_TIMURS_CONQUEST,
+    CARD_ISABELLAS_CORONATION,
     CARD_ID_COUNT
 } CardId;
 
@@ -165,36 +171,37 @@ typedef enum {
 \*--------------------------------------------------------------------------*/
 
 typedef enum {
-    /* Economy */
+    /* Economy (6) */
     RELIC_MERCHANTS_LEDGER,
-    RELIC_TREASURY_KEY,
-    RELIC_GOLDEN_LAMP,
-    RELIC_TRIBUTE_CHEST,
-    RELIC_WANDERING_COIN,
-    /* Meter */
-    RELIC_STORM_BELL,
-    RELIC_OVERFLOW_ORB,
-    RELIC_METER_MASON,
-    RELIC_TIDE_CALLER,
-    RELIC_RESERVOIR_STONE,
-    /* Cards */
-    RELIC_CARDSMITH_HAMMER,
-    RELIC_DECK_TRAY,
-    RELIC_WILD_JOKER,
-    RELIC_SCRIBBLERS_QUILL,
-    RELIC_CARDINAL_ROBE,
-    /* Combinations */
-    RELIC_ALCHEMISTS_STONE,
-    RELIC_FUSION_FURNACE,
-    RELIC_COMBINE_CATALYST,
-    RELIC_TRANSMUTE_CRYSTAL,
-    RELIC_MASTERWORK_ANVIL,
-    /* Board */
-    RELIC_FORTRESS_WALL,
-    RELIC_BATTLE_STANDARD,
-    RELIC_MIRROR_SHIELD,
-    RELIC_PATHFINDER_BOOTS,
-    RELIC_TERRITORY_MAP,
+    RELIC_MINTED_COIN,
+    RELIC_TAX_STAMP,
+    RELIC_BULK_DISCOUNT,
+    RELIC_WAR_CHEST,
+    RELIC_TRADE_ROUTES,
+    /* Meter (6) */
+    RELIC_SOUL_SHARD,
+    RELIC_VETERANS_BOND,
+    RELIC_DEAD_MANS_PACT,
+    RELIC_IRON_KING,
+    RELIC_BLOODTHIRST,
+    RELIC_LAST_BREATH,
+    /* Cards (5) */
+    RELIC_TACTICIANS_SCROLL,
+    RELIC_LIBRARIANS_NOTES,
+    RELIC_COUNTRY_SEAL,
+    RELIC_DEEP_HAND,
+    RELIC_GILDED_ARCHIVE,
+    /* Combinations (4) */
+    RELIC_ALCHEMISTS_KIT,
+    RELIC_MASTERS_NOTES,
+    RELIC_PHILOSOPHERS_STONE,
+    RELIC_INHERITED_POWER,
+    /* Board (5) */
+    RELIC_EAGLE_EYE,
+    RELIC_SURVEYORS_MAP,
+    RELIC_FORWARD_COMMAND,
+    RELIC_FORTIFIED_LINE,
+    RELIC_WARLORDS_BANNER,
     RELIC_ID_COUNT
 } RelicId;
 
@@ -214,14 +221,22 @@ typedef enum {
 typedef enum { CHAIN_BRONZE, CHAIN_SILVER, CHAIN_GOLD, CHAIN_COUNT } ChainId;
 
 typedef enum {
-    MODIFIER_ECONOMY_BOOST,
-    MODIFIER_ECONOMY_DRAIN,
-    MODIFIER_METER_BOOST,
-    MODIFIER_METER_DRAIN,
-    MODIFIER_CARDS_BOOST,
-    MODIFIER_CARDS_DRAIN,
-    MODIFIER_BOARD_BOOST,
-    MODIFIER_BOARD_DRAIN,
+    /* Economy */
+    MODIFIER_LEAN_TIMES,
+    MODIFIER_WINDFALL,
+    MODIFIER_OPEN_MARKET,
+    /* Meter */
+    MODIFIER_GLASS_CANNON,
+    MODIFIER_BLOODBATH,
+    MODIFIER_IRON_WILL,
+    /* Cards */
+    MODIFIER_RICH_HAND,
+    MODIFIER_SPARSE_HAND,
+    MODIFIER_KINGDOM_PURITY,
+    /* Board */
+    MODIFIER_FOG_OF_WAR,
+    MODIFIER_DENSE_TERRAIN,
+    MODIFIER_EXTENDED_FRONT,
     MODIFIER_COUNT
 } ModifierId;
 
@@ -276,15 +291,6 @@ typedef enum {
 } SynergyId;
 
 typedef enum {
-    MASTERY_CARD_LONGWEI,
-    MASTERY_CARD_HARUSHIMA,
-    MASTERY_CARD_KEWARANI,
-    MASTERY_CARD_ZARQAN,
-    MASTERY_CARD_CAELAN,
-    MASTERY_COUNT
-} MasteryId;
-
-typedef enum {
     FIGUREHEAD_POWER_LONGWEI,
     FIGUREHEAD_POWER_HARUSHIMA,
     FIGUREHEAD_POWER_KEWARANI,
@@ -294,11 +300,11 @@ typedef enum {
 } FigureheadPowerId;
 
 typedef enum {
-    ARCHETYPE_STANDARD,
+    ARCHETYPE_SIEGE_ENGINEER,
     ARCHETYPE_RECLAIMER,
+    ARCHETYPE_THE_TIDE,
     ARCHETYPE_TRICKSTER,
-    ARCHETYPE_BERSERKER,
-    ARCHETYPE_DEFENDER,
+    ARCHETYPE_THE_HAMMER,
     ARCHETYPE_COUNT
 } ArchetypeId;
 

@@ -21,7 +21,7 @@ uint64_t rng_next(Rng* rng) {
 }
 
 uint64_t rng_bound(Rng* rng, uint64_t bound) {
-    uint64_t mask = bound - 1; 
+    uint64_t mask = bound - 1;
     mask |= mask >> 1;
     mask |= mask >> 2;
     mask |= mask >> 4;

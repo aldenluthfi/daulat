@@ -16,8 +16,8 @@ void eff_cp_add(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     struct BattleState* bs = (struct BattleState*)ctx;
     if (n < 1)
         return;
-    int delta = (int)args[0].v.i;
-    Side s = bs->active_side;
+    int  delta = (int)args[0].v.i;
+    Side s     = bs->active_side;
     bs->cp[s] += delta;
     if (bs->cp[s] < 0)
         bs->cp[s] = 0;
@@ -28,8 +28,8 @@ void eff_cp_set(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     struct BattleState* bs = (struct BattleState*)ctx;
     if (n < 1)
         return;
-    int val = (int)args[0].v.i;
-    Side s = bs->active_side;
+    int  val  = (int)args[0].v.i;
+    Side s    = bs->active_side;
     bs->cp[s] = val;
     if (bs->cp[s] < 0)
         bs->cp[s] = 0;

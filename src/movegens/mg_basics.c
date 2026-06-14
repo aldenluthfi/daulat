@@ -220,8 +220,8 @@ void mg_slide(
 ) {
     if (n < 4)
         return;
-    int dx = (int)params[0].v.i;
-    int dy = (int)params[1].v.i;
+    int dx    = (int)params[0].v.i;
+    int dy    = (int)params[1].v.i;
     int min_d = (int)params[2].v.i;
     int max_d = (int)params[3].v.i;
     for (int dist = min_d; dist <= max_d; dist++) {
@@ -261,9 +261,9 @@ void mg_slide_dirs(
 ) {
     if (n < 3)
         return;
-    uint32_t mask = (uint32_t)params[0].v.i;
-    int min_d = (int)params[1].v.i;
-    int max_d = (int)params[2].v.i;
+    uint32_t            mask  = (uint32_t)params[0].v.i;
+    int                 min_d = (int)params[1].v.i;
+    int                 max_d = (int)params[2].v.i;
     static const int8_t DX[8] = {1, 1, 0, -1, -1, -1, 0, 1};
     static const int8_t DY[8] = {0, 1, 1, 1, 0, -1, -1, -1};
     for (int dir = 0; dir < 8; dir++) {
@@ -340,8 +340,8 @@ void mg_blockable_leap(
 ) {
     if (n < 2)
         return;
-    int dx = (int)params[0].v.i;
-    int dy = (int)params[1].v.i;
+    int      dx = (int)params[0].v.i;
+    int      dy = (int)params[1].v.i;
     Position to = {piece->pos.x + dx, piece->pos.y + dy};
     if (!can_capture(bs, piece, to))
         return;
@@ -546,7 +546,7 @@ void mg_todo(
 void mg_generate(
     const PieceState* piece, const BattleState* bs, MoveList* out
 ) {
-    out->count = 0;
+    out->count        = 0;
     const MoveGen* mg = NULL;
     if (piece->move_override.func != NULL) {
         mg = &piece->move_override;
@@ -573,7 +573,7 @@ void mg_generate(
 void mg_generate_threat(
     const PieceState* piece, const BattleState* bs, MoveList* out
 ) {
-    out->count = 0;
+    out->count        = 0;
     const MoveGen* mg = NULL;
     if (piece->threat_override.func != NULL) {
         mg = &piece->threat_override;

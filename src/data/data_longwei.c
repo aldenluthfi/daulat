@@ -24,85 +24,92 @@
 /// registry routes PIECE_KING to PIECES_UNIVERSAL[0] directly so a
 /// duplicate king entry here would be dead weight.
 ///
-const PieceTemplate PIECES_LONGWEI[] =
-    {
-        [PIECE_BING] =
-            {
-                .id = PIECE_BING,
-                .name = "Bing",
-                .kingdom = KINGDOM_LONGWEI,
-                .tier = TIER_DISTRICT,
-                .base_value = 1,
-                .move = {.func = mg_step,
-                         .params = {{.type = EARG_INT, .v.i = 0},
-                                    {.type = EARG_INT, .v.i = 1}},
+const PieceTemplate
+    PIECES_LONGWEI[] =
+        {
+            [PIECE_BING] =
+                {
+                    .id         = PIECE_BING,
+                    .name       = "Bing",
+                    .kingdom    = KINGDOM_LONGWEI,
+                    .tier       = TIER_DISTRICT,
+                    .base_value = 1,
+                    .move =
+                        {.func = mg_step,
+                         .params =
+                             {{.type = EARG_INT, .v.i = 0},
+                              {.type = EARG_INT, .v.i = 1}},
                          .param_count = 2},
-                .passives = {},
-                .passive_count = 0,
-            },
-        [PIECE_XIANG] =
-            {
-                .id = PIECE_XIANG,
-                .name = "Xiang",
-                .kingdom = KINGDOM_LONGWEI,
-                .tier = TIER_TOWN,
-                .base_value = 2,
-                .move = {.func = mg_lw_xiang, .params = {}, .param_count = 0},
-                .passives = {},
-                .passive_count = 0,
-            },
-        [PIECE_MA] =
-            {
-                .id = PIECE_MA,
-                .name = "Ma",
-                .kingdom = KINGDOM_LONGWEI,
-                .tier = TIER_TOWN,
-                .base_value = 3,
-                .move = {.func = mg_lw_ma, .params = {}, .param_count = 0},
-                .passives = {},
-                .passive_count = 0,
-            },
-        [PIECE_PAO] =
-            {
-                .id = PIECE_PAO,
-                .name = "Pao",
-                .kingdom = KINGDOM_LONGWEI,
-                .tier = TIER_PROVINCE,
-                .base_value = 4,
-                .move = {.func = mg_lw_pao, .params = {}, .param_count = 0},
-                .passives = {},
-                .passive_count = 0,
-            },
-        [PIECE_LIUBO_DIVINER] =
-            {
-                .id = PIECE_LIUBO_DIVINER,
-                .name = "Liubo Diviner",
-                .kingdom = KINGDOM_LONGWEI,
-                .tier = TIER_COUNTRY,
-                .base_value = 5,
-                .move = {.func = mg_lw_liubo, .params = {}, .param_count = 0},
-                .passives = {},
-                .passive_count = 0,
-            },
-        [PIECE_SANG] =
-            {
-                .id = PIECE_SANG,
-                .name = "Sang",
-                .kingdom = KINGDOM_LONGWEI,
-                .tier = TIER_CAPSTONE,
-                .base_value = 6,
-                .move = {.func = mg_lw_sang, .params = {}, .param_count = 0},
-                .passives = {},
-                .passive_count = 0,
-            },
-        [PIECE_NORTHERN_CAVALRY] =
-            {
-                .id = PIECE_NORTHERN_CAVALRY,
-                .name = "Northern Cavalry",
-                .kingdom = KINGDOM_LONGWEI,
-                .tier = TIER_CAPSTONE,
-                .base_value = 7,
-                .move = {.func = mg_leap_set,
+                    .passives      = {},
+                    .passive_count = 0,
+                },
+            [PIECE_XIANG] =
+                {
+                    .id         = PIECE_XIANG,
+                    .name       = "Xiang",
+                    .kingdom    = KINGDOM_LONGWEI,
+                    .tier       = TIER_TOWN,
+                    .base_value = 2,
+                    .move =
+                        {.func = mg_lw_xiang, .params = {}, .param_count = 0},
+                    .passives      = {},
+                    .passive_count = 0,
+                },
+            [PIECE_MA] =
+                {
+                    .id         = PIECE_MA,
+                    .name       = "Ma",
+                    .kingdom    = KINGDOM_LONGWEI,
+                    .tier       = TIER_TOWN,
+                    .base_value = 3,
+                    .move = {.func = mg_lw_ma, .params = {}, .param_count = 0},
+                    .passives      = {},
+                    .passive_count = 0,
+                },
+            [PIECE_PAO] =
+                {
+                    .id         = PIECE_PAO,
+                    .name       = "Pao",
+                    .kingdom    = KINGDOM_LONGWEI,
+                    .tier       = TIER_PROVINCE,
+                    .base_value = 4,
+                    .move = {.func = mg_lw_pao, .params = {}, .param_count = 0},
+                    .passives      = {},
+                    .passive_count = 0,
+                },
+            [PIECE_LIUBO_DIVINER] =
+                {
+                    .id         = PIECE_LIUBO_DIVINER,
+                    .name       = "Liubo Diviner",
+                    .kingdom    = KINGDOM_LONGWEI,
+                    .tier       = TIER_COUNTRY,
+                    .base_value = 5,
+                    .move =
+                        {.func = mg_lw_liubo, .params = {}, .param_count = 0},
+                    .passives      = {},
+                    .passive_count = 0,
+                },
+            [PIECE_SANG] =
+                {
+                    .id         = PIECE_SANG,
+                    .name       = "Sang",
+                    .kingdom    = KINGDOM_LONGWEI,
+                    .tier       = TIER_CAPSTONE,
+                    .base_value = 6,
+                    .move =
+                        {.func = mg_lw_sang, .params = {}, .param_count = 0},
+                    .passives      = {},
+                    .passive_count = 0,
+                },
+            [PIECE_NORTHERN_CAVALRY] =
+                {
+                    .id         = PIECE_NORTHERN_CAVALRY,
+                    .name       = "Northern Cavalry",
+                    .kingdom    = KINGDOM_LONGWEI,
+                    .tier       = TIER_CAPSTONE,
+                    .base_value = 7,
+                    .move =
+                        {.func = mg_leap_set,
                          .params =
                              {
                                  {.type = EARG_INT, .v.i = 1},
@@ -123,21 +130,21 @@ const PieceTemplate PIECES_LONGWEI[] =
                                  {.type = EARG_INT, .v.i = -2},
                              },
                          .param_count = 16},
-                .passives =
-                    {
-                        {.trigger = TRIGGER_RESOLVE_DEFENSE, .apply = eff_todo},
-                    },
-                .passive_count = 1,
-            },
-        [PIECE_HWACHA] =
-            {
-                .id = PIECE_HWACHA,
-                .name = "Hwacha",
-                .kingdom = KINGDOM_LONGWEI,
-                .tier = TIER_CAPSTONE,
+                    .passives =
+                        {
+                            {.trigger = TRIGGER_RESOLVE_DEFENSE,
+                             .apply   = eff_todo},
+                        },
+                    .passive_count = 1,
+                },
+            [PIECE_HWACHA] = {
+                .id         = PIECE_HWACHA,
+                .name       = "Hwacha",
+                .kingdom    = KINGDOM_LONGWEI,
+                .tier       = TIER_CAPSTONE,
                 .base_value = 8,
                 .move = {.func = mg_lw_hwacha, .params = {}, .param_count = 0},
-                .passives = {},
+                .passives      = {},
                 .passive_count = 0,
             },
 };
@@ -159,78 +166,78 @@ const size_t PIECES_LONGWEI_COUNT =
 const CardTemplate CARDS_LONGWEI[] = {
     [CARD_RIVER_WADE] =
         {
-            .id = CARD_RIVER_WADE,
-            .name = "River Wade",
-            .kingdom = KINGDOM_LONGWEI,
-            .tier = TIER_DISTRICT,
-            .play_cost = 2,
+            .id         = CARD_RIVER_WADE,
+            .name       = "River Wade",
+            .kingdom    = KINGDOM_LONGWEI,
+            .tier       = TIER_DISTRICT,
+            .play_cost  = 2,
             .sell_value = 1,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
             .play_effect_count = 1,
         },
-    [CARD_FORTUNE_TELLER] =
+    [CARD_CHARGE] =
         {
-            .id = CARD_FORTUNE_TELLER,
-            .name = "Fortune Teller",
-            .kingdom = KINGDOM_LONGWEI,
-            .tier = TIER_TOWN,
-            .play_cost = 3,
-            .sell_value = 2,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_SKY_LADDERS] =
-        {
-            .id = CARD_SKY_LADDERS,
-            .name = "Sky Ladders",
-            .kingdom = KINGDOM_LONGWEI,
-            .tier = TIER_PROVINCE,
-            .play_cost = 4,
-            .sell_value = 2,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_MANDATE] =
-        {
-            .id = CARD_MANDATE,
-            .name = "Mandate",
-            .kingdom = KINGDOM_LONGWEI,
-            .tier = TIER_COUNTRY,
-            .play_cost = 5,
-            .sell_value = 3,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_WAR_CHARIOT] =
-        {
-            .id = CARD_WAR_CHARIOT,
-            .name = "War Chariot",
-            .kingdom = KINGDOM_LONGWEI,
-            .tier = TIER_COUNTRY,
-            .play_cost = 6,
-            .sell_value = 3,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_BULL_RUSH] =
-        {
-            .id = CARD_BULL_RUSH,
-            .name = "Bull Rush",
-            .kingdom = KINGDOM_LONGWEI,
-            .tier = TIER_DISTRICT,
-            .play_cost = 2,
+            .id         = CARD_CHARGE,
+            .name       = "Charge",
+            .kingdom    = KINGDOM_LONGWEI,
+            .tier       = TIER_DISTRICT,
+            .play_cost  = 2,
             .sell_value = 1,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
             .play_effect_count = 1,
         },
-    [CARD_WISDOM] = {
-        .id = CARD_WISDOM,
-        .name = "Wisdom",
-        .kingdom = KINGDOM_LONGWEI,
-        .tier = TIER_PROVINCE,
-        .play_cost = 3,
-        .sell_value = 2,
-        .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+    [CARD_FORMATION] =
+        {
+            .id         = CARD_FORMATION,
+            .name       = "Formation",
+            .kingdom    = KINGDOM_LONGWEI,
+            .tier       = TIER_TOWN,
+            .play_cost  = 3,
+            .sell_value = 2,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_DIVINATION] =
+        {
+            .id         = CARD_DIVINATION,
+            .name       = "Divination",
+            .kingdom    = KINGDOM_LONGWEI,
+            .tier       = TIER_TOWN,
+            .play_cost  = 3,
+            .sell_value = 2,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_CANNON_VOLLEY] =
+        {
+            .id         = CARD_CANNON_VOLLEY,
+            .name       = "Cannon Volley",
+            .kingdom    = KINGDOM_LONGWEI,
+            .tier       = TIER_PROVINCE,
+            .play_cost  = 4,
+            .sell_value = 2,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_PALACE_DECREE] =
+        {
+            .id         = CARD_PALACE_DECREE,
+            .name       = "Palace Decree",
+            .kingdom    = KINGDOM_LONGWEI,
+            .tier       = TIER_PROVINCE,
+            .play_cost  = 4,
+            .sell_value = 2,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_MANDATE] = {
+        .id         = CARD_MANDATE,
+        .name       = "Mandate",
+        .kingdom    = KINGDOM_LONGWEI,
+        .tier       = TIER_COUNTRY,
+        .play_cost  = 5,
+        .sell_value = 3,
+        .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
         .play_effect_count = 1,
     },
 };

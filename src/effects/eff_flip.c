@@ -17,7 +17,7 @@ void eff_splitter_medeq(
 ) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }
 
 /// Grant immunity to flip this battle.
@@ -26,7 +26,7 @@ void eff_grant_flip_immunity(
 ) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }
 
 /// Trigger on-flip: destroy an adjacent enemy piece.
@@ -35,5 +35,5 @@ void eff_flip_destroy_adjacent(
 ) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }

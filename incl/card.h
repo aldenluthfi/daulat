@@ -25,17 +25,17 @@ typedef size_t (*TargetFunc)(
 
 /// Immutable description of a card type. Lives in src/data/data_*.c.
 typedef struct CardTemplate {
-    uint16_t id;
+    uint16_t    id;
     const char* name;
-    Kingdom kingdom;
-    Tier tier;
-    int play_cost; /* -1 if no play action */
-    int sell_value;
-    Effect on_play[MAX_CARD_EFFECTS];
-    uint8_t play_effect_count;
-    Effect on_sell[MAX_CARD_EFFECTS];
-    uint8_t sell_effect_count;
-    TargetFunc target_query;
+    Kingdom     kingdom;
+    Tier        tier;
+    int         play_cost; /* -1 if no play action */
+    int         sell_value;
+    Effect      on_play[MAX_CARD_EFFECTS];
+    uint8_t     play_effect_count;
+    Effect      on_sell[MAX_CARD_EFFECTS];
+    uint8_t     sell_effect_count;
+    TargetFunc  target_query;
 } CardTemplate;
 
 /*--------------------------------------------------------------------------*\

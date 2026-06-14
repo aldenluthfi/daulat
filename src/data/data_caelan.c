@@ -7,7 +7,8 @@
 //! Caelan follows the standard chess (plus Grant Acedrex) tradition:
 //! the player sits at the bottom (y=0) and pieces face forward. The
 //! Gryphon's two-stage walk lives in mg_caelan.c; everything else
-//! resolves to mg_basics primitives directly.
+//! resolves to mg_basics primitives directly. Rook is NOT a Caelan
+//! piece — per the GDD it is a Zarqan combo result (Kyosha + Wazir).
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
@@ -20,9 +21,9 @@
 
 /// PIECES_CAELAN
 ///
-/// Dense array indexed by PieceId for every Caelan piece. Bishop,
-/// Rook, and Queen use mg_slide_dirs with direction-bit masks;
-/// Chancellor and Sovereign Banner use mg_choice / passive effect.
+/// Dense array indexed by PieceId for every Caelan piece. Bishop and
+/// Queen use mg_slide_dirs with direction-bit masks; Chancellor and
+/// Sovereign Banner use mg_choice / passive effect.
 ///
 const PieceTemplate
     PIECES_CAELAN[] =
@@ -92,24 +93,6 @@ const PieceTemplate
                     .passives = {},
                     .passive_count = 0,
                 },
-            [PIECE_ROOK] =
-                {
-                    .id = PIECE_ROOK,
-                    .name = "Rook",
-                    .kingdom = KINGDOM_CAELAN,
-                    .tier = TIER_TOWN,
-                    .base_value = 5,
-                    .move = {.func = mg_slide_dirs,
-                             .params =
-                                 {
-                                     {.type = EARG_INT, .v.i = 0x55},
-                                     {.type = EARG_INT, .v.i = 1},
-                                     {.type = EARG_INT, .v.i = 20},
-                                 },
-                             .param_count = 3},
-                    .passives = {},
-                    .passive_count = 0,
-                },
             [PIECE_QUEEN] =
                 {
                     .id = PIECE_QUEEN,
@@ -128,17 +111,6 @@ const PieceTemplate
                     .passives = {},
                     .passive_count = 0,
                 },
-            [PIECE_CHANCELLOR] =
-                {
-                    .id = PIECE_CHANCELLOR,
-                    .name = "Chancellor",
-                    .kingdom = KINGDOM_CAELAN,
-                    .tier = TIER_CAPSTONE,
-                    .base_value = 7,
-                    .move = {.func = mg_choice, .params = {}, .param_count = 0},
-                    .passives = {},
-                    .passive_count = 0,
-                },
             [PIECE_GRYPHON] =
                 {
                     .id = PIECE_GRYPHON,
@@ -149,6 +121,17 @@ const PieceTemplate
                     .move = {.func = mg_ca_gryphon,
                              .params = {},
                              .param_count = 0},
+                    .passives = {},
+                    .passive_count = 0,
+                },
+            [PIECE_CHANCELLOR] =
+                {
+                    .id = PIECE_CHANCELLOR,
+                    .name = "Chancellor",
+                    .kingdom = KINGDOM_CAELAN,
+                    .tier = TIER_CAPSTONE,
+                    .base_value = 7,
+                    .move = {.func = mg_choice, .params = {}, .param_count = 0},
                     .passives = {},
                     .passive_count = 0,
                 },
@@ -169,7 +152,7 @@ const PieceTemplate
                              .param_count = 3},
                     .passives =
                         {
-                            {.trigger = TRIGGER_PIECE_GAINED,
+                            {.trigger = TRIGGER_TURN_START,
                              .apply = eff_todo},
                         },
                     .passive_count = 1,
@@ -185,96 +168,97 @@ const size_t PIECES_CAELAN_COUNT =
 
 /// CARDS_CAELAN
 ///
-/// Dense array indexed by CardId for every Caelan-kingdom card.
-/// Costs match the GDD card table; effect handlers default to
-/// eff_todo until the corresponding behaviour is implemented.
+/// Dense array indexed by CardId for every Caelan-kingdom card. The
+/// roster matches the GDD: two District, two Town, two Province, two
+/// Country. Effect handlers default to eff_todo until per-card
+/// behaviour is implemented.
 ///
 const CardTemplate CARDS_CAELAN[] = {
     [CARD_CASTLING] =
         {
-            .id = CARD_CASTLING,
-            .name = "Castling",
-            .kingdom = KINGDOM_CAELAN,
-            .tier = TIER_DISTRICT,
-            .play_cost = 2,
+            .id         = CARD_CASTLING,
+            .name       = "Castling",
+            .kingdom    = KINGDOM_CAELAN,
+            .tier       = TIER_DISTRICT,
+            .play_cost  = 2,
             .sell_value = 1,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
             .play_effect_count = 1,
         },
-    [CARD_CATHEDRAL] =
+    [CARD_QUEENS_GAMBIT] =
         {
-            .id = CARD_CATHEDRAL,
-            .name = "Cathedral",
-            .kingdom = KINGDOM_CAELAN,
-            .tier = TIER_TOWN,
-            .play_cost = 3,
-            .sell_value = 2,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_ASSEMBLY] =
-        {
-            .id = CARD_ASSEMBLY,
-            .name = "Assembly",
-            .kingdom = KINGDOM_CAELAN,
-            .tier = TIER_PROVINCE,
-            .play_cost = 4,
-            .sell_value = 2,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_PROMOTION] =
-        {
-            .id = CARD_PROMOTION,
-            .name = "Promotion",
-            .kingdom = KINGDOM_CAELAN,
-            .tier = TIER_COUNTRY,
-            .play_cost = 5,
-            .sell_value = 3,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_GOLD_STANDARD] =
-        {
-            .id = CARD_GOLD_STANDARD,
-            .name = "Gold Standard",
-            .kingdom = KINGDOM_CAELAN,
-            .tier = TIER_COUNTRY,
-            .play_cost = 6,
-            .sell_value = 3,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_FORMATION] =
-        {
-            .id = CARD_FORMATION,
-            .name = "Formation",
-            .kingdom = KINGDOM_CAELAN,
-            .tier = TIER_DISTRICT,
-            .play_cost = 2,
+            .id         = CARD_QUEENS_GAMBIT,
+            .name       = "Queen's Gambit",
+            .kingdom    = KINGDOM_CAELAN,
+            .tier       = TIER_DISTRICT,
+            .play_cost  = 2,
             .sell_value = 1,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_VENGEANCE] =
+        {
+            .id         = CARD_VENGEANCE,
+            .name       = "Vengeance",
+            .kingdom    = KINGDOM_CAELAN,
+            .tier       = TIER_TOWN,
+            .play_cost  = 3,
+            .sell_value = 2,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
             .play_effect_count = 1,
         },
     [CARD_QUEENS_DECREE] =
         {
-            .id = CARD_QUEENS_DECREE,
-            .name = "Queen's Decree",
-            .kingdom = KINGDOM_CAELAN,
-            .tier = TIER_PROVINCE,
-            .play_cost = 3,
+            .id         = CARD_QUEENS_DECREE,
+            .name       = "Queen's Decree",
+            .kingdom    = KINGDOM_CAELAN,
+            .tier       = TIER_TOWN,
+            .play_cost  = 3,
             .sell_value = 2,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
             .play_effect_count = 1,
         },
-    [CARD_DIVINE_INTERVENTION] = {
-        .id = CARD_DIVINE_INTERVENTION,
-        .name = "Divine Intervention",
-        .kingdom = KINGDOM_CAELAN,
-        .tier = TIER_PROVINCE,
-        .play_cost = 3,
-        .sell_value = 2,
-        .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+    [CARD_CATHEDRAL] =
+        {
+            .id         = CARD_CATHEDRAL,
+            .name       = "Cathedral",
+            .kingdom    = KINGDOM_CAELAN,
+            .tier       = TIER_PROVINCE,
+            .play_cost  = 4,
+            .sell_value = 2,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_CORONATION] =
+        {
+            .id         = CARD_CORONATION,
+            .name       = "Coronation",
+            .kingdom    = KINGDOM_CAELAN,
+            .tier       = TIER_PROVINCE,
+            .play_cost  = 4,
+            .sell_value = 2,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_CRUSADE] =
+        {
+            .id         = CARD_CRUSADE,
+            .name       = "Crusade",
+            .kingdom    = KINGDOM_CAELAN,
+            .tier       = TIER_COUNTRY,
+            .play_cost  = 5,
+            .sell_value = 3,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_DIVINE_RIGHT] = {
+        .id         = CARD_DIVINE_RIGHT,
+        .name       = "Divine Right",
+        .kingdom    = KINGDOM_CAELAN,
+        .tier       = TIER_COUNTRY,
+        .play_cost  = 5,
+        .sell_value = 3,
+        .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
         .play_effect_count = 1,
     },
 };

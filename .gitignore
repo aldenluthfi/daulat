@@ -55,5 +55,6 @@ dkms.conf
 *.dwo
 
 .clangd
+.clang-format
 CPPLINT.cfg
 .DS_Store

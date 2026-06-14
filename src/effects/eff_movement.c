@@ -15,7 +15,7 @@
 void eff_swap_movegen(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }
 
 /// Grant an extra move step to a piece this action.
@@ -24,7 +24,7 @@ void eff_grant_extra_step(
 ) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }
 
 /// Allow a piece to move through friendly pieces this action.
@@ -33,5 +33,5 @@ void eff_grant_friendly_pass(
 ) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }

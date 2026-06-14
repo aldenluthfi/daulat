@@ -33,7 +33,7 @@ struct BattleState;
 ///
 typedef struct {
     Position squares[MAX_MOVES];
-    uint8_t count;
+    uint8_t  count;
 } MoveList;
 
 /*--------------------------------------------------------------------------*\
@@ -60,8 +60,8 @@ typedef void (*MoveGenFunc)(
 ///
 typedef struct MoveGen {
     MoveGenFunc func;
-    EffectArg params[MAX_MOVE_PARAMS];
-    uint8_t param_count;
+    EffectArg   params[MAX_MOVE_PARAMS];
+    uint8_t     param_count;
 } MoveGen;
 
 /*--------------------------------------------------------------------------*\

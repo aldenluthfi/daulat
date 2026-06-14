@@ -45,7 +45,7 @@ typedef struct {
             uint32_t a, b;
         } combine;
         struct {
-            uint8_t hand_idx;
+            uint8_t    hand_idx;
             TargetSpec target;
         } play_card;
         struct {
@@ -78,11 +78,11 @@ typedef Action (*AIPickFunc)(const struct BattleState* bs);
 
 typedef struct {
     const char* name;
-    Kingdom kingdom;
-    AIPickFunc pick;
-    AIWeights primary;
-    AIWeights fallback;
-    int fallback_meter_diff;
+    Kingdom     kingdom;
+    AIPickFunc  pick;
+    AIWeights   primary;
+    AIWeights   fallback;
+    int         fallback_meter_diff;
 } AIArchetype;
 
 /*--------------------------------------------------------------------------*\

@@ -20,7 +20,7 @@ static int board_index(const Board* board, Position p) {
 \*--------------------------------------------------------------------------*/
 
 void board_init(Board* board, int width, int height) {
-    board->width = width;
+    board->width  = width;
     board->height = height;
     for (int i = 0; i < MAX_BOARD_DIM * MAX_BOARD_DIM; i++) {
         board->squares[i] = NULL;
@@ -38,15 +38,15 @@ bool board_place(Board* board, PieceState* piece, Position pos) {
     if (board->squares[idx] != NULL)
         return false;
     board->squares[idx] = piece;
-    piece->pos = pos;
+    piece->pos          = pos;
     return true;
 }
 
 PieceState* board_remove(Board* board, Position pos) {
     if (!pos_in_bounds(pos, board->width, board->height))
         return NULL;
-    int idx = board_index(board, pos);
-    PieceState* p = board->squares[idx];
+    int         idx     = board_index(board, pos);
+    PieceState* p       = board->squares[idx];
     board->squares[idx] = NULL;
     return p;
 }
@@ -71,10 +71,10 @@ void board_compute_territory(const Board* board, Side territory[]) {
     }
     for (int y = 0; y < board->height; y++) {
         for (int x = 0; x < board->width; x++) {
-            Position pos = {x, y};
-            PieceState* p = board_at(board, pos);
+            Position    pos = {x, y};
+            PieceState* p   = board_at(board, pos);
             if (p != NULL) {
-                int idx = board_index(board, pos);
+                int idx        = board_index(board, pos);
                 territory[idx] = p->owner;
             }
         }
@@ -82,13 +82,13 @@ void board_compute_territory(const Board* board, Side territory[]) {
 }
 
 void board_territory_counts(const Board* board, int counts[3]) {
-    counts[SIDE_PLAYER] = 0;
-    counts[SIDE_ENEMY] = 0;
+    counts[SIDE_PLAYER]  = 0;
+    counts[SIDE_ENEMY]   = 0;
     counts[SIDE_NEUTRAL] = 0;
     for (int y = 0; y < board->height; y++) {
         for (int x = 0; x < board->width; x++) {
-            Position pos = {x, y};
-            PieceState* p = board_at(board, pos);
+            Position    pos = {x, y};
+            PieceState* p   = board_at(board, pos);
             if (p == NULL) {
                 counts[SIDE_NEUTRAL]++;
             } else {
@@ -108,8 +108,8 @@ void board_threat_map(const Board* board, int threats[]) {
     }
     for (int y = 0; y < board->height; y++) {
         for (int x = 0; x < board->width; x++) {
-            Position pos = {x, y};
-            PieceState* p = board_at(board, pos);
+            Position    pos = {x, y};
+            PieceState* p   = board_at(board, pos);
             if (p == NULL)
                 continue;
             MoveList ml = {0};
@@ -129,16 +129,16 @@ void board_threat_map(const Board* board, int threats[]) {
 \*--------------------------------------------------------------------------*/
 
 bool board_has_line_of_sight(const Board* board, Position from, Position to) {
-    int dx = to.x - from.x;
-    int dy = to.y - from.y;
+    int dx  = to.x - from.x;
+    int dy  = to.y - from.y;
     int adx = (dx > 0) ? dx : -dx;
     int ady = (dy > 0) ? dy : -dy;
     if (adx != 0 && ady != 0 && adx != ady)
         return false;
-    int step_x = (adx == 0) ? 0 : ((dx > 0) ? 1 : -1);
-    int step_y = (ady == 0) ? 0 : ((dy > 0) ? 1 : -1);
-    int steps = (adx > ady) ? adx : ady;
-    Position cur = from;
+    int      step_x = (adx == 0) ? 0 : ((dx > 0) ? 1 : -1);
+    int      step_y = (ady == 0) ? 0 : ((dy > 0) ? 1 : -1);
+    int      steps  = (adx > ady) ? adx : ady;
+    Position cur    = from;
     for (int s = 1; s < steps; s++) {
         cur.x += step_x;
         cur.y += step_y;

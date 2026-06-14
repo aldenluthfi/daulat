@@ -52,8 +52,7 @@ typedef enum {
     TRIGGER_PIECE_DEALT_DAMAGE,
     TRIGGER_PIECE_ENTERED_ENEMY_TERR,
     TRIGGER_PIECE_FLIPPED,
-    TRIGGER_PIECE_LOST,
-    TRIGGER_PIECE_GAINED,
+    TRIGGER_PIECE_REMOVED,
     TRIGGER_QUERY_PIECE_COST,
     TRIGGER_QUERY_SELL_VALUE,
     TRIGGER_QUERY_DRAW_COUNT,
@@ -89,12 +88,12 @@ typedef void (*EffectFunc)(
 ///
 typedef struct {
     EffectTrigger trigger;
-    EffectFunc apply;
-    EffectArg args[MAX_EFFECT_ARGS];
-    uint8_t arg_count;
-    int16_t duration_turns;
-    Side owner;
-    uint32_t source_id;
+    EffectFunc    apply;
+    EffectArg     args[MAX_EFFECT_ARGS];
+    uint8_t       arg_count;
+    int16_t       duration_turns;
+    Side          owner;
+    uint32_t      source_id;
 } Effect;
 
 /// EffectSlot
@@ -105,8 +104,8 @@ typedef struct {
 ///
 typedef struct {
     const Effect* effect;
-    int16_t remaining_turns;
-    bool active;
+    int16_t       remaining_turns;
+    bool          active;
 } EffectSlot;
 
 /*--------------------------------------------------------------------------*\
@@ -126,19 +125,19 @@ struct EffectCtx {
         struct {
             struct PieceState* attacker;
             struct PieceState* target;
-            int* damage_out;
-            int* damage_mult_out;
-            int* reduction_out;
+            int*               damage_out;
+            int*               damage_mult_out;
+            int*               reduction_out;
         } resolve;
         struct {
             struct PieceState* piece;
-            Position* pos;
+            Position*          pos;
         } piece;
         struct {
-            Side side;
+            Side          side;
             CardInstance* card;
-            int* count_out;
-            int* value_out;
+            int*          count_out;
+            int*          value_out;
         } card;
         struct {
             int* income_out;
@@ -148,7 +147,7 @@ struct EffectCtx {
         } query;
         struct {
             struct PieceState* piece;
-            MoveGen* move_out;
+            MoveGen*           move_out;
         } movement;
         struct {
             Kingdom kingdom;
@@ -171,7 +170,7 @@ struct EffectCtx {
 ///
 typedef struct {
     EffectSlot slots[MAX_EFFECTS];
-    uint16_t count;
+    uint16_t   count;
 } EffectBus;
 
 /*--------------------------------------------------------------------------*\

@@ -19,8 +19,8 @@ struct PieceState;
 /// The playing surface. Flat storage indexed [y * width + x].
 typedef struct {
     struct PieceState* squares[MAX_BOARD_DIM * MAX_BOARD_DIM];
-    int width;
-    int height;
+    int                width;
+    int                height;
 } Board;
 
 /*--------------------------------------------------------------------------*\

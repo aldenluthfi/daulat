@@ -15,14 +15,14 @@
 void eff_damage_mult(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }
 
 /// Reduce incoming damage by a flat amount.
 void eff_damage_reduce(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }
 
 /// Grant damage immunity to a piece.
@@ -31,12 +31,12 @@ void eff_grant_immunity(
 ) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }
 
 /// Deal damage directly to a piece (not through resolve).
 void eff_deal_damage(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }

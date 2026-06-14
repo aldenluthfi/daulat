@@ -6,7 +6,9 @@
 //!
 //! Zarqan follows the Tamerlane / Shatranj tradition: the player
 //! sits at the bottom (y=0) and pieces face forward. The Ziraafa
-//! family's bespoke movement lives in mg_zarqan.c.
+//! family's bespoke movement lives in mg_zarqan.c. The Rook combo
+//! result (Kyosha + Wazir, value 50) lives here because per the GDD
+//! it is exclusively obtainable through a Zarqan recipe.
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
@@ -99,12 +101,41 @@ const PieceTemplate
                     .passives = {},
                     .passive_count = 0,
                 },
+            [PIECE_ZIRAAFA] =
+                {
+                    .id = PIECE_ZIRAAFA,
+                    .name = "Ziraafa",
+                    .kingdom = KINGDOM_ZARQAN,
+                    .tier = TIER_PROVINCE,
+                    .base_value = 6,
+                    .move = {.func = mg_zq_ziraafa,
+                             .params = {},
+                             .param_count = 0},
+                    .threat = {.func = mg_zq_war_elephant,
+                               .params = {},
+                               .param_count = 0},
+                    .passives = {},
+                    .passive_count = 0,
+                },
+            [PIECE_SHAHZADEH] =
+                {
+                    .id = PIECE_SHAHZADEH,
+                    .name = "Shahzadeh",
+                    .kingdom = KINGDOM_ZARQAN,
+                    .tier = TIER_CAPSTONE,
+                    .base_value = 8,
+                    .move = {.func = mg_zq_ziraafa,
+                             .params = {},
+                             .param_count = 0},
+                    .passives = {},
+                    .passive_count = 0,
+                },
             [PIECE_OLD_KING] =
                 {
                     .id = PIECE_OLD_KING,
                     .name = "Old King",
                     .kingdom = KINGDOM_ZARQAN,
-                    .tier = TIER_COUNTRY,
+                    .tier = TIER_CAPSTONE,
                     .base_value = 5,
                     .move = {.func = mg_step_set,
                              .params =
@@ -141,32 +172,21 @@ const PieceTemplate
                     .passives = {},
                     .passive_count = 0,
                 },
-            [PIECE_ZIRAAFA] =
+            [PIECE_ROOK] =
                 {
-                    .id = PIECE_ZIRAAFA,
-                    .name = "Ziraafa",
-                    .kingdom = KINGDOM_ZARQAN,
-                    .tier = TIER_PROVINCE,
-                    .base_value = 6,
-                    .move = {.func = mg_zq_ziraafa,
-                             .params = {},
-                             .param_count = 0},
-                    .threat = {.func = mg_zq_war_elephant,
-                               .params = {},
-                               .param_count = 0},
-                    .passives = {},
-                    .passive_count = 0,
-                },
-            [PIECE_SHAHZADEH] =
-                {
-                    .id = PIECE_SHAHZADEH,
-                    .name = "Shahzadeh",
+                    .id = PIECE_ROOK,
+                    .name = "Rook",
                     .kingdom = KINGDOM_ZARQAN,
                     .tier = TIER_CAPSTONE,
-                    .base_value = 8,
-                    .move = {.func = mg_zq_ziraafa,
-                             .params = {},
-                             .param_count = 0},
+                    .base_value = 5,
+                    .move = {.func = mg_slide_dirs,
+                             .params =
+                                 {
+                                     {.type = EARG_INT, .v.i = 0x55},
+                                     {.type = EARG_INT, .v.i = 1},
+                                     {.type = EARG_INT, .v.i = 20},
+                                 },
+                             .param_count = 3},
                     .passives = {},
                     .passive_count = 0,
                 },
@@ -219,89 +239,89 @@ const size_t PIECES_ZARQAN_COUNT =
 const CardTemplate CARDS_ZARQAN[] = {
     [CARD_COUNSEL] =
         {
-            .id = CARD_COUNSEL,
-            .name = "Counsel",
-            .kingdom = KINGDOM_ZARQAN,
-            .tier = TIER_DISTRICT,
-            .play_cost = 2,
+            .id         = CARD_COUNSEL,
+            .name       = "Counsel",
+            .kingdom    = KINGDOM_ZARQAN,
+            .tier       = TIER_DISTRICT,
+            .play_cost  = 2,
             .sell_value = 1,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_PILLAGE] =
+        {
+            .id         = CARD_PILLAGE,
+            .name       = "Pillage",
+            .kingdom    = KINGDOM_ZARQAN,
+            .tier       = TIER_DISTRICT,
+            .play_cost  = 2,
+            .sell_value = 1,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_ROYAL_DECOY] =
+        {
+            .id         = CARD_ROYAL_DECOY,
+            .name       = "Royal Decoy",
+            .kingdom    = KINGDOM_ZARQAN,
+            .tier       = TIER_TOWN,
+            .play_cost  = 3,
+            .sell_value = 2,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_BAZAAR] =
+        {
+            .id         = CARD_BAZAAR,
+            .name       = "Bazaar",
+            .kingdom    = KINGDOM_ZARQAN,
+            .tier       = TIER_TOWN,
+            .play_cost  = 3,
+            .sell_value = 2,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_STEPPE_RIDERS] =
+        {
+            .id         = CARD_STEPPE_RIDERS,
+            .name       = "Steppe Riders",
+            .kingdom    = KINGDOM_ZARQAN,
+            .tier       = TIER_TOWN,
+            .play_cost  = 3,
+            .sell_value = 2,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
             .play_effect_count = 1,
         },
     [CARD_AMBITION] =
         {
-            .id = CARD_AMBITION,
-            .name = "Ambition",
-            .kingdom = KINGDOM_ZARQAN,
-            .tier = TIER_TOWN,
-            .play_cost = 3,
+            .id         = CARD_AMBITION,
+            .name       = "Ambition",
+            .kingdom    = KINGDOM_ZARQAN,
+            .tier       = TIER_PROVINCE,
+            .play_cost  = 4,
             .sell_value = 2,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
             .play_effect_count = 1,
         },
-    [CARD_CONQUEST] =
+    [CARD_CITADEL] =
         {
-            .id = CARD_CONQUEST,
-            .name = "Conquest",
-            .kingdom = KINGDOM_ZARQAN,
-            .tier = TIER_PROVINCE,
-            .play_cost = 4,
+            .id         = CARD_CITADEL,
+            .name       = "Citadel",
+            .kingdom    = KINGDOM_ZARQAN,
+            .tier       = TIER_PROVINCE,
+            .play_cost  = 4,
             .sell_value = 2,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
             .play_effect_count = 1,
         },
-    [CARD_FORTUNE] =
-        {
-            .id = CARD_FORTUNE,
-            .name = "Fortune",
-            .kingdom = KINGDOM_ZARQAN,
-            .tier = TIER_COUNTRY,
-            .play_cost = 5,
-            .sell_value = 3,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_CRUSADE] =
-        {
-            .id = CARD_CRUSADE,
-            .name = "Crusade",
-            .kingdom = KINGDOM_ZARQAN,
-            .tier = TIER_COUNTRY,
-            .play_cost = 6,
-            .sell_value = 3,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_DIVINE_RIGHT] =
-        {
-            .id = CARD_DIVINE_RIGHT,
-            .name = "Divine Right",
-            .kingdom = KINGDOM_ZARQAN,
-            .tier = TIER_DISTRICT,
-            .play_cost = 2,
-            .sell_value = 1,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_INTRIGUE] =
-        {
-            .id = CARD_INTRIGUE,
-            .name = "Intrigue",
-            .kingdom = KINGDOM_ZARQAN,
-            .tier = TIER_PROVINCE,
-            .play_cost = 3,
-            .sell_value = 2,
-            .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
-            .play_effect_count = 1,
-        },
-    [CARD_TREACHERY] = {
-        .id = CARD_TREACHERY,
-        .name = "Treachery",
-        .kingdom = KINGDOM_ZARQAN,
-        .tier = TIER_PROVINCE,
-        .play_cost = 3,
-        .sell_value = 2,
-        .on_play = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+    [CARD_CONQUEST] = {
+        .id         = CARD_CONQUEST,
+        .name       = "Conquest",
+        .kingdom    = KINGDOM_ZARQAN,
+        .tier       = TIER_COUNTRY,
+        .play_cost  = 5,
+        .sell_value = 3,
+        .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
         .play_effect_count = 1,
     },
 };

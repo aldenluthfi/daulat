@@ -24,9 +24,9 @@ void bus_register(EffectBus* bus, const Effect* e) {
         log_warn("EffectBus full, dropping effect (trigger=%d)\n", e->trigger);
         return;
     }
-    bus->slots[bus->count].effect = e;
+    bus->slots[bus->count].effect          = e;
     bus->slots[bus->count].remaining_turns = e->duration_turns;
-    bus->slots[bus->count].active = true;
+    bus->slots[bus->count].active          = true;
     bus->count++;
 }
 
@@ -59,8 +59,7 @@ void bus_tick_turn_end(EffectBus* bus) {
     for (uint16_t i = 0; i < bus->count; i++) {
         if (!bus->slots[i].active)
             continue;
-        if (bus->slots[i].remaining_turns ==
-            0) { 
+        if (bus->slots[i].remaining_turns == 0) {
             bus->slots[i].active = false;
         }
     }
@@ -74,8 +73,7 @@ void bus_tick_turn_start(EffectBus* bus) {
     for (uint16_t i = 0; i < bus->count; i++) {
         if (!bus->slots[i].active)
             continue;
-        if (bus->slots[i].remaining_turns >
-            0) { 
+        if (bus->slots[i].remaining_turns > 0) {
             bus->slots[i].remaining_turns--;
         }
     }

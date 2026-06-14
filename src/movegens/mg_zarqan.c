@@ -134,7 +134,14 @@ void mg_zq_war_elephant(
     (void)params;
     (void)n;
     static const int8_t ADJ[8][2] = {
-        {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1},
+        {1, 0},
+        {1, 1},
+        {0, 1},
+        {-1, 1},
+        {-1, 0},
+        {-1, -1},
+        {0, -1},
+        {1, -1},
     };
     for (int i = 0; i < 8; i++) {
         Position to = {piece->pos.x + ADJ[i][0], piece->pos.y + ADJ[i][1]};

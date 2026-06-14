@@ -17,15 +17,15 @@
 
 /// Immutable description of a piece type. Lives in src/data/data_*.c.
 typedef struct PieceTemplate {
-    uint16_t id;
+    uint16_t    id;
     const char* name;
-    Kingdom kingdom;
-    Tier tier;
-    int base_value;
-    MoveGen move;
-    MoveGen threat; /* .func==NULL → reuse move */
-    Effect passives[MAX_PIECE_PASSIVES];
-    uint8_t passive_count;
+    Kingdom     kingdom;
+    Tier        tier;
+    int         base_value;
+    MoveGen     move;
+    MoveGen     threat; /* .func==NULL → reuse move           */
+    Effect      passives[MAX_PIECE_PASSIVES];
+    uint8_t     passive_count;
 } PieceTemplate;
 
 /*--------------------------------------------------------------------------*\
@@ -34,18 +34,18 @@ typedef struct PieceTemplate {
 
 /// Runtime instance of a piece on the board.
 typedef struct PieceState {
-    uint32_t id;
+    uint32_t             id;
     const PieceTemplate* tmpl;
-    MoveGen move_override;
-    MoveGen threat_override;
-    Side owner;
-    Position pos;
-    int value_mod;
-    Effect buffs[MAX_PIECE_BUFFS];
-    uint8_t buff_count;
-    uint8_t moves_used;
-    uint16_t flags;
-    uint8_t streak_attack;
+    MoveGen              move_override;
+    MoveGen              threat_override;
+    Side                 owner;
+    Position             pos;
+    int                  value_mod;
+    Effect               buffs[MAX_PIECE_BUFFS];
+    uint8_t              buff_count;
+    uint8_t              moves_used;
+    uint16_t             flags;
+    uint8_t              streak_attack;
 } PieceState;
 
 /*--------------------------------------------------------------------------*\

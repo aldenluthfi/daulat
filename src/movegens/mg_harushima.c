@@ -38,7 +38,12 @@ void mg_hs_kinsho(
     (void)params;
     (void)n;
     static const int8_t DIRS[6][2] = {
-        {0, 1}, {1, 1}, {-1, 1}, {1, 0}, {-1, 0}, {0, -1},
+        {0, 1},
+        {1, 1},
+        {-1, 1},
+        {1, 0},
+        {-1, 0},
+        {0, -1},
     };
     for (int i = 0; i < 6; i++) {
         Position to = {piece->pos.x + DIRS[i][0], piece->pos.y + DIRS[i][1]};
@@ -71,7 +76,11 @@ void mg_hs_ginsho(
     (void)params;
     (void)n;
     static const int8_t DIRS[5][2] = {
-        {0, 1}, {1, 1}, {-1, 1}, {1, 0}, {-1, 0},
+        {0, 1},
+        {1, 1},
+        {-1, 1},
+        {1, 0},
+        {-1, 0},
     };
     for (int i = 0; i < 5; i++) {
         Position to = {piece->pos.x + DIRS[i][0], piece->pos.y + DIRS[i][1]};
@@ -142,7 +151,14 @@ void mg_hs_shishi(
     (void)params;
     (void)n;
     static const int8_t DIRS[8][2] = {
-        {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1},
+        {1, 0},
+        {1, 1},
+        {0, 1},
+        {-1, 1},
+        {-1, 0},
+        {-1, -1},
+        {0, -1},
+        {1, -1},
     };
     for (int d1 = 0; d1 < 8; d1++) {
         Position mid = {piece->pos.x + DIRS[d1][0], piece->pos.y + DIRS[d1][1]};

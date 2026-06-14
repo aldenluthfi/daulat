@@ -33,7 +33,7 @@
 void eff_apply_relic(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }
 
 /// eff_apply_chain
@@ -50,7 +50,7 @@ void eff_apply_relic(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
 void eff_apply_chain(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }
 
 /// eff_apply_synergy
@@ -67,7 +67,7 @@ void eff_apply_chain(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
 void eff_apply_synergy(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -94,5 +94,5 @@ void eff_apply_synergy(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
 void eff_todo(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
     (void)ctx;
     (void)args;
-    (void)n; 
+    (void)n;
 }

@@ -1,13 +1,14 @@
 //! data_masteries.c
 //!
 //! Static templates for figurehead mastery rewards. Mastery progress
-//! is tracked per kingdom across runs; the level-2 mastery card and
-//! level-1 / level-3 mastery hooks below activate based on how many
-//! flawless runs the player has completed in each kingdom.
+//! is tracked per kingdom across runs.
 //!
-//! Both arrays use TRIGGER_RUN_START for their stub effect so the
-//! handler fires once at the beginning of each run, before any
-//! battle state is constructed.
+//! Level 2: the figurehead card is added to the matching kingdom's
+//! card set. Each card is a normal CardTemplate in the CARD_* enum;
+//! the level-2 hook injects it into the player's cardset.
+//!
+//! Level 1 / Level 3 hooks shift where the kingdom innate activates
+//! (level 1) and upgrade the kingdom's starting power (level 3).
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
@@ -20,55 +21,65 @@
 
 /// MASTERY_CARDS
 ///
-/// Unique level-2 mastery cards added to the kingdom's card set once
-/// the player has cleared a flawless run of that kingdom. One entry
-/// per kingdom, indexed by MasteryId.
+/// The five figurehead cards added to the kingdom card set once
+/// Mastery-2 is reached. Indexed by CardId: CARD_MINGZHUS_SEAL ..
+/// CARD_ISABELLAS_CORONATION. Effects default to eff_todo until the
+/// per-card behaviour is implemented.
 ///
-const MasteryCard MASTERY_CARDS[] = {
-    {
-        .id = MASTERY_CARD_LONGWEI,
-        .name = "Longwei Mastery",
-        .description = "Longwei kingdom mastery.",
-        .kingdom = KINGDOM_LONGWEI,
-        .tier = TIER_KING,
-        .effects[0] = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
-        .effect_count = 1,
-    },
-    {
-        .id = MASTERY_CARD_HARUSHIMA,
-        .name = "Harushima Mastery",
-        .description = "Harushima kingdom mastery.",
-        .kingdom = KINGDOM_HARUSHIMA,
-        .tier = TIER_KING,
-        .effects[0] = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
-        .effect_count = 1,
-    },
-    {
-        .id = MASTERY_CARD_KEWARANI,
-        .name = "Kewarani Mastery",
-        .description = "Kewarani kingdom mastery.",
-        .kingdom = KINGDOM_KEWARANI,
-        .tier = TIER_KING,
-        .effects[0] = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
-        .effect_count = 1,
-    },
-    {
-        .id = MASTERY_CARD_ZARQAN,
-        .name = "Zarqan Mastery",
-        .description = "Zarqan kingdom mastery.",
-        .kingdom = KINGDOM_ZARQAN,
-        .tier = TIER_KING,
-        .effects[0] = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
-        .effect_count = 1,
-    },
-    {
-        .id = MASTERY_CARD_CAELAN,
-        .name = "Caelan Mastery",
-        .description = "Caelan kingdom mastery.",
-        .kingdom = KINGDOM_CAELAN,
-        .tier = TIER_KING,
-        .effects[0] = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
-        .effect_count = 1,
+const CardTemplate MASTERY_CARDS[] = {
+    [CARD_MINGZHUS_SEAL] =
+        {
+            .id         = CARD_MINGZHUS_SEAL,
+            .name       = "Mingzhu's Seal",
+            .kingdom    = KINGDOM_LONGWEI,
+            .tier       = TIER_PROVINCE,
+            .play_cost  = 0,
+            .sell_value = 0,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_TOMOHITOS_PATIENCE] =
+        {
+            .id         = CARD_TOMOHITOS_PATIENCE,
+            .name       = "Tomohito's Patience",
+            .kingdom    = KINGDOM_HARUSHIMA,
+            .tier       = TIER_PROVINCE,
+            .play_cost  = 0,
+            .sell_value = 0,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_SELASSIES_MARCH] =
+        {
+            .id         = CARD_SELASSIES_MARCH,
+            .name       = "Selassie's March",
+            .kingdom    = KINGDOM_KEWARANI,
+            .tier       = TIER_PROVINCE,
+            .play_cost  = 0,
+            .sell_value = 0,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_TIMURS_CONQUEST] =
+        {
+            .id         = CARD_TIMURS_CONQUEST,
+            .name       = "Timur's Conquest",
+            .kingdom    = KINGDOM_ZARQAN,
+            .tier       = TIER_PROVINCE,
+            .play_cost  = 0,
+            .sell_value = 0,
+            .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+            .play_effect_count = 1,
+        },
+    [CARD_ISABELLAS_CORONATION] = {
+        .id         = CARD_ISABELLAS_CORONATION,
+        .name       = "Isabella's Coronation",
+        .kingdom    = KINGDOM_CAELAN,
+        .tier       = TIER_PROVINCE,
+        .play_cost  = 0,
+        .sell_value = 0,
+        .on_play    = {{.trigger = TRIGGER_TURN_START, .apply = eff_todo}},
+        .play_effect_count = 1,
     },
 };
 
@@ -88,64 +99,64 @@ const size_t MASTERY_CARDS_COUNT =
 ///
 const MasteryHook MASTERY_HOOKS[] = {
     {
-        .level = 1,
+        .level   = 1,
         .kingdom = KINGDOM_LONGWEI,
-        .name = "Longwei Lv1 Hook",
-        .effect = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+        .name    = "Longwei Lv1 Hook",
+        .effect  = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
     },
     {
-        .level = 1,
+        .level   = 1,
         .kingdom = KINGDOM_HARUSHIMA,
-        .name = "Harushima Lv1 Hook",
-        .effect = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+        .name    = "Harushima Lv1 Hook",
+        .effect  = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
     },
     {
-        .level = 1,
+        .level   = 1,
         .kingdom = KINGDOM_KEWARANI,
-        .name = "Kewarani Lv1 Hook",
-        .effect = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+        .name    = "Kewarani Lv1 Hook",
+        .effect  = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
     },
     {
-        .level = 1,
+        .level   = 1,
         .kingdom = KINGDOM_ZARQAN,
-        .name = "Zarqan Lv1 Hook",
-        .effect = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+        .name    = "Zarqan Lv1 Hook",
+        .effect  = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
     },
     {
-        .level = 1,
+        .level   = 1,
         .kingdom = KINGDOM_CAELAN,
-        .name = "Caelan Lv1 Hook",
-        .effect = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+        .name    = "Caelan Lv1 Hook",
+        .effect  = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
     },
     {
-        .level = 3,
+        .level   = 3,
         .kingdom = KINGDOM_LONGWEI,
-        .name = "Longwei Lv3 Hook",
-        .effect = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+        .name    = "Longwei Lv3 Hook",
+        .effect  = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
     },
     {
-        .level = 3,
+        .level   = 3,
         .kingdom = KINGDOM_HARUSHIMA,
-        .name = "Harushima Lv3 Hook",
-        .effect = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+        .name    = "Harushima Lv3 Hook",
+        .effect  = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
     },
     {
-        .level = 3,
+        .level   = 3,
         .kingdom = KINGDOM_KEWARANI,
-        .name = "Kewarani Lv3 Hook",
-        .effect = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+        .name    = "Kewarani Lv3 Hook",
+        .effect  = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
     },
     {
-        .level = 3,
+        .level   = 3,
         .kingdom = KINGDOM_ZARQAN,
-        .name = "Zarqan Lv3 Hook",
-        .effect = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+        .name    = "Zarqan Lv3 Hook",
+        .effect  = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
     },
     {
-        .level = 3,
+        .level   = 3,
         .kingdom = KINGDOM_CAELAN,
-        .name = "Caelan Lv3 Hook",
-        .effect = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
+        .name    = "Caelan Lv3 Hook",
+        .effect  = {.trigger = TRIGGER_RUN_START, .apply = eff_todo},
     },
 };
 

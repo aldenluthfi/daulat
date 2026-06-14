@@ -19,28 +19,28 @@
 \*--------------------------------------------------------------------------*/
 
 const PieceTemplate* piece_template(uint16_t id);
-size_t piece_count(void);
+size_t               piece_count(void);
 
 /*--------------------------------------------------------------------------*\
                               CARD REGISTRY
 \*--------------------------------------------------------------------------*/
 
 const CardTemplate* card_template(uint16_t id);
-size_t card_count(void);
+size_t              card_count(void);
 
 /*--------------------------------------------------------------------------*\
                               RECIPE REGISTRY
 \*--------------------------------------------------------------------------*/
 
 const Recipe* recipe_find(uint16_t a, uint16_t b);
-size_t recipe_count(void);
+size_t        recipe_count(void);
 
 /*--------------------------------------------------------------------------*\
                               RELIC REGISTRY
 \*--------------------------------------------------------------------------*/
 
 const RelicTemplate* relic_template(uint16_t id);
-size_t relic_count(void);
+size_t               relic_count(void);
 
 /*--------------------------------------------------------------------------*\
                               INNATE REGISTRY
@@ -59,14 +59,14 @@ const Chain* chain_template(uint8_t level);
 \*--------------------------------------------------------------------------*/
 
 const Modifier* modifier_template(uint16_t id);
-size_t modifier_count(void);
+size_t          modifier_count(void);
 
 /*--------------------------------------------------------------------------*\
                               TRAIT REGISTRY
 \*--------------------------------------------------------------------------*/
 
 const BoardTrait* trait_template(uint16_t id);
-size_t trait_count(void);
+size_t            trait_count(void);
 
 /*--------------------------------------------------------------------------*\
                               FIGUREHEAD REGISTRY
@@ -85,6 +85,6 @@ const Synergy* synergy_template(Kingdom cleared);
 \*--------------------------------------------------------------------------*/
 
 const AIArchetype* ai_archetype(Kingdom k);
-size_t ai_archetype_count(void);
+size_t             ai_archetype_count(void);
 
 #endif /* REGISTRY_H */

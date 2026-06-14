@@ -18,14 +18,14 @@ size_t card_draw(BattleState* bs, Side side) {
     uint8_t current = bs->hand_count[side];
     if (current >= MAX_HAND)
         return 0;
-    uint64_t idx = rng_range(&bs->rng, csz);
-    const CardTemplate* tmpl = bs->cardset[side][idx];
-    bs->hand[side][current].tmpl = tmpl;
+    uint64_t            idx       = rng_range(&bs->rng, csz);
+    const CardTemplate* tmpl      = bs->cardset[side][idx];
+    bs->hand[side][current].tmpl  = tmpl;
     bs->hand[side][current].flags = 0;
     bs->hand_count[side]++;
     struct EffectCtx ctx = {0};
-    ctx.as.card.side = side;
-    ctx.as.card.card = &bs->hand[side][current];
+    ctx.as.card.side     = side;
+    ctx.as.card.card     = &bs->hand[side][current];
     bus_emit(&bs->bus, bs, TRIGGER_CARD_DRAWN, &ctx);
     return 1;
 }
@@ -34,7 +34,7 @@ void card_add_to_hand(BattleState* bs, Side side, const CardTemplate* tmpl) {
     uint8_t current = bs->hand_count[side];
     if (current >= MAX_HAND)
         return;
-    bs->hand[side][current].tmpl = tmpl;
+    bs->hand[side][current].tmpl  = tmpl;
     bs->hand[side][current].flags = 0;
     bs->hand_count[side]++;
 }

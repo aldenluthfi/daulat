@@ -82,20 +82,23 @@ const CardTemplate* card_template(uint16_t id) {
     if (id >= CARD_PAWN_STORM && id <= CARD_HYDRA) {
         return &CARDS_UNIVERSAL[id - CARD_PAWN_STORM];
     }
-    if (id >= CARD_RIVER_WADE && id <= CARD_WISDOM) {
+    if (id >= CARD_RIVER_WADE && id <= CARD_MANDATE) {
         return &CARDS_LONGWEI[id - CARD_RIVER_WADE];
     }
-    if (id >= CARD_RONIN && id <= CARD_REVENGE) {
+    if (id >= CARD_RONIN && id <= CARD_BUSHIDO) {
         return &CARDS_HARUSHIMA[id - CARD_RONIN];
     }
     if (id >= CARD_SULTANS_GOLD && id <= CARD_HAJJ) {
         return &CARDS_KEWARANI[id - CARD_SULTANS_GOLD];
     }
-    if (id >= CARD_COUNSEL && id <= CARD_TREACHERY) {
+    if (id >= CARD_COUNSEL && id <= CARD_CONQUEST) {
         return &CARDS_ZARQAN[id - CARD_COUNSEL];
     }
-    if (id >= CARD_CASTLING && id <= CARD_DIVINE_INTERVENTION) {
+    if (id >= CARD_CASTLING && id <= CARD_DIVINE_RIGHT) {
         return &CARDS_CAELAN[id - CARD_CASTLING];
+    }
+    if (id >= CARD_MINGZHUS_SEAL && id <= CARD_ISABELLAS_CORONATION) {
+        return &MASTERY_CARDS[id - CARD_MINGZHUS_SEAL];
     }
     return NULL;
 }

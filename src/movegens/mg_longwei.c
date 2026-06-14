@@ -38,10 +38,24 @@ void mg_lw_ma(
     (void)params;
     (void)n;
     static const int8_t DELTAS[8][2] = {
-        {1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1},
+        {1, 2},
+        {-1, 2},
+        {1, -2},
+        {-1, -2},
+        {2, 1},
+        {-2, 1},
+        {2, -1},
+        {-2, -1},
     };
     static const int8_t ELBOW[8][2] = {
-        {1, 1}, {-1, 1}, {1, -1}, {-1, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1},
+        {1, 1},
+        {-1, 1},
+        {1, -1},
+        {-1, -1},
+        {1, 1},
+        {-1, 1},
+        {1, -1},
+        {-1, -1},
     };
     for (int i = 0; i < 8; i++) {
         Position to = {
@@ -92,7 +106,7 @@ void mg_lw_xiang(
     };
     for (int d = 0; d < 4; d++) {
         Position mid = {piece->pos.x + DIRS[d][0], piece->pos.y + DIRS[d][1]};
-        Position to = {
+        Position to  = {
             piece->pos.x + DIRS[d][0] * 2, piece->pos.y + DIRS[d][1] * 2
         };
         if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
@@ -136,7 +150,7 @@ void mg_lw_pao(
         {0, -1},
     };
     for (int d = 0; d < 4; d++) {
-        int screens = 0;
+        int  screens     = 0;
         bool found_first = false;
         for (int step = 1; step < 20; step++) {
             Position to = {
@@ -189,7 +203,14 @@ void mg_lw_hwacha(
     (void)params;
     (void)n;
     static const int8_t DIRS[8][2] = {
-        {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1},
+        {1, 0},
+        {-1, 0},
+        {0, 1},
+        {0, -1},
+        {1, 1},
+        {1, -1},
+        {-1, 1},
+        {-1, -1},
     };
     for (int d = 0; d < 8; d++) {
         bool found_first = false;
@@ -262,7 +283,7 @@ void mg_lw_sang(
             continue;
         for (int d = 0; d < 4; d++) {
             Position mid2 = {mid1.x + DIAG[d][0], mid1.y + DIAG[d][1]};
-            Position to = {mid1.x + DIAG[d][0] * 2, mid1.y + DIAG[d][1] * 2};
+            Position to   = {mid1.x + DIAG[d][0] * 2, mid1.y + DIAG[d][1] * 2};
             if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
                 continue;
             }

@@ -26,17 +26,17 @@
 \*--------------------------------------------------------------------------*/
 
 typedef struct {
-    int width;
-    int height;
-    int max_turns;
-    int starting_cp;
-    uint64_t rng_seed;
-    Side player_side;
-    const Modifier* modifiers[MAX_BATTLE_MODIFIERS];
-    uint8_t modifier_count;
+    int               width;
+    int               height;
+    int               max_turns;
+    int               starting_cp;
+    uint64_t          rng_seed;
+    Side              player_side;
+    const Modifier*   modifiers[MAX_BATTLE_MODIFIERS];
+    uint8_t           modifier_count;
     const BoardTrait* traits[MAX_BOARD_TRAITS];
-    uint8_t trait_count;
-    RunState* run;
+    uint8_t           trait_count;
+    RunState*         run;
 } BattleConfig;
 
 /*--------------------------------------------------------------------------*\
@@ -53,7 +53,7 @@ typedef enum {
     EVT_PIECE_COMBINED,
     EVT_PIECE_REMOVED,
     EVT_PIECE_FLIPPED,
-    EVT_PIECE_DAMAGED,
+    EVT_PIECE_DEALT_DAMAGE,
     EVT_METER_CHANGED,
     EVT_CP_CHANGED,
     EVT_CARD_DRAWN,
@@ -66,7 +66,7 @@ typedef enum {
 
 typedef struct {
     EventKind kind;
-    uint16_t turn_no;
+    uint16_t  turn_no;
     union {
         struct {
             uint32_t piece_id;
@@ -76,30 +76,31 @@ typedef struct {
             uint32_t piece_id;
             Position pos;
             uint16_t tmpl_id;
-            Side owner;
+            Side     owner;
         } placed;
         struct {
             uint32_t piece_id;
-            Side new_owner;
+            Side     new_owner;
         } flipped;
         struct {
-            uint32_t attacker, target;
-            int dmg;
-        } damaged;
+            uint32_t attacker;
+            Side     victim_side;
+            int      dmg;
+        } dealt_damage;
         struct {
             Side s;
-            int old_val, new_val;
+            int  old_val, new_val;
         } meter;
         struct {
             Side s;
-            int old_val, new_val;
+            int  old_val, new_val;
         } cp;
         struct {
-            Side s;
+            Side     s;
             uint16_t card_tmpl_id;
         } card;
         struct {
-            uint32_t effect_source_id;
+            uint32_t      effect_source_id;
             EffectTrigger trigger;
         } effect;
     } as;
@@ -110,41 +111,41 @@ typedef struct {
 \*--------------------------------------------------------------------------*/
 
 typedef struct BattleState {
-    Board board;
-    BattleConfig config;
-    Side active_side;
-    uint16_t turn_no;
-    uint16_t max_turns;
-    int cp[2];
-    int meter[2];
-    int meter_cap[2];
-    int meter_overflow_cap[2];
-    PieceState pieces[MAX_PIECES];
-    uint16_t piece_count;
-    uint32_t next_piece_id;
-    CardInstance hand[2][MAX_HAND];
-    uint8_t hand_count[2];
+    Board               board;
+    BattleConfig        config;
+    Side                active_side;
+    uint16_t            turn_no;
+    uint16_t            max_turns;
+    int                 cp[2];
+    int                 meter[2];
+    int                 meter_cap[2];
+    int                 meter_overflow_cap[2];
+    PieceState          pieces[MAX_PIECES];
+    uint16_t            piece_count;
+    uint32_t            next_piece_id;
+    CardInstance        hand[2][MAX_HAND];
+    uint8_t             hand_count[2];
     const CardTemplate* cardset[2][MAX_CARDSET];
-    uint16_t cardset_count[2];
-    uint8_t actions_left;
-    EffectBus bus;
-    Rng rng;
-    Event events[MAX_EVENTS];
-    uint16_t event_head;
-    uint16_t event_count;
-    bool battle_ended;
-    BattleResult result;
+    uint16_t            cardset_count[2];
+    uint8_t             actions_left;
+    EffectBus           bus;
+    Rng                 rng;
+    Event               events[MAX_EVENTS];
+    uint16_t            event_head;
+    uint16_t            event_count;
+    bool                battle_ended;
+    BattleResult        result;
 } BattleState;
 
 /*--------------------------------------------------------------------------*\
                               LIFECYCLE
 \*--------------------------------------------------------------------------*/
 
-void battle_init(BattleState* bs, const BattleConfig* cfg);
-void battle_destroy(BattleState* bs);
+void         battle_init(BattleState* bs, const BattleConfig* cfg);
+void         battle_destroy(BattleState* bs);
 BattleResult battle_check_end(const BattleState* bs);
-void battle_turn_start(BattleState* bs);
-void battle_turn_end(BattleState* bs);
+void         battle_turn_start(BattleState* bs);
+void         battle_turn_end(BattleState* bs);
 
 /*--------------------------------------------------------------------------*\
                               STATE ACCESSORS
@@ -152,15 +153,15 @@ void battle_turn_end(BattleState* bs);
 
 const PieceState* battle_piece_at(const BattleState* bs, Position p);
 const PieceState* battle_piece_by_id(const BattleState* bs, uint32_t id);
-size_t battle_pieces(
+size_t            battle_pieces(
     const BattleState* bs, Side side, const PieceState** out, size_t cap
 );
-Side battle_territory(const BattleState* bs, Position p);
-int battle_threat_count(const BattleState* bs, Position p, Side attacker);
+Side   battle_territory(const BattleState* bs, Position p);
+int    battle_threat_count(const BattleState* bs, Position p, Side attacker);
 size_t battle_hand(
     const BattleState* bs, Side side, const CardInstance** out, size_t cap
 );
-const CardTemplate* battle_card_tmpl(uint16_t id);
+const CardTemplate*  battle_card_tmpl(uint16_t id);
 const PieceTemplate* battle_piece_tmpl(uint16_t id);
 
 /*--------------------------------------------------------------------------*\
@@ -223,6 +224,6 @@ void battle_end_player_turn(BattleState* bs);
 \*--------------------------------------------------------------------------*/
 
 size_t battle_drain_events(BattleState* bs, Event* out, size_t cap);
-void battle_clear_events(BattleState* bs);
+void   battle_clear_events(BattleState* bs);
 
 #endif /* BATTLE_H */

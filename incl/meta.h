@@ -18,11 +18,11 @@ struct Effect;
 \*--------------------------------------------------------------------------*/
 
 typedef struct {
-    uint16_t id;
+    uint16_t    id;
     const char* name;
     const char* description;
-    Effect effects[8];
-    uint8_t effect_count;
+    Effect      effects[8];
+    uint8_t     effect_count;
 } RelicTemplate;
 
 /*--------------------------------------------------------------------------*\
@@ -30,11 +30,11 @@ typedef struct {
 \*--------------------------------------------------------------------------*/
 
 typedef struct {
-    Kingdom kingdom;
+    Kingdom     kingdom;
     const char* name;
     const char* description;
-    Effect effects[8];
-    uint8_t effect_count;
+    Effect      effects[8];
+    uint8_t     effect_count;
 } InnateTemplate;
 
 /*--------------------------------------------------------------------------*\
@@ -42,11 +42,11 @@ typedef struct {
 \*--------------------------------------------------------------------------*/
 
 typedef struct {
-    uint8_t level; /* 0=Bronze, 1=Silver, 2=Gold */
+    uint8_t     level; /* 0=Bronze, 1=Silver, 2=Gold */
     const char* name;
     const char* description;
-    Effect penalties[8];
-    uint8_t penalty_count;
+    Effect      penalties[8];
+    uint8_t     penalty_count;
 } Chain;
 
 /*--------------------------------------------------------------------------*\
@@ -54,12 +54,12 @@ typedef struct {
 \*--------------------------------------------------------------------------*/
 
 typedef struct {
-    uint16_t id;
+    uint16_t    id;
     const char* name;
     const char* description;
-    ModifierId type;
-    Effect effects[4];
-    uint8_t effect_count;
+    ModifierId  type;
+    Effect      effects[4];
+    uint8_t     effect_count;
 } Modifier;
 
 /*--------------------------------------------------------------------------*\
@@ -67,12 +67,12 @@ typedef struct {
 \*--------------------------------------------------------------------------*/
 
 typedef struct {
-    uint16_t id;
+    uint16_t    id;
     const char* name;
     const char* description;
-    TraitId type;
-    Effect effects[4];
-    uint8_t effect_count;
+    TraitId     type;
+    Effect      effects[4];
+    uint8_t     effect_count;
 } BoardTrait;
 
 /*--------------------------------------------------------------------------*\
@@ -80,11 +80,11 @@ typedef struct {
 \*--------------------------------------------------------------------------*/
 
 typedef struct {
-    Kingdom kingdom;
+    Kingdom     kingdom;
     const char* name;
     const char* description;
-    Effect effects[4];
-    uint8_t effect_count;
+    Effect      effects[4];
+    uint8_t     effect_count;
 } FigureheadPower;
 
 /*--------------------------------------------------------------------------*\
@@ -92,10 +92,10 @@ typedef struct {
 \*--------------------------------------------------------------------------*/
 
 typedef struct {
-    Kingdom cleared;
+    Kingdom     cleared;
     const char* name;
     const char* description;
-    Effect bonus;
+    Effect      bonus;
 } Synergy;
 
 /*--------------------------------------------------------------------------*\
@@ -103,32 +103,29 @@ typedef struct {
 \*--------------------------------------------------------------------------*/
 
 typedef struct {
-    uint16_t id;
+    uint16_t    id;
     const char* name;
     const char* description;
-    Effect effects[8];
-    uint8_t effect_count;
+    Effect      effects[8];
+    uint8_t     effect_count;
 } Overseer;
 
 /*--------------------------------------------------------------------------*\
                               MASTERY
 \*--------------------------------------------------------------------------*/
 
+/// MasteryHook
+///
+/// Level-1 (innate-shift) and level-3 (starting-power upgrade) hooks
+/// per kingdom. Mastery-level-2 figurehead cards are NOT here — they
+/// are normal CardTemplates in the CARD_* enum, injected into the
+/// player's cardset by a level-2 hook.
+///
 typedef struct {
-    uint16_t id;
+    Kingdom     kingdom;
+    int         level; /* 1 or 3 */
     const char* name;
-    const char* description;
-    Kingdom kingdom;
-    Tier tier;
-    Effect effects[8];
-    uint8_t effect_count;
-} MasteryCard;
-
-typedef struct {
-    Kingdom kingdom;
-    int level; /* 1 or 3 */
-    const char* name;
-    Effect effect;
+    Effect      effect;
 } MasteryHook;
 
 /*--------------------------------------------------------------------------*\
@@ -136,15 +133,15 @@ typedef struct {
 \*--------------------------------------------------------------------------*/
 
 typedef struct {
-    uint16_t id;
+    uint16_t    id;
     const char* name;
     const char* description;
-    EventId type;
+    EventId     type;
 } EventTemplate;
 
 typedef struct {
     const char* option_text;
-    Effect effect;
+    Effect      effect;
 } EventOption;
 
 #endif /* META_H */

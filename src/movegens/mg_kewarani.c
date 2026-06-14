@@ -83,7 +83,14 @@ void mg_kw_negus_guard(
     (void)params;
     (void)n;
     static const int8_t KING[8][2] = {
-        {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1},
+        {1, 0},
+        {1, 1},
+        {0, 1},
+        {-1, 1},
+        {-1, 0},
+        {-1, -1},
+        {0, -1},
+        {1, -1},
     };
     for (int i = 0; i < 8; i++) {
         Position mid = {piece->pos.x + KING[i][0], piece->pos.y + KING[i][1]};

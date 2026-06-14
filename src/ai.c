@@ -46,27 +46,26 @@ void ai_play_turn(BattleState* bs) {
 }
 
 Action ai_pick_one(BattleState* bs) {
-    Action best = {.kind = ACTION_END_TURN}; 
+    Action best = {.kind = ACTION_END_TURN};
 
-    for (uint16_t i = 0; i < bs->piece_count;
-         i++) { 
+    for (uint16_t i = 0; i < bs->piece_count; i++) {
         const PieceState* p = &bs->pieces[i];
         if (p->owner != bs->active_side)
             continue;
         MoveList ml = {0};
         mg_generate(p, bs, &ml);
         if (ml.count > 0) {
-            uint64_t idx = rng_range(&bs->rng, ml.count);
-            best.kind = ACTION_MOVE;
+            uint64_t idx          = rng_range(&bs->rng, ml.count);
+            best.kind             = ACTION_MOVE;
             best.as.move.piece_id = p->id;
-            best.as.move.to = ml.squares[idx];
+            best.as.move.to       = ml.squares[idx];
             return best;
         }
     }
 
-    if (bs->hand_count[bs->active_side] > 0) { 
+    if (bs->hand_count[bs->active_side] > 0) {
         uint64_t idx = rng_range(&bs->rng, bs->hand_count[bs->active_side]);
-        best.kind = ACTION_SELL_CARD;
+        best.kind    = ACTION_SELL_CARD;
         best.as.sell_card.hand_idx = (uint8_t)idx;
     }
 
@@ -82,7 +81,7 @@ int ai_score_move(
 ) {
     (void)bs;
     (void)action;
-    (void)w; 
+    (void)w;
     return 0;
 }
 
@@ -91,6 +90,6 @@ int ai_score_buy(
 ) {
     (void)bs;
     (void)action;
-    (void)w; 
+    (void)w;
     return 0;
 }

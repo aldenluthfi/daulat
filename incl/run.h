@@ -17,7 +17,7 @@
 typedef struct {
     /* Relics */
     const RelicTemplate* relics[MAX_RELICS_HELD];
-    uint8_t relic_count;
+    uint8_t              relic_count;
 
     /* Penalty chain */
     uint8_t chain_level;
@@ -30,7 +30,7 @@ typedef struct {
 
     /* Mastery hooks */
     const MasteryHook* mastery_hooks[8];
-    uint8_t mastery_hook_count;
+    uint8_t            mastery_hook_count;
 
     /* Synergies (cleared kingdoms) */
     bool cleared_kingdoms[5];

@@ -17,8 +17,8 @@ void meta_apply_relics(BattleState* bs, const RunState* run) {
         if (r == NULL)
             continue;
         for (uint8_t j = 0; j < r->effect_count; j++) {
-            Effect e = r->effects[j];
-            e.owner = SIDE_PLAYER;
+            Effect e         = r->effects[j];
+            e.owner          = SIDE_PLAYER;
             e.duration_turns = -1;
             bus_register(&bs->bus, &e);
         }
@@ -34,8 +34,8 @@ void meta_apply_innate(BattleState* bs, Kingdom kingdom) {
     if (inn == NULL)
         return;
     for (uint8_t i = 0; i < inn->effect_count; i++) {
-        Effect e = inn->effects[i];
-        e.owner = SIDE_PLAYER;
+        Effect e         = inn->effects[i];
+        e.owner          = SIDE_PLAYER;
         e.duration_turns = -1;
         bus_register(&bs->bus, &e);
     }
@@ -47,7 +47,7 @@ void meta_apply_innate(BattleState* bs, Kingdom kingdom) {
 
 void meta_apply_mastery(BattleState* bs, uint8_t level) {
     (void)bs;
-    (void)level; 
+    (void)level;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -60,7 +60,7 @@ void meta_apply_chain(BattleState* bs, uint8_t level) {
         return;
     for (uint8_t i = 0; i < ch->penalty_count; i++) {
         Effect e = ch->penalties[i];
-        e.owner = SIDE_PLAYER;
+        e.owner  = SIDE_PLAYER;
         bus_register(&bs->bus, &e);
     }
 }
@@ -73,8 +73,8 @@ void meta_apply_synergy(BattleState* bs, Kingdom cleared) {
     const Synergy* syn = synergy_template(cleared);
     if (syn == NULL)
         return;
-    Effect e = syn->bonus;
-    e.owner = SIDE_PLAYER;
+    Effect e         = syn->bonus;
+    e.owner          = SIDE_PLAYER;
     e.duration_turns = -1;
     bus_register(&bs->bus, &e);
 }

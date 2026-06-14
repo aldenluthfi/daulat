@@ -301,8 +301,7 @@ typedef enum {
     TRIGGER_PIECE_PLACED, TRIGGER_PIECE_MOVED,
     TRIGGER_PIECE_COMBINED, TRIGGER_PIECE_DEALT_DAMAGE,
     TRIGGER_PIECE_ENTERED_ENEMY_TERR,
-    TRIGGER_PIECE_FLIPPED, TRIGGER_PIECE_LOST,
-    TRIGGER_PIECE_GAINED,
+    TRIGGER_PIECE_FLIPPED, TRIGGER_PIECE_REMOVED,
     /* queries (mutate out-params) */
     TRIGGER_QUERY_PIECE_COST, TRIGGER_QUERY_SELL_VALUE,
     TRIGGER_QUERY_DRAW_COUNT, TRIGGER_QUERY_TURN_INCOME,
@@ -555,7 +554,7 @@ typedef enum {
     EVT_RESOLVE_BEGAN,   EVT_RESOLVE_ENDED,
     EVT_PIECE_PLACED,    EVT_PIECE_MOVED,
     EVT_PIECE_COMBINED,  EVT_PIECE_REMOVED,
-    EVT_PIECE_FLIPPED,   EVT_PIECE_DAMAGED,
+    EVT_PIECE_FLIPPED,   EVT_PIECE_DEALT_DAMAGE,
     EVT_METER_CHANGED,   EVT_CP_CHANGED,
     EVT_CARD_DRAWN,      EVT_CARD_PLAYED,
     EVT_CARD_SOLD,       EVT_EFFECT_APPLIED,
@@ -570,7 +569,8 @@ typedef struct Event {
         struct { uint32_t piece_id; Position pos;
                  uint16_t tmpl_id; Side owner; }         placed;
         struct { uint32_t piece_id; Side new_owner; }    flipped;
-        struct { uint32_t attacker, target; int dmg; }   damaged;
+        struct { uint32_t attacker;
+                 Side victim_side; int dmg; }            dealt_damage;
         struct { Side s; int old_val, new_val; }         meter;
         struct { Side s; int old_val, new_val; }         cp;
         struct { Side s; uint16_t card_tmpl_id; }        card;
@@ -583,6 +583,15 @@ size_t battle_drain_events(BattleState *bs, Event *out,
                            size_t cap);
 void   battle_clear_events(BattleState *bs);
 ```
+
+`EVT_PIECE_DEALT_DAMAGE` records that an attacker contributed `dmg`
+to `victim_side`'s meter. Pieces have no HP — damage always pools to
+the side meter, never to an individual piece, so the payload names
+the destination side, not a target piece.
+
+`EVT_PIECE_REMOVED` fires only for: combination ingredient
+consumption, Sacrifice/Mandate cards, and splitter substitution.
+There is no removal-by-movement.
 
 ### 6.8 Summary
 
@@ -798,17 +807,32 @@ spawned by:
 
 Flipping a piece:
 
-1. Emit `TRIGGER_PIECE_FLIPPED`. Effects on the piece's owner with
+1. Emit `TRIGGER_PIECE_FLIPPED`. Context carries the piece pointer
+   and its current (old) owner. Effects on the piece's owner with
    this trigger fire first (so Kewarani splitters intercept and
-   transform the flip into spawn-Medeq).
+   transform the flip into spawn-Medeq + remove-self).
 2. If the flip was not consumed, switch the piece's owner.
 3. Recalculate threatened squares + meter caps.
-4. Emit `TRIGGER_PIECE_GAINED` for new owner, `TRIGGER_PIECE_LOST`
-   for old owner.
+
+`FLIPPED` is one event, not three. Cards that care about a flip on
+their side (Hostage's "next flip to your side", Reforge's "next time
+one of your pieces flips") filter by side in the effect handler. No
+LOST/GAINED perspective triggers exist — they were redundant.
+
+Removing a piece (Sacrifice card, Mandate card, splitter
+substitution, combination ingredient consumption) emits
+`TRIGGER_PIECE_REMOVED`. There is no removal-by-movement — no
+"capture" mechanic exists. Cards that need "you lose a piece"
+semantics (Spite) install **two** passive effects: one on
+`TRIGGER_PIECE_FLIPPED` with side filter, one on
+`TRIGGER_PIECE_REMOVED` with side filter.
 
 Kewarani splitter behavior is therefore *just* a passive effect on
-the piece that listens for its own flip trigger and substitutes
-spawn-Medeq + remove-self. No engine code knows about splitters.
+PIECE_MEDEQ_SQUAD, PIECE_SULTANS_LEVY, and PIECE_NEGUS_GUARD that
+listens for `TRIGGER_PIECE_FLIPPED`, spawns Medeq pawns, and emits
+`TRIGGER_PIECE_REMOVED` for self. No engine code knows about
+splitters; the splitter set is identified entirely by these three
+template ids carrying the same passive.
 
 ## 10. Cards
 
@@ -1052,9 +1076,17 @@ Exhaustive catalog organized as:
   - Northern Cavalry (combo)
   - Hwacha (combo)
 ### Harushima  (5 base + 4 combos)
+  - Base:  Fuhyo, Kyosha, Ginsho, Kinsho, Shishi
+  - Combo: Honorable Horse, Promoted Bishop, Daimyo, Dragon
 ### Kewarani   (5 base + 2 combos)
+  - Base:  Medeq, Makwanam, Saba, Faras, Negus Guard
+  - Combo: Medeq Squad, Sultan's Levy
 ### Zarqan     (5 base + 4 combos)
+  - Base:  Wazir, Jamal, Talliya, Ziraafa, Shahzadeh
+  - Combo: Old King, Cataphract, Rook, War Elephant
 ### Caelan     (5 base + 2 combos)
+  - Base:  Pawn, Knight, Bishop, Queen, Gryphon
+  - Combo: Chancellor, Sovereign Banner
 
 ## Cards
 ### Universal  (12)
@@ -1064,27 +1096,71 @@ Exhaustive catalog organized as:
     | Up to 3 pawns this turn,| on_play Effect with dur=0 on       |
     | 3rd is free             | TRIGGER_QUERY_PIECE_COST →         |
     |                         | eff_pawn_storm_pricing(counter)    |
-  - Revitalize, Hostage, Last Stand, Sacrifice, Reforge, Mercy,
-    Bloodletting, Counter Coup, Spite, Chain Break, Hydra
-### Longwei    (7)   River Wade … Mandate
-### Harushima  (7)   Ronin … Bushido
-### Kewarani   (7)   Sultan's Gold … Hajj
-### Zarqan     (8)   Counsel … Conquest
-### Caelan     (8)   Castling … Divine Right
+  - District:  Revitalize, Hostage
+  - Town:      Last Stand, Sacrifice, Reforge
+  - Province:  Mercy, Bloodletting, Counter Coup
+  - Country:   Spite, Chain Break, Hydra
+### Longwei    (7)
+  - District:  River Wade, Charge
+  - Town:      Formation, Divination
+  - Province:  Cannon Volley, Palace Decree
+  - Country:   Mandate
+### Harushima  (7)
+  - District:  Ronin
+  - Town:      Resurrection, Gold Standard, Promotion
+  - Province:  Dual Drop, Force Drop
+  - Country:   Bushido
+### Kewarani   (7)
+  - District:  Sultan's Gold, March
+  - Town:      Double Time, Salt Road
+  - Province:  Caravan, Doublestrike
+  - Country:   Hajj
+### Zarqan     (8)
+  - District:  Counsel, Pillage
+  - Town:      Royal Decoy, Bazaar, Steppe Riders
+  - Province:  Ambition, Citadel
+  - Country:   Conquest
+### Caelan     (8)
+  - District:  Castling, Queen's Gambit
+  - Town:      Vengeance, Queen's Decree
+  - Province:  Cathedral, Coronation
+  - Country:   Crusade, Divine Right
 
-## Relics  (26 across Economy / Meter / Cards / Combinations / Board)
+## Relics  (26)
+  - Economy:      Merchant's Ledger, Minted Coin, Tax Stamp,
+                  Bulk Discount, War Chest, Trade Routes
+  - Meter:        Soul Shard, Veteran's Bond, Dead Man's Pact,
+                  Iron King, Bloodthirst, Last Breath
+  - Cards:        Tactician's Scroll, Librarian's Notes,
+                  Country Seal, Deep Hand, Gilded Archive
+  - Combinations: Alchemist's Kit, Master's Notes,
+                  Philosopher's Stone, Inherited Power
+  - Board:        Eagle Eye, Surveyor's Map, Forward Command,
+                  Fortified Line, Warlord's Banner
 
 ## Innates (5: Bulwark, Reclaim, Double Time, Royal Substitution,
             Conqueror's Reward)
 
 ## Mastery
-### Mastery cards (5 unique figurehead cards)
+### Mastery cards (5 figurehead cards)
+The five Mastery-2 cards are proper `CardTemplate`s in the
+`CARD_*` enum: `CARD_MINGZHUS_SEAL` (Longwei), `CARD_TOMOHITOS_PATIENCE`
+(Harushima), `CARD_SELASSIES_MARCH` (Kewarani),
+`CARD_TIMURS_CONQUEST` (Zarqan), `CARD_ISABELLAS_CORONATION`
+(Caelan). The Mastery-2 hook for kingdom K injects the matching
+card into the player's cardset when Mastery-2 is reached. There is
+no separate `MasteryCard` struct — they are normal cards with
+normal data.
 ### Mastery level 1 — innate-shift hooks (5)
 ### Mastery level 3 — starting-power upgrades (5)
 
 ## Penalty Chains (Bronze / Silver / Gold)
 
-## Battle Modifiers (Economy / Meter / Cards / Board)
+## Battle Modifiers
+  - Economy: Lean Times, Windfall, Open Market
+  - Meter:   Glass Cannon, Bloodbath, Iron Will
+  - Cards:   Rich Hand, Sparse Hand, Kingdom Purity
+  - Board:   Fog of War, Dense Terrain, Extended Front
 
 ## Board Traits (River Crossing, Palace, Fog Coast, Island Chain,
                  Trade Route, Contested Market, Sandstorm, Mirage,
@@ -1095,13 +1171,26 @@ Exhaustive catalog organized as:
 ## Overseers (Iron Strategist, Eternal Recursion, Caravan of
               Conquest, Many-Faced King, Crowned Heretic)
 
-## Vorath  (Grand King + 5 Minor Kings mechanic)
+## Vorath
+The final boss occupies a 20×20 board partitioned into 5
+quadrants. Each quadrant holds a Minor King; the Grand King sits
+in the centre quadrant. The Grand King's meter resets to full at
+the start of every turn **unless** the player attacked at least
+one Minor King in each of the 5 quadrants on the immediately
+preceding turn. The run-end win condition is reducing the Grand
+King's meter to zero in a turn where all 5 quadrants were struck.
 
 ## Kingdom Synergies (5)
 
 ## Events  (per-kingdom + universal)
 
 ## Combo Chain Climaxes (5)
+
+## AI Archetypes (5)
+One archetype per kingdom: Siege Engineer (Longwei), Reclaimer
+(Harushima), The Tide (Kewarani), Trickster (Zarqan), The Hammer
+(Caelan). Each is an `(AIPickFunc, AIWeights primary, AIWeights
+fallback, int fallback_threshold)` tuple in `data_archetypes.c`.
 ```
 
 Every row pins the element to one or more

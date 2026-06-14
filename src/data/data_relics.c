@@ -31,117 +31,126 @@
 ///
 #define RELIC(id_, name_, ...)                                                 \
     {                                                                          \
-        .id = id_,                                                             \
-        .name = name_,                                                         \
-        .effects = {__VA_ARGS__},                                              \
+        .id           = id_,                                                   \
+        .name         = name_,                                                 \
+        .effects      = {__VA_ARGS__},                                         \
         .effect_count = sizeof((Effect[]){__VA_ARGS__}) / sizeof(Effect),      \
     }
 
 /// RELICS
 ///
 /// Dense relic table. Iteration order matches the GDD category
-/// breakdown (Economy, Meter, Cards, Combinations, Board) so future
-/// rebalancing edits stay easy to read.
+/// breakdown (Economy 6, Meter 6, Cards 5, Combinations 4, Board 5)
+/// so future rebalancing edits stay easy to read.
 ///
 const RelicTemplate RELICS[] = {
+    /* Economy (6) */
     RELIC(
         RELIC_MERCHANTS_LEDGER, "Merchant's Ledger",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_TREASURY_KEY, "Treasury Key",
+        RELIC_MINTED_COIN, "Minted Coin",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_GOLDEN_LAMP, "Golden Lamp",
+        RELIC_TAX_STAMP, "Tax Stamp",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_TRIBUTE_CHEST, "Tribute Chest",
+        RELIC_BULK_DISCOUNT, "Bulk Discount",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_WANDERING_COIN, "Wandering Coin",
+        RELIC_WAR_CHEST, "War Chest",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_STORM_BELL, "Storm Bell",
+        RELIC_TRADE_ROUTES, "Trade Routes",
+        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+    ),
+    /* Meter (6) */
+    RELIC(
+        RELIC_SOUL_SHARD, "Soul Shard",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_OVERFLOW_ORB, "Overflow Orb",
+        RELIC_VETERANS_BOND, "Veteran's Bond",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_METER_MASON, "Meter Mason",
+        RELIC_DEAD_MANS_PACT, "Dead Man's Pact",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_TIDE_CALLER, "Tide Caller",
+        RELIC_IRON_KING, "Iron King",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_RESERVOIR_STONE, "Reservoir Stone",
+        RELIC_BLOODTHIRST, "Bloodthirst",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_CARDSMITH_HAMMER, "Cardsmith Hammer",
+        RELIC_LAST_BREATH, "Last Breath",
+        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+    ),
+    /* Cards (5) */
+    RELIC(
+        RELIC_TACTICIANS_SCROLL, "Tactician's Scroll",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_DECK_TRAY, "Deck Tray",
+        RELIC_LIBRARIANS_NOTES, "Librarian's Notes",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_WILD_JOKER, "Wild Joker",
+        RELIC_COUNTRY_SEAL, "Country Seal",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_SCRIBBLERS_QUILL, "Scribbler's Quill",
+        RELIC_DEEP_HAND, "Deep Hand",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_CARDINAL_ROBE, "Cardinal Robe",
+        RELIC_GILDED_ARCHIVE, "Gilded Archive",
+        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+    ),
+    /* Combinations (4) */
+    RELIC(
+        RELIC_ALCHEMISTS_KIT, "Alchemist's Kit",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_ALCHEMISTS_STONE, "Alchemist's Stone",
+        RELIC_MASTERS_NOTES, "Master's Notes",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_FUSION_FURNACE, "Fusion Furnace",
+        RELIC_PHILOSOPHERS_STONE, "Philosopher's Stone",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_COMBINE_CATALYST, "Combine Catalyst",
+        RELIC_INHERITED_POWER, "Inherited Power",
+        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
+    ),
+    /* Board (5) */
+    RELIC(
+        RELIC_EAGLE_EYE, "Eagle Eye",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_TRANSMUTE_CRYSTAL, "Transmute Crystal",
+        RELIC_SURVEYORS_MAP, "Surveyor's Map",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_MASTERWORK_ANVIL, "Masterwork Anvil",
+        RELIC_FORWARD_COMMAND, "Forward Command",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_FORTRESS_WALL, "Fortress Wall",
+        RELIC_FORTIFIED_LINE, "Fortified Line",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
     RELIC(
-        RELIC_BATTLE_STANDARD, "Battle Standard",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
-    ),
-    RELIC(
-        RELIC_MIRROR_SHIELD, "Mirror Shield",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
-    ),
-    RELIC(
-        RELIC_PATHFINDER_BOOTS, "Pathfinder Boots",
-        {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
-    ),
-    RELIC(
-        RELIC_TERRITORY_MAP, "Territory Map",
+        RELIC_WARLORDS_BANNER, "Warlord's Banner",
         {.trigger = TRIGGER_TURN_START, .apply = eff_todo}
     ),
 };
