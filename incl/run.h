@@ -13,6 +13,7 @@
 #define RUN_H
 
 #include "defs.h"
+#include "map.h"
 
 struct Profile;
 struct RelicTemplate;
@@ -32,6 +33,9 @@ typedef struct RunState {
     uint64_t run_seed;
     Kingdom  current_kingdom;
     Tier     current_map_tier;
+
+    /* Active map */
+    MapState current_map;
 
     /* Relics (ids for serialization; pointers via registry) */
     RelicId relic_ids[MAX_RELICS_HELD];

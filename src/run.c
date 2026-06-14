@@ -94,6 +94,9 @@ static bool write_run_chunk(SaveWriter* w, const RunState* run) {
     if (!save_write_u8(w, (uint8_t)run->current_map_tier))
         return false;
 
+    if (!save_write_bytes(w, &run->current_map, sizeof(run->current_map)))
+        return false;
+
     if (!save_write_u8(w, run->relic_count))
         return false;
     for (uint8_t i = 0; i < run->relic_count; i++)
@@ -152,6 +155,9 @@ static bool read_run_chunk(SaveReader* r, RunState* run) {
     if (!save_read_u8(r, &u8))
         return false;
     run->current_map_tier = (Tier)u8;
+
+    if (!save_read_bytes(r, &run->current_map, sizeof(run->current_map)))
+        return false;
 
     if (!save_read_u8(r, &run->relic_count))
         return false;

@@ -219,6 +219,7 @@ int main(void) {
 
 #include "app.h"
 #include "log.h"
+#include "map.h"
 #include "profile.h"
 #include "run.h"
 #include "save.h"
@@ -252,6 +253,81 @@ static int cli_new_profile(void) {
 ///
 static int cli_dump_save(const char* path) {
     return save_dump(path);
+}
+
+/// cli_debug_map
+///
+/// Generate a map for the given (kingdom, tier) pair and print its
+/// node table. Used by `--debug-map <KINGDOM> <TIER>` to verify the
+/// GDD § 6 layout.
+///
+static int cli_debug_map(const char* kingdom_arg, const char* tier_arg) {
+    static const struct {
+        const char* name;
+        Kingdom     value;
+    } KINGDOMS[] = {
+        {"LONGWEI", KINGDOM_LONGWEI},
+        {"HARUSHIMA", KINGDOM_HARUSHIMA},
+        {"KEWARANI", KINGDOM_KEWARANI},
+        {"ZARQAN", KINGDOM_ZARQAN},
+        {"CAELAN", KINGDOM_CAELAN},
+    };
+    static const struct {
+        const char* name;
+        Tier        value;
+    } TIERS[] = {
+        {"TOWN", TIER_TOWN},
+        {"PROVINCE", TIER_PROVINCE},
+        {"COUNTRY", TIER_COUNTRY},
+    };
+    Kingdom k    = KINGDOM_LONGWEI;
+    Tier    tier = TIER_TOWN;
+    bool    ok   = false;
+    for (size_t i = 0; i < sizeof(KINGDOMS) / sizeof(KINGDOMS[0]); i++)
+        if (strcmp(kingdom_arg, KINGDOMS[i].name) == 0) {
+            k  = KINGDOMS[i].value;
+            ok = true;
+            break;
+        }
+    if (!ok) {
+        log_err("--debug-map: unknown kingdom '%s'", kingdom_arg);
+        return 1;
+    }
+    ok = false;
+    for (size_t i = 0; i < sizeof(TIERS) / sizeof(TIERS[0]); i++)
+        if (strcmp(tier_arg, TIERS[i].name) == 0) {
+            tier = TIERS[i].value;
+            ok   = true;
+            break;
+        }
+    if (!ok) {
+        log_err("--debug-map: unknown tier '%s'", tier_arg);
+        return 2;
+    }
+    MapState map;
+    map_generate(&map, k, tier, 0xC0FFEEABCDULL);
+
+    static const char* TYPE_NAMES[] = {
+        "BATTLE", "ELITE", "ARCHIVE", "OFFERING",
+        "EVENT", "OVERSEER", "LIBERATION"
+    };
+    log_info(
+        "map: %s %s | seed=%llx | nodes=%u",
+        kingdom_arg, tier_arg, (unsigned long long)map.seed, map.node_count
+    );
+    for (uint8_t i = 0; i < map.node_count; i++) {
+        const MapNode* node = &map.nodes[i];
+        log_info(
+            "  [%u] %-10s payload=%u mod=%u trait=%u -> %u",
+            node->id,
+            TYPE_NAMES[node->type < NODE_TYPE_COUNT ? node->type : 0],
+            node->payload_id,
+            node->modifier_id,
+            node->trait_id,
+            node->edge_count > 0 ? node->edges[0] : 0xFFFFu
+        );
+    }
+    return 0;
 }
 
 /// cli_test_save
@@ -318,6 +394,10 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
         }
         if (strcmp(argv[i], "--test-save") == 0) {
             int rc = cli_test_save();
+            exit(rc);
+        }
+        if (strcmp(argv[i], "--debug-map") == 0 && i + 2 < argc) {
+            int rc = cli_debug_map(argv[i + 1], argv[i + 2]);
             exit(rc);
         }
     }
