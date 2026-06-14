@@ -46,138 +46,129 @@
 const RelicTemplate RELICS[] = {
     /* Economy (6) */
     RELIC(
-        RELIC_MERCHANTS_LEDGER,
-        "Merchant's Ledger",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_MERCHANTS_LEDGER, "Merchant's Ledger",
+        {.trigger = TRIGGER_QUERY_SELL_VALUE,
+         EFF(MERCHANTS_LEDGER, merchants_ledger)}
     ),
     RELIC(
-        RELIC_MINTED_COIN,
-        "Minted Coin",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_MINTED_COIN, "Minted Coin",
+        {.trigger = TRIGGER_QUERY_TURN_INCOME,
+         EFF(MINTED_COIN, minted_coin)}
     ),
     RELIC(
-        RELIC_TAX_STAMP,
-        "Tax Stamp",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_TAX_STAMP, "Tax Stamp",
+        {.trigger = TRIGGER_CARD_PLAYED, EFF(TAX_STAMP, tax_stamp)}
     ),
     RELIC(
-        RELIC_BULK_DISCOUNT,
-        "Bulk Discount",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_BULK_DISCOUNT, "Bulk Discount",
+        {.trigger = TRIGGER_QUERY_PIECE_COST,
+         EFF(BULK_DISCOUNT, bulk_discount)}
     ),
     RELIC(
-        RELIC_WAR_CHEST,
-        "War Chest",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_WAR_CHEST, "War Chest",
+        {.trigger = TRIGGER_CP_REMAINING_EOT, EFF(WAR_CHEST, war_chest)}
     ),
     RELIC(
-        RELIC_TRADE_ROUTES,
-        "Trade Routes",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_TRADE_ROUTES, "Trade Routes",
+        {.trigger = TRIGGER_RUN_START, EFF(TRADE_ROUTES, trade_routes)}
     ),
     /* Meter (6) */
     RELIC(
-        RELIC_SOUL_SHARD,
-        "Soul Shard",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_SOUL_SHARD, "Soul Shard",
+        {.trigger = TRIGGER_PIECE_GAINED, EFF(SOUL_SHARD, soul_shard)}
     ),
     RELIC(
-        RELIC_VETERANS_BOND,
-        "Veteran's Bond",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_VETERANS_BOND, "Veteran's Bond",
+        {.trigger = TRIGGER_QUERY_METER_CAP,
+         EFF(VETERANS_BOND, veterans_bond)}
     ),
     RELIC(
-        RELIC_DEAD_MANS_PACT,
-        "Dead Man's Pact",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_DEAD_MANS_PACT, "Dead Man's Pact",
+        {.trigger = TRIGGER_RESOLVE_FLIP,
+         EFF(DEAD_MANS_PACT, dead_mans_pact)}
     ),
     RELIC(
-        RELIC_IRON_KING,
-        "Iron King",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_IRON_KING, "Iron King",
+        {.trigger = TRIGGER_QUERY_METER_CAP, EFF(IRON_KING, iron_king)}
     ),
     RELIC(
-        RELIC_BLOODTHIRST,
-        "Bloodthirst",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_BLOODTHIRST, "Bloodthirst",
+        {.trigger = TRIGGER_TURN_START, EFF(BLOODTHIRST, bloodthirst)}
     ),
     RELIC(
-        RELIC_LAST_BREATH,
-        "Last Breath",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_LAST_BREATH, "Last Breath",
+        {.trigger = TRIGGER_PIECE_FLIPPED, EFF(LAST_BREATH, last_breath)}
     ),
     /* Cards (5) */
     RELIC(
-        RELIC_TACTICIANS_SCROLL,
-        "Tactician's Scroll",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_TACTICIANS_SCROLL, "Tactician's Scroll",
+        {.trigger = TRIGGER_QUERY_DRAW_COUNT,
+         EFF(TACTICIANS_SCROLL, tacticians_scroll)}
     ),
     RELIC(
-        RELIC_LIBRARIANS_NOTES,
-        "Librarian's Notes",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_LIBRARIANS_NOTES, "Librarian's Notes",
+        {.trigger = TRIGGER_TURN_START,
+         EFF(LIBRARIANS_NOTES, librarians_notes)}
     ),
     RELIC(
-        RELIC_COUNTRY_SEAL,
-        "Country Seal",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_COUNTRY_SEAL, "Country Seal",
+        {.trigger = TRIGGER_QUERY_SELL_VALUE,
+         EFF(COUNTRY_SEAL, country_seal)}
     ),
     RELIC(
-        RELIC_DEEP_HAND,
-        "Deep Hand",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_DEEP_HAND, "Deep Hand",
+        {.trigger = TRIGGER_BATTLE_START, EFF(DEEP_HAND, deep_hand)}
     ),
     RELIC(
-        RELIC_GILDED_ARCHIVE,
-        "Gilded Archive",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_GILDED_ARCHIVE, "Gilded Archive",
+        {.trigger = TRIGGER_QUERY_SELL_VALUE,
+         EFF(GILDED_ARCHIVE, gilded_archive)}
     ),
     /* Combinations (4) */
     RELIC(
-        RELIC_ALCHEMISTS_KIT,
-        "Alchemist's Kit",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_ALCHEMISTS_KIT, "Alchemist's Kit",
+        {.trigger = TRIGGER_QUERY_COMBINE_COST,
+         EFF(ALCHEMISTS_KIT, alchemists_kit)}
     ),
     RELIC(
-        RELIC_MASTERS_NOTES,
-        "Master's Notes",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_MASTERS_NOTES, "Master's Notes",
+        {.trigger = TRIGGER_RUN_START,
+         EFF(MASTERS_NOTES, masters_notes)}
     ),
     RELIC(
-        RELIC_PHILOSOPHERS_STONE,
-        "Philosopher's Stone",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_PHILOSOPHERS_STONE, "Philosopher's Stone",
+        {.trigger = TRIGGER_COMBO_PERFORMED,
+         EFF(PHILOSOPHERS_STONE, philosophers_stone)}
     ),
     RELIC(
-        RELIC_INHERITED_POWER,
-        "Inherited Power",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_INHERITED_POWER, "Inherited Power",
+        {.trigger = TRIGGER_COMBO_PERFORMED,
+         EFF(INHERITED_POWER, inherited_power)}
     ),
     /* Board (5) */
     RELIC(
-        RELIC_EAGLE_EYE,
-        "Eagle Eye",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_EAGLE_EYE, "Eagle Eye",
+        {.trigger = TRIGGER_RUN_START, EFF(EAGLE_EYE, eagle_eye)}
     ),
     RELIC(
-        RELIC_SURVEYORS_MAP,
-        "Surveyor's Map",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_SURVEYORS_MAP, "Surveyor's Map",
+        {.trigger = TRIGGER_RUN_START,
+         EFF(SURVEYORS_MAP, surveyors_map)}
     ),
     RELIC(
-        RELIC_FORWARD_COMMAND,
-        "Forward Command",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_FORWARD_COMMAND, "Forward Command",
+        {.trigger = TRIGGER_ATTACK_ENEMY_TERR,
+         EFF(FORWARD_COMMAND, forward_command)}
     ),
     RELIC(
-        RELIC_FORTIFIED_LINE,
-        "Fortified Line",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_FORTIFIED_LINE, "Fortified Line",
+        {.trigger = TRIGGER_NO_MOVE_THIS_TURN,
+         EFF(FORTIFIED_LINE, fortified_line)}
     ),
     RELIC(
-        RELIC_WARLORDS_BANNER,
-        "Warlord's Banner",
-        {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)}
+        RELIC_WARLORDS_BANNER, "Warlord's Banner",
+        {.trigger = TRIGGER_QUERY_ADJ_KING_BONUS,
+         EFF(WARLORDS_BANNER, warlords_banner)}
     ),
 };
 

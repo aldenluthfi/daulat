@@ -5,7 +5,7 @@
 //!
 //! Bronze deducts starting cp, Silver gifts the enemy a free piece,
 //! and Gold locks the kingdom's track until a Liberation Trial is
-//! cleared. The actual handlers are stubs until the chain UI lands.
+//! cleared.
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
@@ -28,7 +28,8 @@ const Chain CHAINS[] = {
         .level = 1,
         .penalties =
             {
-                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
+                {.trigger = TRIGGER_BATTLE_START,
+                 EFF(CHAIN_BRONZE, chain_bronze)},
             },
         .penalty_count = 1,
     },
@@ -36,8 +37,10 @@ const Chain CHAINS[] = {
         .level = 2,
         .penalties =
             {
-                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
+                {.trigger = TRIGGER_BATTLE_START,
+                 EFF(CHAIN_BRONZE, chain_bronze)},
+                {.trigger = TRIGGER_BATTLE_START,
+                 EFF(CHAIN_SILVER, chain_silver)},
             },
         .penalty_count = 2,
     },
@@ -45,9 +48,12 @@ const Chain CHAINS[] = {
         .level = 3,
         .penalties =
             {
-                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-                {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
+                {.trigger = TRIGGER_BATTLE_START,
+                 EFF(CHAIN_BRONZE, chain_bronze)},
+                {.trigger = TRIGGER_BATTLE_START,
+                 EFF(CHAIN_SILVER, chain_silver)},
+                {.trigger = TRIGGER_BATTLE_START,
+                 EFF(CHAIN_GOLD, chain_gold)},
             },
         .penalty_count = 3,
     },

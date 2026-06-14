@@ -28,7 +28,8 @@ const InnateTemplate INNATES[] = {
         .name    = "Bulwark",
         .effects =
             {
-                {.trigger = TRIGGER_RESOLVE_DEFENSE, EFF(TODO, todo)},
+                {.trigger = TRIGGER_RESOLVE_DEFENSE,
+                 EFF(INNATE_BULWARK, innate_bulwark)},
             },
         .effect_count = 1,
     },
@@ -37,7 +38,8 @@ const InnateTemplate INNATES[] = {
         .name    = "Reclaim",
         .effects =
             {
-                {.trigger = TRIGGER_TURN_END, EFF(TODO, todo)},
+                {.trigger = TRIGGER_TURN_START,
+                 EFF(INNATE_RECLAIM, innate_reclaim)},
             },
         .effect_count = 1,
     },
@@ -46,7 +48,8 @@ const InnateTemplate INNATES[] = {
         .name    = "Double Time",
         .effects =
             {
-                {.trigger = TRIGGER_TURN_START, EFF(TODO, todo)},
+                {.trigger = TRIGGER_QUERY_MOVE_COUNT,
+                 EFF(INNATE_DOUBLE_TIME, innate_double_time)},
             },
         .effect_count = 1,
     },
@@ -55,8 +58,8 @@ const InnateTemplate INNATES[] = {
         .name    = "Royal Substitution",
         .effects =
             {
-                {.trigger = TRIGGER_PIECE_ENTERED_ENEMY_TERR,
-                 .apply   = eff_todo},
+                {.trigger = TRIGGER_TURN_START,
+                 EFF(INNATE_ROYAL_SUB, innate_royal_sub)},
             },
         .effect_count = 1,
     },
@@ -65,7 +68,9 @@ const InnateTemplate INNATES[] = {
         .name    = "Conqueror's Reward",
         .effects =
             {
-                {.trigger = TRIGGER_PIECE_FLIPPED, EFF(TODO, todo)},
+                {.trigger = TRIGGER_RESOLVE_FLIP,
+                 EFF(INNATE_CONQUERORS_REWARD,
+                     innate_conquerors_reward)},
             },
         .effect_count = 1,
     },

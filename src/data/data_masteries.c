@@ -92,72 +92,72 @@ const size_t MASTERY_CARDS_COUNT =
 
 /// MASTERY_HOOKS
 ///
-/// Run-start hooks that activate when the player has reached the
-/// given mastery level (1 = innate-shift, 3 = starting-power
-/// upgrade). The first five entries handle level 1, the last five
-/// handle level 3.
+/// Per-kingdom mastery hooks at levels 1, 2 and 3. Level 1 activates
+/// the kingdom innate at Town entry; level 2 appends the figurehead
+/// card to the cardset; level 3 flips a RunState flag that the
+/// figurehead and innate bodies consult for the upgraded variant.
 ///
 const MasteryHook MASTERY_HOOKS[] = {
-    {
-        .level   = 1,
-        .kingdom = KINGDOM_LONGWEI,
-        .name    = "Longwei Lv1 Hook",
-        .effect  = {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-    },
-    {
-        .level   = 1,
-        .kingdom = KINGDOM_HARUSHIMA,
-        .name    = "Harushima Lv1 Hook",
-        .effect  = {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-    },
-    {
-        .level   = 1,
-        .kingdom = KINGDOM_KEWARANI,
-        .name    = "Kewarani Lv1 Hook",
-        .effect  = {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-    },
-    {
-        .level   = 1,
-        .kingdom = KINGDOM_ZARQAN,
-        .name    = "Zarqan Lv1 Hook",
-        .effect  = {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-    },
-    {
-        .level   = 1,
-        .kingdom = KINGDOM_CAELAN,
-        .name    = "Caelan Lv1 Hook",
-        .effect  = {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-    },
-    {
-        .level   = 3,
-        .kingdom = KINGDOM_LONGWEI,
-        .name    = "Longwei Lv3 Hook",
-        .effect  = {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-    },
-    {
-        .level   = 3,
-        .kingdom = KINGDOM_HARUSHIMA,
-        .name    = "Harushima Lv3 Hook",
-        .effect  = {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-    },
-    {
-        .level   = 3,
-        .kingdom = KINGDOM_KEWARANI,
-        .name    = "Kewarani Lv3 Hook",
-        .effect  = {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-    },
-    {
-        .level   = 3,
-        .kingdom = KINGDOM_ZARQAN,
-        .name    = "Zarqan Lv3 Hook",
-        .effect  = {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-    },
-    {
-        .level   = 3,
-        .kingdom = KINGDOM_CAELAN,
-        .name    = "Caelan Lv3 Hook",
-        .effect  = {.trigger = TRIGGER_RUN_START, EFF(TODO, todo)},
-    },
+    {.level = 1, .kingdom = KINGDOM_LONGWEI,
+     .name = "Longwei Lv1 Hook",
+     .effect = {.trigger = TRIGGER_MAP_ENTERED,
+                EFF(MASTERY_L1_LONGWEI, mastery_l1_longwei)}},
+    {.level = 1, .kingdom = KINGDOM_HARUSHIMA,
+     .name = "Harushima Lv1 Hook",
+     .effect = {.trigger = TRIGGER_MAP_ENTERED,
+                EFF(MASTERY_L1_HARUSHIMA, mastery_l1_harushima)}},
+    {.level = 1, .kingdom = KINGDOM_KEWARANI,
+     .name = "Kewarani Lv1 Hook",
+     .effect = {.trigger = TRIGGER_MAP_ENTERED,
+                EFF(MASTERY_L1_KEWARANI, mastery_l1_kewarani)}},
+    {.level = 1, .kingdom = KINGDOM_ZARQAN,
+     .name = "Zarqan Lv1 Hook",
+     .effect = {.trigger = TRIGGER_MAP_ENTERED,
+                EFF(MASTERY_L1_ZARQAN, mastery_l1_zarqan)}},
+    {.level = 1, .kingdom = KINGDOM_CAELAN,
+     .name = "Caelan Lv1 Hook",
+     .effect = {.trigger = TRIGGER_MAP_ENTERED,
+                EFF(MASTERY_L1_CAELAN, mastery_l1_caelan)}},
+    {.level = 2, .kingdom = KINGDOM_LONGWEI,
+     .name = "Longwei Lv2 Hook",
+     .effect = {.trigger = TRIGGER_RUN_START,
+                EFF(MASTERY_L2_LONGWEI, mastery_l2_longwei)}},
+    {.level = 2, .kingdom = KINGDOM_HARUSHIMA,
+     .name = "Harushima Lv2 Hook",
+     .effect = {.trigger = TRIGGER_RUN_START,
+                EFF(MASTERY_L2_HARUSHIMA, mastery_l2_harushima)}},
+    {.level = 2, .kingdom = KINGDOM_KEWARANI,
+     .name = "Kewarani Lv2 Hook",
+     .effect = {.trigger = TRIGGER_RUN_START,
+                EFF(MASTERY_L2_KEWARANI, mastery_l2_kewarani)}},
+    {.level = 2, .kingdom = KINGDOM_ZARQAN,
+     .name = "Zarqan Lv2 Hook",
+     .effect = {.trigger = TRIGGER_RUN_START,
+                EFF(MASTERY_L2_ZARQAN, mastery_l2_zarqan)}},
+    {.level = 2, .kingdom = KINGDOM_CAELAN,
+     .name = "Caelan Lv2 Hook",
+     .effect = {.trigger = TRIGGER_RUN_START,
+                EFF(MASTERY_L2_CAELAN, mastery_l2_caelan)}},
+    {.level = 3, .kingdom = KINGDOM_LONGWEI,
+     .name = "Longwei Lv3 Hook",
+     .effect = {.trigger = TRIGGER_RUN_START,
+                EFF(MASTERY_L3_LONGWEI, mastery_l3_longwei)}},
+    {.level = 3, .kingdom = KINGDOM_HARUSHIMA,
+     .name = "Harushima Lv3 Hook",
+     .effect = {.trigger = TRIGGER_RUN_START,
+                EFF(MASTERY_L3_HARUSHIMA, mastery_l3_harushima)}},
+    {.level = 3, .kingdom = KINGDOM_KEWARANI,
+     .name = "Kewarani Lv3 Hook",
+     .effect = {.trigger = TRIGGER_RUN_START,
+                EFF(MASTERY_L3_KEWARANI, mastery_l3_kewarani)}},
+    {.level = 3, .kingdom = KINGDOM_ZARQAN,
+     .name = "Zarqan Lv3 Hook",
+     .effect = {.trigger = TRIGGER_RUN_START,
+                EFF(MASTERY_L3_ZARQAN, mastery_l3_zarqan)}},
+    {.level = 3, .kingdom = KINGDOM_CAELAN,
+     .name = "Caelan Lv3 Hook",
+     .effect = {.trigger = TRIGGER_RUN_START,
+                EFF(MASTERY_L3_CAELAN, mastery_l3_caelan)}},
 };
 
 const size_t MASTERY_HOOKS_COUNT =

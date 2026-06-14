@@ -70,8 +70,8 @@ void bus_emit(
     EffectTrigger     trigger,
     struct EffectCtx* ctx
 ) {
-    (void)bs;
     ctx->trigger = trigger;
+    ctx->bs      = bs;
     for (uint16_t i = 0; i < bus->count; i++) {
         if (!bus->slots[i].active)
             continue;

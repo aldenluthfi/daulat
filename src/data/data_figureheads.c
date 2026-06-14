@@ -4,9 +4,9 @@
 //! powers. All five powers are simultaneously active for every run
 //! because the figureheads are allied against Vorath.
 //!
-//! The .effects field is intentionally zero for now; once the
-//! figurehead power handlers are written, each kingdom's effect
-//! lands here and registers at run start.
+//! Phase 3 wires each effect to its kingdom-specific body — Mingzhu
+//! and Isabella fire at battle start, the other three configure
+//! run-wide overrides on run start.
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
@@ -24,34 +24,59 @@
 ///
 const FigureheadPower FIGUREHEADS[] = {
     {
-        .kingdom      = KINGDOM_LONGWEI,
-        .name         = "Longwei Figurehead",
-        .description  = "Longwei starting power.",
-        .effect_count = 0,
+        .kingdom     = KINGDOM_LONGWEI,
+        .name        = "Mingzhu's Cannon Salute",
+        .description = "Spawn a free Pao in Longwei; +20 cp elsewhere.",
+        .effects =
+            {
+                {.trigger = TRIGGER_BATTLE_START,
+                 EFF(FH_MINGZHU, fh_mingzhu)},
+            },
+        .effect_count = 1,
     },
     {
-        .kingdom      = KINGDOM_HARUSHIMA,
-        .name         = "Harushima Figurehead",
-        .description  = "Harushima starting power.",
-        .effect_count = 0,
+        .kingdom     = KINGDOM_HARUSHIMA,
+        .name        = "Tomohito's Patience",
+        .description = "Reclaim cost drops to 10 cp (5 at Mastery 3).",
+        .effects =
+            {
+                {.trigger = TRIGGER_RUN_START,
+                 EFF(FH_TOMOHITO, fh_tomohito)},
+            },
+        .effect_count = 1,
     },
     {
-        .kingdom      = KINGDOM_KEWARANI,
-        .name         = "Kewarani Figurehead",
-        .description  = "Kewarani starting power.",
-        .effect_count = 0,
+        .kingdom     = KINGDOM_KEWARANI,
+        .name        = "Selassie's March",
+        .description = "Double Time active from run start.",
+        .effects =
+            {
+                {.trigger = TRIGGER_BATTLE_START,
+                 EFF(FH_SELASSIE, fh_selassie)},
+            },
+        .effect_count = 1,
     },
     {
-        .kingdom      = KINGDOM_ZARQAN,
-        .name         = "Zarqan Figurehead",
-        .description  = "Zarqan starting power.",
-        .effect_count = 0,
+        .kingdom     = KINGDOM_ZARQAN,
+        .name        = "Timur's Royal Substitution",
+        .description = "Royal Substitution usable twice per battle.",
+        .effects =
+            {
+                {.trigger = TRIGGER_RUN_START,
+                 EFF(FH_TIMUR, fh_timur)},
+            },
+        .effect_count = 1,
     },
     {
-        .kingdom      = KINGDOM_CAELAN,
-        .name         = "Caelan Figurehead",
-        .description  = "Caelan starting power.",
-        .effect_count = 0,
+        .kingdom     = KINGDOM_CAELAN,
+        .name        = "Isabella's Crusade",
+        .description = "Guaranteed Province-tier Caelan card at turn 1.",
+        .effects =
+            {
+                {.trigger = TRIGGER_BATTLE_START,
+                 EFF(FH_ISABELLA, fh_isabella)},
+            },
+        .effect_count = 1,
     },
 };
 

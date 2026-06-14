@@ -14,6 +14,7 @@
 #include "ai.h"
 #include "board.h"
 #include "card.h"
+#include "defs.h"
 #include "effect.h"
 #include "meta.h"
 #include "movegen.h"
@@ -22,6 +23,20 @@
 #include "rng.h"
 #include "run.h"
 #include "types.h"
+
+/*--------------------------------------------------------------------------*\
+                              ONCE-PER-BATTLE LATCHES
+\*--------------------------------------------------------------------------*/
+
+#define LATCH_DEAD_MANS_PACT     (1u << 0)
+#define LATCH_PHILOSOPHERS_STONE (1u << 1)
+#define LATCH_DEEP_HAND          (1u << 2)
+
+/*--------------------------------------------------------------------------*\
+                              VISION FLAGS
+\*--------------------------------------------------------------------------*/
+
+#define VISION_ENEMY_VALUES (1u << 0)
 
 /*--------------------------------------------------------------------------*\
                               BATTLE CONFIG
@@ -137,6 +152,13 @@ typedef struct BattleState {
     uint16_t            event_count;
     bool                battle_ended;
     BattleResult        result;
+
+    /* Meta-layer scratch state */
+    uint8_t  buys_this_turn[2];
+    uint16_t cheapest_buy_cost[2];
+    uint16_t once_per_battle_flags;
+    uint32_t vision_flags;
+    uint8_t  silver_chain_pending[KINGDOM_COUNT];
 } BattleState;
 
 /*--------------------------------------------------------------------------*\
