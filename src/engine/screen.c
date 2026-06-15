@@ -1,9 +1,8 @@
 //! screen.c
 //!
-//! Screen registry and transition driver. Maps `ScreenId` to the
-//! concrete `Screen` v-tables declared in `screens.h`. Transitions
-//! land at frame boundaries so a screen's tick or render
-//! never runs against a half-swapped state.
+//! Engine-side screen registry. Maps ScreenId to the concrete
+//! Screen v-tables declared in screens.h, plus the wire-token
+//! mapping used by `< SHOW` lines and the `goto <screen>` verb.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
@@ -35,24 +34,28 @@ const Screen* screen_get(ScreenId id) {
     return REGISTRY[id];
 }
 
-void screen_goto(App* app, ScreenId id) {
+void screen_goto(EngineState* engine, ScreenId id) {
+    if (engine == NULL)
+        return;
     if (id < 0 || id >= SCREEN_COUNT) {
         log_warn("screen_goto: out-of-range id %d", id);
         return;
     }
-    app->next               = id;
-    app->transition_pending = true;
+    engine->next               = id;
+    engine->transition_pending = true;
 }
 
-void screen_apply_transition(App* app) {
-    if (!app->transition_pending)
+void screen_apply_transition(EngineState* engine) {
+    if (engine == NULL || !engine->transition_pending)
         return;
-    const Screen* old_screen = screen_get(app->current);
-    const Screen* new_screen = screen_get(app->next);
+    const Screen* old_screen = screen_get(engine->current);
+    const Screen* new_screen = screen_get(engine->next);
     if (old_screen != NULL && old_screen->leave != NULL)
-        old_screen->leave(app);
-    app->current            = app->next;
-    app->transition_pending = false;
+        old_screen->leave(engine);
+    engine->current            = engine->next;
+    engine->transition_pending = false;
     if (new_screen != NULL && new_screen->enter != NULL)
-        new_screen->enter(app);
+        new_screen->enter(engine);
+    if (new_screen != NULL && new_screen->emit != NULL)
+        new_screen->emit(engine);
 }

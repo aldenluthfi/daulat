@@ -157,20 +157,20 @@ bool map_can_advance(const MapState* map, uint16_t to_id) {
 /// Push the appropriate screen for the resolved node type. Battle /
 /// event / overseer / liberation push their own screens; archive /
 /// offering resolve immediately on the map.
-static void enter_node(struct App* app, MapNode* node) {
+static void enter_node(EngineState* engine, MapNode* node) {
     switch ((NodeType)node->type) {
         case NODE_BATTLE:
         case NODE_ELITE:
         case NODE_OVERSEER:
         case NODE_LIBERATION_TRIAL:
-            screen_goto(app, SCREEN_BATTLE);
+            screen_goto(engine, SCREEN_BATTLE);
             break;
         case NODE_EVENT:
-            screen_goto(app, SCREEN_EVENT);
+            screen_goto(engine, SCREEN_EVENT);
             break;
         case NODE_ARCHIVE:
-            if (app->run != NULL && node->payload_id < MAX_RECIPES)
-                app->run->revealed_recipes |= (1ULL << node->payload_id);
+            if (engine->run != NULL && node->payload_id < MAX_RECIPES)
+                engine->run->revealed_recipes |= (1ULL << node->payload_id);
             node->visited = true;
             break;
         case NODE_OFFERING:
@@ -182,15 +182,15 @@ static void enter_node(struct App* app, MapNode* node) {
     }
 }
 
-bool map_advance(struct App* app, uint16_t to_id) {
-    if (app == NULL || app->run == NULL)
+bool map_advance(EngineState* engine, uint16_t to_id) {
+    if (engine == NULL || engine->run == NULL)
         return false;
-    MapState* map = &app->run->current_map;
+    MapState* map = &engine->run->current_map;
     if (!map_can_advance(map, to_id))
         return false;
     map->current_node_id = to_id;
-    enter_node(app, &map->nodes[to_id]);
-    run_save(app->run);
+    enter_node(engine, &map->nodes[to_id]);
+    run_save(engine->run);
     return true;
 }
 
@@ -198,27 +198,27 @@ bool map_advance(struct App* app, uint16_t to_id) {
                               BATTLE CALLBACKS
 \*--------------------------------------------------------------------------*/
 
-static void clear_kingdom_if_overseer(struct App* app, MapNode* node) {
-    if (app->run == NULL)
+static void clear_kingdom_if_overseer(EngineState* engine, MapNode* node) {
+    if (engine->run == NULL)
         return;
     if (node->type != NODE_OVERSEER)
         return;
     Kingdom k = (Kingdom)node->kingdom;
     if ((unsigned)k >= KINGDOM_COUNT)
         return;
-    app->run->cleared_kingdoms[k] = true;
+    engine->run->cleared_kingdoms[k] = true;
     for (size_t i = 0; i < KINGDOM_COUNT; i++) {
         if (i == (size_t)k)
             continue;
-        if (app->run->vorath_pressure < 255)
-            app->run->vorath_pressure++;
+        if (engine->run->vorath_pressure < 255)
+            engine->run->vorath_pressure++;
     }
 }
 
-void map_on_battle_won(struct App* app) {
-    if (app == NULL || app->run == NULL)
+void map_on_battle_won(EngineState* engine) {
+    if (engine == NULL || engine->run == NULL)
         return;
-    MapState* map = &app->run->current_map;
+    MapState* map = &engine->run->current_map;
     if (map->current_node_id >= map->node_count)
         return;
     MapNode* node = &map->nodes[map->current_node_id];
@@ -226,11 +226,11 @@ void map_on_battle_won(struct App* app) {
 
     Kingdom k = map->kingdom;
     if ((unsigned)k < KINGDOM_COUNT
-        && app->run->chain_levels[k] > 0)
-        app->run->chain_levels[k]--;
+        && engine->run->chain_levels[k] > 0)
+        engine->run->chain_levels[k]--;
 
-    clear_kingdom_if_overseer(app, node);
-    run_save(app->run);
+    clear_kingdom_if_overseer(engine, node);
+    run_save(engine->run);
 }
 
 static void seed_liberation_trial(RunState* run, Kingdom subjugated_k) {
@@ -246,10 +246,10 @@ static void seed_liberation_trial(RunState* run, Kingdom subjugated_k) {
     }
 }
 
-void map_on_battle_lost(struct App* app) {
-    if (app == NULL || app->run == NULL)
+void map_on_battle_lost(EngineState* engine) {
+    if (engine == NULL || engine->run == NULL)
         return;
-    RunState* run = app->run;
+    RunState* run = engine->run;
     Kingdom   k   = run->current_map.kingdom;
     if ((unsigned)k >= KINGDOM_COUNT)
         return;

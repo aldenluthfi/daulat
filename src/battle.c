@@ -1,8 +1,9 @@
 //! battle.c
 //!
 //! Battle state, turn loop, resolve, cascading flips, and event log.
-//! BattleState is the model consumed by the SDL3 front-end.
-//! Resolve phase applies damage to meter, triggering cascading flips.
+//! BattleState is the model the engine projects to the frontend via
+//! `< STATE battle.*` lines. The resolve phase applies damage to
+//! the meter, triggering cascading flips.
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi

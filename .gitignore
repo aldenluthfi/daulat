@@ -58,3 +58,7 @@ dkms.conf
 .clang-format
 CPPLINT.cfg
 .DS_Store
+
+# Test transcripts are tracked even though *.out is ignored above.
+!tests/
+!tests/**

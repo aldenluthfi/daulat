@@ -1,9 +1,11 @@
 //! prelude.h
 //!
-//! Umbrella include. Every .c file in the project includes this and
-//! only this; ad-hoc internal includes are forbidden. Order follows
-//! the dependency layering so a clean rebuild from scratch always
-//! succeeds.
+//! Engine-side umbrella include. Every .c file under src/ except
+//! src/sdl/ includes this and only this; ad-hoc internal includes
+//! are forbidden. SDL-coupled headers (app.h, input.h, ui.h) live
+//! outside the prelude and are pulled in directly by src/sdl/
+//! files. The order follows the dependency layering so a clean
+//! rebuild from scratch always succeeds.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
@@ -12,7 +14,6 @@
 #define PRELUDE_H
 
 #include "ai.h"
-#include "app.h"
 #include "battle.h"
 #include "board.h"
 #include "card.h"
@@ -21,13 +22,15 @@
 #include "defs.h"
 #include "effect.h"
 #include "effects.h"
-#include "input.h"
+#include "engine.h"
 #include "log.h"
 #include "map.h"
 #include "meta.h"
 #include "movegen.h"
 #include "piece.h"
+#include "platform.h"
 #include "profile.h"
+#include "protocol.h"
 #include "recipe.h"
 #include "registry.h"
 #include "rng.h"
@@ -36,6 +39,5 @@
 #include "screen.h"
 #include "screens.h"
 #include "types.h"
-#include "ui.h"
 
 #endif /* PRELUDE_H */

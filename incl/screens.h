@@ -1,8 +1,9 @@
 //! screens.h
 //!
 //! Extern declarations for every concrete screen v-table. Each
-//! screen lives in `src/screens/screen_<name>.c` and exposes a single
-//! `const Screen` symbol the registry binds by `ScreenId`.
+//! engine-side screen lives in `src/engine/screen_<name>.c` and
+//! exposes a single `const Screen` symbol the registry binds by
+//! `ScreenId`.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi

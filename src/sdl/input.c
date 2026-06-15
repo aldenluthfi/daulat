@@ -1,15 +1,17 @@
 //! input.c
 //!
-//! Input edge-detector implementation. Tracks per-frame down /
-//! pressed / released keyboard state plus a sticky quit_requested
-//! flag set by SDL_EVENT_QUIT.
+//! SDL frontend input edge-detector. Mirrors what src/sdl/app.c
+//! needs to read each frame: down / pressed / released state per
+//! scancode and a quit_requested flag.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
 #include <string.h>
 
-#include "prelude.h"
+#include <SDL3/SDL.h>
+
+#include "input.h"
 
 /*--------------------------------------------------------------------------*\
                               LIFECYCLE

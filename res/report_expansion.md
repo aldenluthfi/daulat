@@ -1,6 +1,7 @@
 # Regnum — Boilerplate Expansion Guide
 
 **Created**: 2026-06-14
+**Updated**: 2026-06-15
 **Purpose**: Step-by-step instructions for adding new content to the Regnum
 boilerplate without editing engine code. Every addition is a data record;
 engine behavior is dispatched through function pointers.
@@ -227,7 +228,15 @@ is needed.
 | `eff_piece.c` | Spawn, remove, swap, force flip |
 | `eff_card.c` | Draw extra, skip, peek, target removal |
 | `eff_flip.c` | On-flip handlers, splitter spawns |
-| `eff_run.c` | Relic / chain / synergy hooks |
+| `eff_chain.c` | Penalty chain effects |
+| `eff_figurehead.c` | Figurehead power effects |
+| `eff_innate.c` | Innate power effects |
+| `eff_mastery.c` | Mastery hook effects |
+| `eff_overseer.c` | Overseer mechanic effects |
+| `eff_relic.c` | Relic effects |
+| `eff_synergy.c` | Kingdom synergy effects |
+| `eff_vorath_memory.c` | Vorath memory tracking |
+| `eff_run.c` | Universal stub (`eff_todo`) and run handlers |
 
 If the effect doesn't fit an existing file, create `eff_<name>.c` with the
 appropriate content and add it to the Makefile's `EFFECT_SRCS`.
@@ -261,6 +270,11 @@ eff_my_effect(EffectCtx *ctx, const EffectArg *args, size_t n)
 
 In `incl/effect.h`, add the declaration under the `/* effect function prototypes */`
 section.
+
+### Step 4 — Register in the effect lookup table
+
+In `src/effects/eff_registry.c`, add the new function to the `EFFECT_TABLE[]`
+array using its `EffectFuncId` enum value.
 
 ---
 
@@ -367,7 +381,300 @@ semantics and context fields.
 
 ---
 
-## 6. Adding a New Kingdom
+## 6. Adding a New Screen
+
+**Files to touch**: `incl/screen.h`, `incl/screens.h`,
+`src/engine/screen_*.c`, `src/engine/screen.c`,
+`src/engine/protocol.c`
+
+Screens live entirely on the engine side. The SDL frontend renders
+from the `< SHOW` / `< STATE` / `< POPUP` lines the engine emits
+and translates key presses into verbs the engine consumes via
+`engine_handle_line`.
+
+### Step 1 — Add the screen id
+
+In `incl/screen.h`, append the new `SCREEN_*` value just before
+`SCREEN_COUNT`:
+
+```c
+typedef enum {
+    SCREEN_TITLE = 0,
+    SCREEN_MAP,
+    SCREEN_BATTLE,
+    SCREEN_EVENT,
+    SCREEN_RESULTS,
+    SCREEN_CODEX,
+    SCREEN_MASTERY,
+    SCREEN_SETTINGS,
+    SCREEN_MY_NEW_SCREEN,  /* add here */
+    SCREEN_COUNT
+} ScreenId;
+```
+
+### Step 2 — Define the screen v-table
+
+Create `src/engine/screen_my_new.c` with a `Screen` v-table whose
+hooks operate on `EngineState`. There is no `tick` or `render`;
+the engine emits state lines and the frontend renders.
+
+```c
+//! screen_my_new.c
+//!
+//! Describe the screen here.
+//!
+//! Created: 2026-06-15
+//! Author : Alden Luthfi
+
+#include "prelude.h"
+
+static void my_new_enter(EngineState* engine) {
+    (void)engine;
+}
+
+static void my_new_handle(EngineState* engine, const ProtocolVerb* verb) {
+    (void)engine;
+    (void)verb;
+}
+
+static void my_new_emit(EngineState* engine) {
+    protocol_emit_show(engine->out, SCREEN_MY_NEW_SCREEN, "");
+}
+
+const Screen SCREEN_MY_NEW_V = {
+    .enter  = my_new_enter,
+    .leave  = NULL,
+    .handle = my_new_handle,
+    .emit   = my_new_emit,
+};
+```
+
+### Step 3 — Register in the screen registry
+
+In `incl/screens.h`, declare the new symbol:
+
+```c
+extern const Screen SCREEN_MY_NEW_V;
+```
+
+In `src/engine/screen.c`, add to the `REGISTRY` array:
+
+```c
+static const Screen* const REGISTRY[SCREEN_COUNT] = {
+    [SCREEN_TITLE]         = &SCREEN_TITLE_V,
+    [SCREEN_MAP]           = &SCREEN_MAP_V,
+    [SCREEN_BATTLE]        = &SCREEN_BATTLE_V,
+    [SCREEN_EVENT]         = &SCREEN_EVENT_V,
+    [SCREEN_RESULTS]       = &SCREEN_RESULTS_V,
+    [SCREEN_CODEX]         = &SCREEN_CODEX_V,
+    [SCREEN_MASTERY]       = &SCREEN_MASTERY_V,
+    [SCREEN_SETTINGS]      = &SCREEN_SETTINGS_V,
+    [SCREEN_MY_NEW_SCREEN] = &SCREEN_MY_NEW_V,  /* add here */
+};
+```
+
+### Step 4 — Wire the protocol token
+
+In `src/engine/protocol.c`, append the wire token to `NAMES[]` so
+`< SHOW my_new` and `> goto my_new` round-trip cleanly:
+
+```c
+static const char* const NAMES[SCREEN_COUNT] = {
+    [SCREEN_TITLE]         = "title",
+    ...
+    [SCREEN_MY_NEW_SCREEN] = "my_new",
+};
+```
+
+The frontend can now transition into the screen with:
+
+```
+> goto my_new
+```
+
+---
+
+## 7. Screen Transition Mechanism
+
+**Files**: `incl/screen.h`, `src/engine/screen.c`
+
+### Deferred Transition Pattern
+
+Transitions are **deferred** to pump boundaries so the current
+screen's `emit` finishes before any teardown / setup runs:
+
+```c
+void screen_goto(EngineState* engine, ScreenId id) {
+    engine->next               = id;
+    engine->transition_pending = true;
+}
+
+void screen_apply_transition(EngineState* engine) {
+    if (!engine->transition_pending) return;
+
+    const Screen* old_screen = screen_get(engine->current);
+    const Screen* new_screen = screen_get(engine->next);
+
+    if (old_screen != NULL && old_screen->leave != NULL)
+        old_screen->leave(engine);
+
+    engine->current            = engine->next;
+    engine->transition_pending = false;
+
+    if (new_screen != NULL && new_screen->enter != NULL)
+        new_screen->enter(engine);
+    if (new_screen != NULL && new_screen->emit != NULL)
+        new_screen->emit(engine);
+}
+```
+
+### Hook Ordering
+
+1. **Pump start**: `engine_handle_line` parses the verb and
+   dispatches to the active screen's `handle`.
+2. **Outgoing `leave`**: Called first if non-NULL.
+3. **Screen swap**: `engine->current = engine->next`.
+4. **Incoming `enter`**: Called after swap if non-NULL.
+5. **Incoming `emit`**: Writes the new SHOW + STATE lines so the
+   frontend can re-render.
+
+### Leave Hook Usage
+
+The `leave` hook is optional. Use it to save selection state, clear
+codex/popup state, or write a parting LOG line.
+
+---
+
+## 8. Profile and Run Persistence
+
+**Files**: `incl/profile.h`, `src/profile.c`, `incl/run.h`, `src/run.c`
+
+### Profile Lifecycle
+
+The `Profile` struct is the player's persistent identity:
+
+```c
+typedef struct Profile {
+    uint32_t version;
+    uint8_t  mastery_levels[KINGDOM_COUNT];
+    uint64_t codex_bits[2];
+    uint8_t  prestige_tier;
+    uint32_t vorath_defeat_count;
+    uint16_t vorath_memory[PIECE_ID_COUNT];
+    uint32_t total_wins;
+    uint32_t total_losses;
+} Profile;
+```
+
+**Load/Save cycle:**
+```c
+/* At engine startup (engine_init) */
+engine->profile = calloc(1, sizeof(Profile));
+if (!profile_load(engine->profile)) profile_new(engine->profile);
+
+/* At engine shutdown (engine_destroy) */
+profile_save(engine->profile);
+free(engine->profile);
+```
+
+### Run State Lifecycle
+
+The `RunState` struct tracks an in-progress campaign run:
+
+```c
+typedef struct RunState {
+    uint64_t run_seed;
+    Kingdom  current_kingdom;
+    Tier     current_map_tier;
+    MapState current_map;
+    RelicId  relic_ids[MAX_RELICS_HELD];
+    uint8_t  relic_count;
+    uint8_t  chain_levels[KINGDOM_COUNT];
+    bool     subjugated[KINGDOM_COUNT];
+    uint16_t vorath_counter;
+    uint32_t flags;
+    struct Profile* profile;
+} RunState;
+```
+
+**Run Flags:**
+- `RUN_FOREIGN_MARKUP_OFF` — Trade Routes relic
+- `RUN_DOUBLE_ARCHIVE` — Master's Notes relic
+- `RUN_VISION_ENEMY_VALUES` — Eagle Eye relic
+- `RUN_PREREVEAL_MODIFIER` — Surveyor's Map relic
+
+### End-of-Run Processing
+
+```c
+void run_finalize(RunState *run, RunEnd outcome)
+{
+    switch (outcome) {
+    case RUN_END_VORATH_WIN:
+        run->profile->vorath_defeat_count++;
+        run->profile->total_wins++;
+        run->profile->prestige_tier = max(1, run->profile->prestige_tier);
+        for (k = 0; k < KINGDOM_COUNT; k++) {
+            if (!run->mastery_disqualified[k])
+                run->profile->mastery_levels[k]++;
+        }
+        break;
+    case RUN_END_LOSS:
+        run->profile->total_losses++;
+        break;
+    }
+    profile_save(run->profile);
+    run_delete();  // Remove run.regsav
+}
+```
+
+### Battle Loss Handling
+
+```c
+void map_on_battle_lost(RunState *run)
+{
+    Kingdom k = run->current_kingdom;
+    run->chain_levels[k]++;
+    run->vorath_counter++;
+    run->mastery_disqualified[k] = true;
+
+    if (run->chain_levels[k] >= 3)
+        run->subjugated[k] = true;
+}
+```
+
+### Save Codec Pattern
+
+For serializing function pointers:
+
+```c
+// Each Effect carries an id that maps to the function at load time
+typedef struct Effect {
+    uint16_t      effect_id;  /* index into function table */
+    EffectTrigger trigger;
+    EffectArg     args[MAX_EFFECT_ARGS];
+    uint8_t       arg_count;
+    int16_t       duration_turns;
+    Side          owner;
+    uint32_t      source_id;
+} Effect;
+
+// At load time, resolve id to function pointer
+static const EffectFunc EFFECT_TABLE[] = {
+    [EFFECT_TODO]       = eff_todo,
+    [EFFECT_BULWARK]    = eff_bulwark,
+    // ...
+};
+
+EffectFunc eff_lookup(EffectFuncId id)
+{
+    if (id >= EFFECT_COUNT) return eff_todo;
+    return EFFECT_TABLE[id];
+}
+```
+
+---
+
+## 9. Adding a New Kingdom
 
 **Files to touch**: `incl/defs.h`, `incl/types.h`, `src/data/`,
 `src/movegens/`, `src/effects/`, `src/registry.c`, `src/ai.c`,
@@ -424,7 +731,7 @@ Add to `data_figureheads.c` for the kingdom's starting power.
 
 ---
 
-## 7. Adding a Relic / Chain / Mastery
+## 10. Adding a Relic / Chain / Mastery
 
 **Files to touch**: `incl/defs.h`, `src/data/`, `src/registry.c`
 
@@ -492,7 +799,7 @@ Add to `data_figureheads.c` for the kingdom's starting power.
 
 ---
 
-## 8. Wiring Battle Modifiers and Board Traits
+## 11. Wiring Battle Modifiers and Board Traits
 
 **Files to touch**: `incl/defs.h`, `src/data/data_modifiers.c`,
 `src/data/data_traits.c`, `src/battle.c`
@@ -536,7 +843,7 @@ Add to `data_figureheads.c` for the kingdom's starting power.
 
 ---
 
-## 9. Wiring AI Archetypes
+## 12. Wiring AI Archetypes
 
 **Files to touch**: `incl/defs.h`, `src/data/data_archetypes.c`,
 `src/ai.c`
@@ -586,9 +893,9 @@ In `data_archetypes.c`:
 
 ---
 
-## 10. Plugging in SDL3
+## 13. Plugging in SDL3
 
-**Files to touch**: `src/sdl3/` (new), `incl/`
+**Files to touch**: `src/sdl3/` (future), `incl/`
 
 ### Architecture
 
@@ -639,7 +946,7 @@ int projected = battle_projected_damage(bs, SIDE_PLAYER);
 
 ---
 
-## 11. Adding Save/Load
+## 14. Adding Save/Load
 
 **Files to touch**: `src/run.c`, `incl/run.h`
 
@@ -701,7 +1008,7 @@ length arrays, write length prefix first.
 
 ---
 
-## 12. Adding Unit Tests
+## 15. Adding Unit Tests
 
 **Files to touch**: `tests/` (new directory)
 
@@ -759,13 +1066,14 @@ test: $(TEST_SRCS)
 | `eff_meter.c` | Meter cap, overflow, cascade |
 | `eff_damage.c` | Multipliers, reductions, immunity |
 | `eff_piece.c` | Spawn, flip, remove |
+| `eff_*.c` | Each effect function |
 | `mg_*.c` | Each movegen covers legal squares |
 | `piece.c` | Flip cascades, splitter intercept |
 | `battle.c` | Turn flow, resolve order |
 
 ---
 
-## 13. Adding Multiplayer / Replay
+## 16. Adding Multiplayer / Replay
 
 **Files to touch**: `src/battle.c`, `src/run.c`
 
@@ -803,13 +1111,14 @@ Player A <---> Game Server <---> Player B
 
 ---
 
-## 14. Makefile Checklist
+## 17. Makefile Checklist
 
 When adding new files:
 
 - **`DATA_SRCS`** in `Makefile`: add `src/data/data_new.c`
 - **`MOVE_SRCS`**: add `src/movegens/mg_new.c` if creating new file
 - **`EFFECT_SRCS`**: add `src/effects/eff_new.c` if creating new file
+- **`SCREEN_SRCS`**: add `src/screens/screen_new.c` if creating new screen
 - **`TEST_SRCS`**: add `tests/test_new.c` if creating test file
 
 Headers: `-MMD -MP` (already in Makefile) auto-generates `.d` files
@@ -817,7 +1126,7 @@ so editing any header rebuilds its dependents.
 
 ---
 
-## 15. Code Review Checklist
+## 18. Code Review Checklist
 
 Before submitting a new element:
 
@@ -831,3 +1140,4 @@ Before submitting a new element:
 - [ ] Build with `make debug` — zero warnings, zero errors
 - [ ] Run `./bin/regnum` — demo still works
 - [ ] Document the new element in `report_elements.md`
+- [ ] Add "Descriptive Behaviour" row from GDD vision

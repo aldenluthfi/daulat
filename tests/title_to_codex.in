@@ -1,0 +1,5 @@
+open_codex piece
+close_popup
+goto mastery
+goto title
+quit

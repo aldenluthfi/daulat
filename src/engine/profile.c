@@ -1,13 +1,14 @@
 //! profile.c
 //!
-//! Profile persistence backed by the chunked save codec. Path lives
-//! under SDL_GetPrefPath so the file lands in the OS-conventional
-//! per-user location.
+//! Profile persistence backed by the chunked save codec. The save
+//! file lands under platform_pref_path() so it ends up in the OS-
+//! conventional per-user location regardless of which binary
+//! writes it (engine vs. SDL frontend).
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include <SDL3/SDL.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "prelude.h"
@@ -22,13 +23,10 @@ static bool PROFILE_PATH_READY = false;
 const char* profile_path(void) {
     if (PROFILE_PATH_READY)
         return PROFILE_PATH;
-    char* pref = SDL_GetPrefPath("aldenluthfi", "regnum");
-    if (pref == NULL) {
-        log_err("SDL_GetPrefPath failed: %s", SDL_GetError());
+    const char* pref = platform_pref_path("aldenluthfi", "regnum");
+    if (pref == NULL)
         return NULL;
-    }
-    SDL_snprintf(PROFILE_PATH, sizeof(PROFILE_PATH), "%sprofile.regsav", pref);
-    SDL_free(pref);
+    snprintf(PROFILE_PATH, sizeof(PROFILE_PATH), "%sprofile.regsav", pref);
     PROFILE_PATH_READY = true;
     return PROFILE_PATH;
 }

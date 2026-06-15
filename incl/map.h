@@ -14,7 +14,7 @@
 
 #include "defs.h"
 
-struct App;
+struct EngineState;
 struct RunState;
 
 /*--------------------------------------------------------------------------*\
@@ -130,13 +130,13 @@ bool map_can_advance(const MapState* map, uint16_t to_id);
 /// and autosave the run. Returns false if the step is illegal.
 ///
 /// Params:
-/// - struct App* app    -> app holding the active run
+/// - struct EngineState* engine    -> app holding the active run
 /// - uint16_t    to_id  -> destination node id
 ///
 /// Return:
 /// bool -> true on success
 ///
-bool map_advance(struct App* app, uint16_t to_id);
+bool map_advance(struct EngineState* engine, uint16_t to_id);
 
 /// map_on_battle_won
 ///
@@ -146,9 +146,9 @@ bool map_advance(struct App* app, uint16_t to_id);
 /// synergy unlock, vorath pressure), and autosaves.
 ///
 /// Params:
-/// - struct App* app -> app holding the active run
+/// - struct EngineState* engine -> app holding the active run
 ///
-void map_on_battle_won(struct App* app);
+void map_on_battle_won(struct EngineState* engine);
 
 /// map_on_battle_lost
 ///
@@ -157,9 +157,9 @@ void map_on_battle_won(struct App* app);
 /// subjugated and seed a Liberation Trial elsewhere, and autosaves.
 ///
 /// Params:
-/// - struct App* app -> app holding the active run
+/// - struct EngineState* engine -> app holding the active run
 ///
-void map_on_battle_lost(struct App* app);
+void map_on_battle_lost(struct EngineState* engine);
 
 /// map_current_node
 ///

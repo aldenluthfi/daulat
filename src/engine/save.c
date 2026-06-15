@@ -2,14 +2,13 @@
 //!
 //! Binary save-file codec: chunked TLV layout with a magic +
 //! versioned header and a CRC32 footer. Writers buffer everything
-//! into a fixed-size stack array and flush atomically via
-//! `SDL_IOStream`; readers slurp the entire file in one go and
+//! into a fixed-size stack array and flush atomically through the
+//! platform layer; readers slurp the entire file in one go and
 //! validate the CRC up-front.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include <SDL3/SDL.h>
 #include <string.h>
 
 #include "prelude.h"
@@ -144,14 +143,14 @@ bool save_writer_flush(const SaveWriter* w, const char* path) {
     }
     uint32_t crc = crc32_ieee(w->buf, w->pos);
 
-    SDL_IOStream* io = SDL_IOFromFile(path, "wb");
-    if (io == NULL) {
-        log_err("SDL_IOFromFile failed for %s: %s", path, SDL_GetError());
+    PlatformStream* stream = platform_open_write(path);
+    if (stream == NULL) {
+        log_err("save_writer_flush: cannot open %s", path);
         return false;
     }
-    if (SDL_WriteIO(io, w->buf, w->pos) != w->pos) {
-        log_err("SDL_WriteIO body failed: %s", SDL_GetError());
-        SDL_CloseIO(io);
+    if (platform_write(stream, w->buf, w->pos) != w->pos) {
+        log_err("save_writer_flush: body write failed");
+        platform_close(stream);
         return false;
     }
     uint8_t footer[4] = {
@@ -160,12 +159,12 @@ bool save_writer_flush(const SaveWriter* w, const char* path) {
         (uint8_t)((crc >> 16) & 0xFFu),
         (uint8_t)((crc >> 24) & 0xFFu),
     };
-    if (SDL_WriteIO(io, footer, sizeof(footer)) != sizeof(footer)) {
-        log_err("SDL_WriteIO footer failed: %s", SDL_GetError());
-        SDL_CloseIO(io);
+    if (platform_write(stream, footer, sizeof(footer)) != sizeof(footer)) {
+        log_err("save_writer_flush: footer write failed");
+        platform_close(stream);
         return false;
     }
-    SDL_CloseIO(io);
+    platform_close(stream);
     return true;
 }
 
@@ -185,28 +184,28 @@ static uint16_t read_u16_le(const uint8_t* position) {
 bool save_reader_open(SaveReader* r, const char* path) {
     memset(r, 0, sizeof(*r));
 
-    SDL_IOStream* io = SDL_IOFromFile(path, "rb");
-    if (io == NULL)
+    PlatformStream* stream = platform_open_read(path);
+    if (stream == NULL)
         return false;
-    Sint64 size = SDL_GetIOSize(io);
-    if (size < 16 || size > (Sint64)SAVE_BUFFER_BYTES) {
+    int64_t size = platform_size(stream);
+    if (size < 16 || size > (int64_t)SAVE_BUFFER_BYTES) {
         log_err(
             "save_reader_open: %s has invalid size %lld",
             path, (long long)size
         );
-        SDL_CloseIO(io);
+        platform_close(stream);
         return false;
     }
-    if (SDL_ReadIO(io, r->buf, (size_t)size) != (size_t)size) {
-        log_err("SDL_ReadIO failed: %s", SDL_GetError());
-        SDL_CloseIO(io);
+    if (platform_read(stream, r->buf, (size_t)size) != (size_t)size) {
+        log_err("save_reader_open: short read on %s", path);
+        platform_close(stream);
         return false;
     }
-    SDL_CloseIO(io);
+    platform_close(stream);
 
     r->total = (uint32_t)size;
 
-    uint32_t stored_crc  = read_u32_le(&r->buf[r->total - 4u]);
+    uint32_t stored_crc   = read_u32_le(&r->buf[r->total - 4u]);
     uint32_t computed_crc = crc32_ieee(r->buf, r->total - 4u);
     if (stored_crc != computed_crc) {
         log_err(

@@ -1,10 +1,9 @@
 //! app.h
 //!
-//! Top-level application state and SDL3 lifecycle hooks. The `App`
-//! struct owns the SDL window and renderer, the active screen
-//! transition state, and the input edge-detector. Phase-later fields
-//! (Profile, RunState, BattleState) are attached as forward-declared
-//! pointers and populated in their respective phases.
+//! SDL frontend lifecycle and state. Owns the SDL window, renderer,
+//! input edge-detector, child-engine pipes, and the mirrored
+//! FrontendModel the views render from. This header is SDL-coupled
+//! and lives outside prelude.h; only src/sdl/ files include it.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
@@ -12,93 +11,81 @@
 #ifndef APP_H
 #define APP_H
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <sys/types.h>
+
 #include <SDL3/SDL.h>
 
 #include "input.h"
-#include "screen.h"
 
-struct Profile;
-struct RunState;
-struct BattleState;
+/*--------------------------------------------------------------------------*\
+                              MODEL
+\*--------------------------------------------------------------------------*/
+
+/// Mirror of the engine's current view, hydrated from `< SHOW`,
+/// `< STATE`, `< POPUP` lines. The frontend re-renders from this
+/// every frame.
+typedef struct FrontendModel {
+    char screen[32];
+    char detail[256];
+    char popup[32];
+    char popup_detail[256];
+    bool engine_quit;
+} FrontendModel;
 
 /*--------------------------------------------------------------------------*\
                               APP STATE
 \*--------------------------------------------------------------------------*/
 
-/// App
-///
-/// Owner of SDL3 handles, the input edge-detector, and the current
-/// and pending screen ids. Game-state pointers are NULL until their
-/// respective phases populate them.
-///
+/// Owner of SDL3 handles, the input edge-detector, the engine
+/// child process handles, and the FrontendModel.
 typedef struct App {
     SDL_Window*   window;
     SDL_Renderer* renderer;
 
-    ScreenId current;
-    ScreenId next;
-    bool     transition_pending;
-
     Input    input;
     uint64_t last_tick_ns;
 
-    struct Profile*     profile;
-    struct RunState*    run;
-    struct BattleState* battle;
+    pid_t    engine_pid;
+    FILE*    engine_in;     /* parent writes "> ..." here          */
+    FILE*    engine_out;    /* parent reads  "< ..." here          */
+    char     read_buffer[1024];
+    size_t   read_length;
+
+    FrontendModel model;
 } App;
 
 /*--------------------------------------------------------------------------*\
-                              SDL3 CALLBACKS
+                              LIFECYCLE
 \*--------------------------------------------------------------------------*/
 
-/// app_init
-///
-/// Allocate and initialize the App: SDL_Init, window + renderer
-/// creation, input reset, initial screen entry. Returns SDL_APP_FAILURE
-/// on any SDL error.
-///
-/// Params:
-/// - App** out_app -> receives the heap-allocated App pointer
-///
-/// Return:
-/// SDL_AppResult -> SDL_APP_CONTINUE on success
-///
-SDL_AppResult app_init(App** out_app);
+/// Fork the engine binary as a child, set up pipes, create the
+/// SDL window + renderer. Returns SDL_APP_FAILURE on any error.
+SDL_AppResult app_init(App** out_app, const char* engine_binary_path);
 
-/// app_iterate
-///
-/// One frame: apply pending transition, begin frame, tick, render.
-/// Returns SDL_APP_SUCCESS if the user requested quit.
-///
-/// Params:
-/// - App* app -> app to advance
-///
-/// Return:
-/// SDL_AppResult -> SDL_APP_CONTINUE or SDL_APP_SUCCESS
-///
+/// One frame: drain engine output, render the model. Returns
+/// SDL_APP_SUCCESS when the engine quit or the user requested
+/// quit.
 SDL_AppResult app_iterate(App* app);
 
-/// app_event
-///
-/// Fold one SDL event into input state and forward to the active
-/// screen's `event` hook. Returns SDL_APP_SUCCESS on SDL_EVENT_QUIT.
-///
-/// Params:
-/// - App*           app   -> app to mutate
-/// - const SDL_Event* event -> SDL event to consume
-///
-/// Return:
-/// SDL_AppResult -> SDL_APP_CONTINUE or SDL_APP_SUCCESS
-///
+/// Translate one SDL_Event into an engine verb when it is a key
+/// press; pass through SDL_EVENT_QUIT.
 SDL_AppResult app_event(App* app, const SDL_Event* event);
 
-/// app_quit
-///
-/// Tear down SDL3 resources and free the App. Idempotent w.r.t. NULL.
-///
-/// Params:
-/// - App* app -> app to destroy
-///
+/// Send `> quit` to the child, wait, tear down SDL.
 void app_quit(App* app);
+
+/*--------------------------------------------------------------------------*\
+                              PIPE I/O
+\*--------------------------------------------------------------------------*/
+
+/// Write one verb line ("> <text>\n") to the engine.
+void app_send(App* app, const char* fmt, ...);
+
+/// Parse one engine line into the FrontendModel.
+void app_consume_line(App* app, const char* line);
 
 #endif /* APP_H */

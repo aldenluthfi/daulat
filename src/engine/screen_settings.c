@@ -12,25 +12,13 @@
                               HOOKS
 \*--------------------------------------------------------------------------*/
 
-static void settings_enter(App* app) {
-    (void)app;
+static void settings_handle(EngineState* engine, const ProtocolVerb* verb) {
+    (void)engine;
+    (void)verb;
 }
 
-static void settings_event(App* app, const SDL_Event* event) {
-    (void)app;
-    (void)event;
-}
-
-static void settings_tick(App* app, float dt) {
-    (void)app;
-    (void)dt;
-}
-
-static void settings_render(App* app, SDL_Renderer* renderer) {
-    (void)app;
-    SDL_SetRenderDrawColor(renderer, 22, 22, 32, 255);
-    SDL_RenderClear(renderer);
-    ui_text(renderer, 32.0f, 32.0f, "REGNUM - SETTINGS");
+static void settings_emit(EngineState* engine) {
+    protocol_emit_show(engine->out, SCREEN_SETTINGS, "");
 }
 
 /*--------------------------------------------------------------------------*\
@@ -38,9 +26,8 @@ static void settings_render(App* app, SDL_Renderer* renderer) {
 \*--------------------------------------------------------------------------*/
 
 const Screen SCREEN_SETTINGS_V = {
-    .enter  = settings_enter,
+    .enter  = NULL,
     .leave  = NULL,
-    .event  = settings_event,
-    .tick   = settings_tick,
-    .render = settings_render,
+    .handle = settings_handle,
+    .emit   = settings_emit,
 };

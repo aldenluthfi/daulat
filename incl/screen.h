@@ -1,10 +1,12 @@
 //! screen.h
 //!
-//! Screen v-table and dispatch enum for the Regnum app shell.
-//! Every visible mode (title, map, battle, event, results, codex,
-//! mastery, settings) implements a `Screen` and registers it via
-//! `screens.h`. The active screen handles all input, ticks, and
-//! draws for the current frame.
+//! Screen v-table and dispatch enum for the headless engine. A
+//! screen is a (enter, leave, handle, emit) tuple operating on
+//! EngineState: `enter` runs on transition in; `leave` on
+//! transition out; `handle` consumes one parsed verb from the
+//! frontend; `emit` writes the SHOW + STATE lines that describe
+//! the current view. Rendering lives in the SDL frontend, which
+//! parses the engine's `<` lines into its own model.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
@@ -12,18 +14,15 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
-#include <SDL3/SDL.h>
-
-struct App;
+struct EngineState;
+struct ProtocolVerb;
 
 /*--------------------------------------------------------------------------*\
                               SCREEN IDS
 \*--------------------------------------------------------------------------*/
 
-/// ScreenId
-///
-/// Dense enum naming every screen. SCREEN_COUNT is the registry size.
-///
+/// Dense enum naming every screen. SCREEN_COUNT is the registry
+/// size.
 typedef enum {
     SCREEN_TITLE = 0,
     SCREEN_MAP,
@@ -37,60 +36,42 @@ typedef enum {
 } ScreenId;
 
 /*--------------------------------------------------------------------------*\
-                              SCREEN V-TABLE
+                              V-TABLE
 \*--------------------------------------------------------------------------*/
 
-/// Screen
-///
-/// V-table of per-screen lifecycle and per-frame hooks. Any hook may
-/// be NULL; the dispatcher treats NULL as a no-op.
-///
+/// V-table of per-screen lifecycle and per-verb hooks. Any hook
+/// may be NULL; the dispatcher treats NULL as a no-op.
 typedef struct Screen {
-    void (*enter)(struct App* app);
-    void (*leave)(struct App* app);
-    void (*event)(struct App* app, const SDL_Event* event);
-    void (*tick)(struct App* app, float dt);
-    void (*render)(struct App* app, SDL_Renderer* renderer);
+    void (*enter) (struct EngineState* engine);
+    void (*leave) (struct EngineState* engine);
+    void (*handle)(
+        struct EngineState*        engine,
+        const struct ProtocolVerb* verb
+    );
+    void (*emit)  (struct EngineState* engine);
 } Screen;
 
 /*--------------------------------------------------------------------------*\
                               API
 \*--------------------------------------------------------------------------*/
 
-/// screen_get
-///
-/// Look up the Screen v-table for a given id. Returns NULL if the id
-/// is out of range or no screen was registered.
-///
-/// Params:
-/// - ScreenId id -> id to look up
-///
-/// Return:
-/// const Screen* -> screen v-table, or NULL
-///
+/// Look up the Screen v-table for a given id. Returns NULL when
+/// the id is out of range or no screen was registered.
 const Screen* screen_get(ScreenId id);
 
-/// screen_goto
-///
-/// Request a transition to a new screen. The transition lands at
-/// the next frame boundary so the current screen's tick and render
-/// finish without surprise re-entry.
-///
-/// Params:
-/// - struct App* app -> app holding the active screen state
-/// - ScreenId    id  -> id of the screen to enter next
-///
-void screen_goto(struct App* app, ScreenId id);
+/// Return the protocol token used for a screen on the wire
+/// ("title", "map", "battle", ...). NULL on unknown id.
+const char* screen_name(ScreenId id);
 
-/// screen_apply_transition
-///
-/// If a transition was requested, call the outgoing screen's `leave`
-/// and the incoming screen's `enter`. Called by the app loop once per
-/// frame, before tick.
-///
-/// Params:
-/// - struct App* app -> app to advance
-///
-void screen_apply_transition(struct App* app);
+/// Request a transition to a new screen. The transition lands at
+/// the next pump boundary so the current screen's emit finishes
+/// without re-entry surprise.
+void screen_goto(struct EngineState* engine, ScreenId id);
+
+/// If a transition was requested, call the outgoing screen's
+/// `leave`, the incoming screen's `enter`, and the incoming
+/// screen's `emit`. Called by the engine dispatcher once per
+/// pump.
+void screen_apply_transition(struct EngineState* engine);
 
 #endif /* SCREEN_H */

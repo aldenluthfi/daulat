@@ -1,14 +1,14 @@
 //! run.c
 //!
 //! Run-state implementation: small in-memory helpers plus the
-//! binary save/load codec backed by `save.h`. Relics are stored
-//! as ids and rehydrated to templates via the registry; the
-//! Profile pointer is not persisted (it is re-attached at runtime).
+//! binary save/load codec backed by save.h. Relics are stored as
+//! ids and rehydrated to templates via the registry; the Profile
+//! pointer is not persisted and is re-attached at runtime.
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 
-#include <SDL3/SDL.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "prelude.h"
@@ -63,13 +63,10 @@ static bool RUN_PATH_READY = false;
 const char* run_path(void) {
     if (RUN_PATH_READY)
         return RUN_PATH;
-    char* pref = SDL_GetPrefPath("aldenluthfi", "regnum");
-    if (pref == NULL) {
-        log_err("SDL_GetPrefPath failed: %s", SDL_GetError());
+    const char* pref = platform_pref_path("aldenluthfi", "regnum");
+    if (pref == NULL)
         return NULL;
-    }
-    SDL_snprintf(RUN_PATH, sizeof(RUN_PATH), "%srun.regsav", pref);
-    SDL_free(pref);
+    snprintf(RUN_PATH, sizeof(RUN_PATH), "%srun.regsav", pref);
     RUN_PATH_READY = true;
     return RUN_PATH;
 }
@@ -141,8 +138,6 @@ static bool write_run_chunk(SaveWriter* w, const RunState* run) {
 static bool read_run_chunk(SaveReader* r, RunState* run) {
     uint8_t  u8;
     uint16_t u16;
-    uint32_t u32;
-    uint64_t u64;
 
     if (!save_read_u64(r, &run->run_seed))
         return false;
@@ -206,8 +201,6 @@ static bool read_run_chunk(SaveReader* r, RunState* run) {
         ))
         return false;
 
-    (void)u32;
-    (void)u64;
     return true;
 }
 
@@ -256,8 +249,8 @@ void run_delete(void) {
     const char* path = run_path();
     if (path == NULL)
         return;
-    if (!SDL_RemovePath(path))
-        log_warn("run_delete: SDL_RemovePath failed: %s", SDL_GetError());
+    if (!platform_remove(path))
+        log_warn("run_delete: platform_remove failed");
 }
 
 /*--------------------------------------------------------------------------*\
