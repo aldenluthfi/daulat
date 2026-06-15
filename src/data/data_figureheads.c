@@ -40,7 +40,7 @@ const FigureheadPower FIGUREHEADS[] = {
         .description = "Reclaim cost drops to 10 cp (5 at Mastery 3).",
         .effects =
             {
-                {.trigger = TRIGGER_RUN_START,
+                {.trigger = TRIGGER_QUERY_RECLAIM_COST,
                  EFF(FH_TOMOHITO, fh_tomohito)},
             },
         .effect_count = 1,
@@ -62,7 +62,7 @@ const FigureheadPower FIGUREHEADS[] = {
         .description = "Royal Substitution usable twice per battle.",
         .effects =
             {
-                {.trigger = TRIGGER_RUN_START,
+                {.trigger = TRIGGER_QUERY_ROYAL_SUB_COUNT,
                  EFF(FH_TIMUR, fh_timur)},
             },
         .effect_count = 1,

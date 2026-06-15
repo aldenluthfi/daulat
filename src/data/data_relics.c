@@ -66,7 +66,7 @@ const RelicTemplate RELICS[] = {
     ),
     RELIC(
         RELIC_WAR_CHEST, "War Chest",
-        {.trigger = TRIGGER_CP_REMAINING_EOT, EFF(WAR_CHEST, war_chest)}
+        {.trigger = TRIGGER_TURN_END, EFF(WAR_CHEST, war_chest)}
     ),
     RELIC(
         RELIC_TRADE_ROUTES, "Trade Routes",
@@ -75,7 +75,7 @@ const RelicTemplate RELICS[] = {
     /* Meter (6) */
     RELIC(
         RELIC_SOUL_SHARD, "Soul Shard",
-        {.trigger = TRIGGER_PIECE_GAINED, EFF(SOUL_SHARD, soul_shard)}
+        {.trigger = TRIGGER_PIECE_FLIPPED, EFF(SOUL_SHARD, soul_shard)}
     ),
     RELIC(
         RELIC_VETERANS_BOND, "Veteran's Bond",
@@ -137,18 +137,18 @@ const RelicTemplate RELICS[] = {
     ),
     RELIC(
         RELIC_PHILOSOPHERS_STONE, "Philosopher's Stone",
-        {.trigger = TRIGGER_COMBO_PERFORMED,
+        {.trigger = TRIGGER_PIECE_COMBINED,
          EFF(PHILOSOPHERS_STONE, philosophers_stone)}
     ),
     RELIC(
         RELIC_INHERITED_POWER, "Inherited Power",
-        {.trigger = TRIGGER_COMBO_PERFORMED,
+        {.trigger = TRIGGER_PIECE_COMBINED,
          EFF(INHERITED_POWER, inherited_power)}
     ),
     /* Board (5) */
     RELIC(
         RELIC_EAGLE_EYE, "Eagle Eye",
-        {.trigger = TRIGGER_RUN_START, EFF(EAGLE_EYE, eagle_eye)}
+        {.trigger = TRIGGER_QUERY_VISION_FLAGS, EFF(EAGLE_EYE, eagle_eye)}
     ),
     RELIC(
         RELIC_SURVEYORS_MAP, "Surveyor's Map",
@@ -157,12 +157,12 @@ const RelicTemplate RELICS[] = {
     ),
     RELIC(
         RELIC_FORWARD_COMMAND, "Forward Command",
-        {.trigger = TRIGGER_ATTACK_ENEMY_TERR,
+        {.trigger = TRIGGER_RESOLVE_ATTACK,
          EFF(FORWARD_COMMAND, forward_command)}
     ),
     RELIC(
         RELIC_FORTIFIED_LINE, "Fortified Line",
-        {.trigger = TRIGGER_NO_MOVE_THIS_TURN,
+        {.trigger = TRIGGER_RESOLVE_ATTACK,
          EFF(FORTIFIED_LINE, fortified_line)}
     ),
     RELIC(

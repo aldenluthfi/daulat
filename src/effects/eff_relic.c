@@ -59,13 +59,15 @@ void eff_bulk_discount(
 ) {
     (void)args;
     (void)count;
-    struct BattleState* battle = context->battle;
-    if (battle == NULL || context->as.query.cost_out == NULL)
+    if (context->battle == NULL || context->self == NULL)
         return;
-    if (battle->buys_this_turn[SIDE_PLAYER] < 3)
+    if (context->as.query.cost_out == NULL)
         return;
-    uint16_t cheapest = battle->cheapest_buy_cost[SIDE_PLAYER];
-    if ((uint16_t)*context->as.query.cost_out <= cheapest)
+    int buys_this_turn = context->self->scratch[0].v.i;
+    int cheapest_so_far = context->self->scratch[1].v.i;
+    if (buys_this_turn < 3)
+        return;
+    if (cheapest_so_far > 0 && *context->as.query.cost_out <= cheapest_so_far)
         *context->as.query.cost_out = 0;
 }
 
@@ -107,6 +109,8 @@ void eff_soul_shard(
     (void)count;
     if (context->battle == NULL)
         return;
+    if (context->as.flipped.new_owner != SIDE_PLAYER)
+        return;
     context->battle->meter[SIDE_PLAYER] += 30;
 }
 
@@ -137,14 +141,14 @@ void eff_dead_mans_pact(
     (void)args;
     (void)count;
     struct BattleState* battle = context->battle;
-    if (battle == NULL)
+    if (battle == NULL || context->self == NULL)
         return;
-    if (battle->once_per_battle_flags & LATCH_DEAD_MANS_PACT)
+    if (context->self->scratch[0].v.i != 0)
         return;
     if (battle->meter[SIDE_PLAYER] > 0)
         return;
     battle->meter[SIDE_PLAYER]      = 20;
-    battle->once_per_battle_flags  |= LATCH_DEAD_MANS_PACT;
+    context->self->scratch[0].v.i  = 1;
 }
 
 void eff_iron_king(
@@ -241,7 +245,7 @@ void eff_deep_hand(
     (void)args;
     (void)count;
     /* Once-per-battle draw action; consumed via
-     * battle_relic_deep_hand_draw, gated by LATCH_DEEP_HAND. */
+     * battle_relic_deep_hand_draw and gated by scratch[0]. */
 }
 
 void eff_gilded_archive(
@@ -292,13 +296,12 @@ void eff_philosophers_stone(
 ) {
     (void)args;
     (void)count;
-    struct BattleState* battle = context->battle;
-    if (battle == NULL || context->as.piece.piece == NULL)
+    if (context->battle == NULL || context->as.piece.piece == NULL)
         return;
-    if (battle->once_per_battle_flags & LATCH_PHILOSOPHERS_STONE)
+    if (context->self == NULL || context->self->scratch[0].v.i != 0)
         return;
-    context->as.piece.piece->value_mod   += 20;
-    battle->once_per_battle_flags        |= LATCH_PHILOSOPHERS_STONE;
+    context->as.piece.piece->value_mod += 20;
+    context->self->scratch[0].v.i      = 1;
 }
 
 void eff_inherited_power(
@@ -323,10 +326,9 @@ void eff_eagle_eye(
 ) {
     (void)args;
     (void)count;
-    if (context->battle == NULL)
-        return;
-    context->battle->vision_flags |= VISION_ENEMY_VALUES;
-    if (context->battle->config.run != NULL)
+    if (context->as.query.vision_flags_out != NULL)
+        *context->as.query.vision_flags_out |= VISION_ENEMY_VALUES;
+    if (context->battle != NULL && context->battle->config.run != NULL)
         context->battle->config.run->flags |= RUN_VISION_ENEMY_VALUES;
 }
 
@@ -349,8 +351,15 @@ void eff_forward_command(
 ) {
     (void)args;
     (void)count;
-    if (context->as.resolve.damage_out != NULL)
-        *context->as.resolve.damage_out += 5;
+    if (context->battle == NULL || context->as.resolve.attacker == NULL)
+        return;
+    if (context->as.resolve.damage_out == NULL)
+        return;
+    Position position = context->as.resolve.attacker->pos;
+    Side     attacker_side = context->as.resolve.attacker->owner;
+    if (battle_territory(context->battle, position) != side_opposite(attacker_side))
+        return;
+    *context->as.resolve.damage_out += 5;
 }
 
 void eff_fortified_line(
@@ -360,6 +369,10 @@ void eff_fortified_line(
 ) {
     (void)args;
     (void)count;
+    if (context->as.resolve.attacker == NULL)
+        return;
+    if (context->as.resolve.attacker->moves_used != 0)
+        return;
     if (context->as.resolve.damage_out != NULL)
         *context->as.resolve.damage_out += 5;
 }

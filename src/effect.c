@@ -1,8 +1,9 @@
 //! effect.c
 //!
-//! EffectBus: single dispatch point for all game behaviors.
-//! Effects are registered with scope (local / timed / battle / run).
-//! Duration ticks expire local effects and decrement timed ones.
+//! EffectBus. Owns every active Effect by value so handlers can
+//! mutate per-instance scratch[]. Duration ticks expire local
+//! effects and decrement timed ones; the bus dispatches by trigger
+//! through `EffectFunc.apply`.
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
@@ -30,7 +31,8 @@ void bus_init(EffectBus* bus) {
 
 /// bus_register
 ///
-/// Append a copy of `*effect` to the bus as a fresh active slot.
+/// Copy `*effect` into a new active slot. The bus owns the copy; the
+/// original template literal in the data file remains immutable.
 ///
 /// Params:
 /// - EffectBus* bus -> destination bus
@@ -44,7 +46,7 @@ void bus_register(EffectBus* bus, const Effect* effect) {
         );
         return;
     }
-    bus->slots[bus->count].effect          = effect;
+    bus->slots[bus->count].effect          = *effect;
     bus->slots[bus->count].remaining_turns = effect->duration_turns;
     bus->slots[bus->count].active          = true;
     bus->count++;
@@ -56,7 +58,9 @@ void bus_register(EffectBus* bus, const Effect* effect) {
 
 /// bus_emit
 ///
-/// Invoke every active handler whose trigger matches.
+/// Invoke every active handler whose trigger matches. `context->self`
+/// points at the live slot so handlers can read args and write
+/// scratch through one pointer.
 ///
 /// Params:
 /// - EffectBus* bus -> bus to scan
@@ -71,18 +75,20 @@ void bus_emit(
     struct EffectCtx* context
 ) {
     context->trigger = trigger;
-    context->battle      = battle;
+    context->battle  = battle;
     for (uint16_t i = 0; i < bus->count; i++) {
         if (!bus->slots[i].active)
             continue;
-        if (bus->slots[i].effect->trigger != trigger)
+        if (bus->slots[i].effect.trigger != trigger)
             continue;
-        bus->slots[i].effect->apply(
+        context->self = &bus->slots[i].effect;
+        bus->slots[i].effect.apply(
             context,
-            bus->slots[i].effect->args,
-            bus->slots[i].effect->arg_count
+            bus->slots[i].effect.args,
+            bus->slots[i].effect.arg_count
         );
     }
+    context->self = NULL;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -145,7 +151,7 @@ void bus_tick_turn_start(EffectBus* bus) {
 size_t bus_query_count(const EffectBus* bus, EffectTrigger trigger) {
     size_t count = 0;
     for (uint16_t i = 0; i < bus->count; i++) {
-        if (bus->slots[i].active && bus->slots[i].effect->trigger == trigger) {
+        if (bus->slots[i].active && bus->slots[i].effect.trigger == trigger) {
             count++;
         }
     }
@@ -167,8 +173,22 @@ size_t bus_query_count(const EffectBus* bus, EffectTrigger trigger) {
 ///
 void bus_evict_by_source(EffectBus* bus, uint32_t source_id) {
     for (uint16_t i = 0; i < bus->count; i++) {
-        if (bus->slots[i].effect->source_id == source_id) {
+        if (bus->slots[i].effect.source_id == source_id) {
             bus->slots[i].active = false;
         }
     }
+}
+
+/*--------------------------------------------------------------------------*\
+                                 BUS SCRATCH FOR
+\*--------------------------------------------------------------------------*/
+
+EffectArg* bus_scratch_for(EffectBus* bus, uint32_t source_id) {
+    for (uint16_t i = 0; i < bus->count; i++) {
+        if (!bus->slots[i].active)
+            continue;
+        if (bus->slots[i].effect.source_id == source_id)
+            return bus->slots[i].effect.scratch;
+    }
+    return NULL;
 }

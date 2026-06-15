@@ -39,9 +39,9 @@ void eff_chain_silver(
     (void)count;
     if (context->battle == NULL || context->battle->config.run == NULL)
         return;
-    Kingdom k = context->battle->config.run->current_kingdom;
-    if ((unsigned)k < KINGDOM_COUNT)
-        context->battle->silver_chain_pending[k] += 1;
+    Kingdom kingdom = context->battle->config.run->current_kingdom;
+    if ((unsigned)kingdom < KINGDOM_COUNT)
+        context->battle->config.run->chain_silver_pending[kingdom] += 1;
 }
 
 void eff_chain_gold(

@@ -60,10 +60,13 @@ typedef struct RunState {
     uint64_t revealed_recipes;
     uint64_t forbidden_recipes;
 
-    /* Run-wide flags & overrides */
+    /* Run-wide flags */
     uint32_t flags;
-    int      reclaim_cost_override;
-    int      royal_sub_per_battle;
+
+    /* Silver-chain hand-off to the battle layer: each entry counts
+       free enemy pieces the next battle in that kingdom should
+       receive. Decremented in `battle_init` as the pieces spawn. */
+    uint8_t chain_silver_pending[KINGDOM_COUNT];
 
     /* Live pointer (not persisted) */
     struct Profile* profile;

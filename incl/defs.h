@@ -22,6 +22,7 @@
 #define MAX_CARDSET          96
 #define MAX_EFFECTS          256
 #define MAX_EFFECT_ARGS      6
+#define MAX_EFFECT_SCRATCH   2
 #define MAX_PIECE_BUFFS      8
 #define MAX_PIECE_PASSIVES   4
 #define MAX_CARD_EFFECTS     6

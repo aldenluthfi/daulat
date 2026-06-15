@@ -60,22 +60,59 @@ typedef enum {
     TRIGGER_QUERY_MOVE_COUNT,
     TRIGGER_QUERY_DAMAGE_MULT,
     TRIGGER_QUERY_METER_CAP,
-    TRIGGER_MAP_ENTERED,
-    TRIGGER_RUN_START,
-    TRIGGER_PIECE_BOUGHT,
-    TRIGGER_COMBO_PERFORMED,
     TRIGGER_QUERY_COMBINE_COST,
     TRIGGER_QUERY_COMBO_VALUE_BONUS,
-    TRIGGER_METER_GAINED,
-    TRIGGER_PIECE_GAINED,
-    TRIGGER_CP_REMAINING_EOT,
-    TRIGGER_ATTACK_ENEMY_TERR,
-    TRIGGER_NO_MOVE_THIS_TURN,
     TRIGGER_QUERY_ADJ_KING_BONUS,
-    TRIGGER_KINGDOM_PROGRESSED,
-    TRIGGER_BATTLE_LOST,
+    TRIGGER_QUERY_RECLAIM_COST,
+    TRIGGER_QUERY_ROYAL_SUB_COUNT,
+    TRIGGER_QUERY_VISION_FLAGS,
+    TRIGGER_MAP_ENTERED,
+    TRIGGER_RUN_START,
     TRIGGER_COUNT
 } EffectTrigger;
+
+/*--------------------------------------------------------------------------*\
+                              CAUSE DISCRIMINATORS
+\*--------------------------------------------------------------------------*/
+
+/// PlacementCause
+///
+/// Why a piece appeared on the board. Read by `TRIGGER_PIECE_PLACED`
+/// handlers that filter on purchase, spawn, combine result, or
+/// splitter spawn. Reclaim is not in this list; reclaimed pieces are
+/// already on the board and fire `TRIGGER_PIECE_FLIPPED` instead.
+///
+typedef enum {
+    PLACED_SPAWN,
+    PLACED_BOUGHT,
+    PLACED_COMBINE_RESULT,
+    PLACED_SPLIT,
+} PlacementCause;
+
+/// FlipCause
+///
+/// Why a piece changed owner. Read by `TRIGGER_PIECE_FLIPPED`
+/// handlers that filter on cascade, reclaim, forced flip, or Mercy.
+///
+typedef enum {
+    FLIPPED_METER_CASCADE,
+    FLIPPED_RECLAIM,
+    FLIPPED_FORCED,
+    FLIPPED_MERCY,
+} FlipCause;
+
+/// RemovalCause
+///
+/// Why a piece left the board. Combine ingredients do not emit
+/// `TRIGGER_PIECE_REMOVED`; they go through `TRIGGER_PIECE_COMBINED`
+/// so "you lost a piece" cards do not mistake voluntary combines for
+/// losses.
+///
+typedef enum {
+    REMOVED_SACRIFICE,
+    REMOVED_MANDATE,
+    REMOVED_SPLITTER_SUBSTITUTION,
+} RemovalCause;
 
 /*--------------------------------------------------------------------------*\
                               EFFECT FUNC IDS
@@ -196,16 +233,22 @@ typedef void (*EffectFunc)(
 ///
 /// Behaviour entry registered with the bus. Combines a trigger key,
 /// a stable `func_id` for serialization, the handler function,
-/// typed arguments, a duration in turns, the owner side, and an
-/// opaque source id used for selective eviction (piece removal,
-/// card discard, relic loss).
+/// typed read-only arguments, a per-instance writable scratch slot,
+/// a duration in turns, the owner side, and an opaque source id used
+/// for selective eviction (piece removal, card discard, relic loss).
 ///
-typedef struct {
+/// `args[]` are the literal arguments from the data table; `scratch[]`
+/// holds per-instance mutable state (counters, latches) that handlers
+/// can update on each emit. Save/load serializes both arrays so an
+/// in-progress battle round-trips faithfully.
+///
+typedef struct Effect {
     EffectTrigger trigger;
     EffectFuncId  func_id;
     EffectFunc    apply;
     EffectArg     args[MAX_EFFECT_ARGS];
     uint8_t       arg_count;
+    EffectArg     scratch[MAX_EFFECT_SCRATCH];
     int16_t       duration_turns;
     Side          owner;
     uint32_t      source_id;
@@ -224,14 +267,15 @@ typedef struct {
 
 /// EffectSlot
 ///
-/// Bus-internal entry pairing an Effect pointer with its current
-/// remaining-turns counter and active flag. Slots are never freed —
-/// they are merely deactivated when their effect expires.
+/// Bus-internal entry owning an Effect by value plus its remaining
+/// turns and active flag. Owning by value lets handlers update each
+/// effect's `scratch[]` slots through `EffectCtx.self`. Slots are
+/// never freed; they are deactivated when their effect expires.
 ///
 typedef struct {
-    const Effect* effect;
-    int16_t       remaining_turns;
-    bool          active;
+    Effect  effect;
+    int16_t remaining_turns;
+    bool    active;
 } EffectSlot;
 
 /*--------------------------------------------------------------------------*\
@@ -248,6 +292,7 @@ typedef struct {
 struct EffectCtx {
     EffectTrigger       trigger;
     struct BattleState* battle;
+    struct Effect*      self;
     union {
         struct {
             struct PieceState* attacker;
@@ -256,6 +301,21 @@ struct EffectCtx {
             int*               damage_mult_out;
             int*               reduction_out;
         } resolve;
+        struct {
+            struct PieceState* piece;
+            Position*          pos;
+            PlacementCause     cause;
+        } placed;
+        struct {
+            struct PieceState* piece;
+            Side               old_owner;
+            Side               new_owner;
+            FlipCause          cause;
+        } flipped;
+        struct {
+            struct PieceState* piece;
+            RemovalCause       cause;
+        } removed;
         struct {
             struct PieceState* piece;
             Position*          pos;
@@ -271,6 +331,9 @@ struct EffectCtx {
             int*     cost_out;
             int*     moves_out;
             int*     meter_cap_out;
+            int*     reclaim_cost_out;
+            int*     royal_sub_count_out;
+            int*     vision_flags_out;
             uint16_t template_id;
             Side     side;
             Tier     tier;
@@ -393,6 +456,24 @@ size_t bus_query_count(const EffectBus* bus, EffectTrigger trigger);
 /// - uint32_t   source_id -> source identifier to match
 ///
 void bus_evict_by_source(EffectBus* bus, uint32_t source_id);
+
+/// bus_scratch_for
+///
+/// Return a writable pointer to the scratch[] array of the first
+/// active slot whose source_id matches. Used when a source (relic,
+/// chain, innate) registers multiple effects that need shared
+/// per-source state. The first registration owns the storage;
+/// subsequent registrations look it up via this helper.
+///
+/// Params:
+/// - EffectBus* bus       -> bus to scan
+/// - uint32_t   source_id -> source identifier to match
+///
+/// Return:
+/// EffectArg* -> pointer to scratch[0] of the matching slot, or NULL
+///               if no active slot matches
+///
+EffectArg* bus_scratch_for(EffectBus* bus, uint32_t source_id);
 
 /*--------------------------------------------------------------------------*\
                               FUNC LOOKUP

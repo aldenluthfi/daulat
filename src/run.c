@@ -19,9 +19,7 @@
 
 void run_init(RunState* run, uint64_t seed) {
     memset(run, 0, sizeof(*run));
-    run->run_seed              = seed;
-    run->reclaim_cost_override = 30;
-    run->royal_sub_per_battle  = 2;
+    run->run_seed = seed;
 }
 
 void run_add_relic(RunState* run, RelicId id) {
@@ -132,9 +130,9 @@ static bool write_run_chunk(SaveWriter* w, const RunState* run) {
 
     if (!save_write_u32(w, run->flags))
         return false;
-    if (!save_write_u32(w, (uint32_t)run->reclaim_cost_override))
-        return false;
-    if (!save_write_u32(w, (uint32_t)run->royal_sub_per_battle))
+    if (!save_write_bytes(
+            w, run->chain_silver_pending, sizeof(run->chain_silver_pending)
+        ))
         return false;
 
     return save_write_chunk_end(w);
@@ -203,13 +201,12 @@ static bool read_run_chunk(SaveReader* r, RunState* run) {
 
     if (!save_read_u32(r, &run->flags))
         return false;
-    if (!save_read_u32(r, &u32))
+    if (!save_read_bytes(
+            r, run->chain_silver_pending, sizeof(run->chain_silver_pending)
+        ))
         return false;
-    run->reclaim_cost_override = (int)u32;
-    if (!save_read_u32(r, &u32))
-        return false;
-    run->royal_sub_per_battle = (int)u32;
 
+    (void)u32;
     (void)u64;
     return true;
 }

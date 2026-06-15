@@ -26,8 +26,13 @@
 /// Return:
 /// uint32_t -> runtime id of spawned piece, or 0 on failure
 ///
-uint32_t
-piece_spawn(BattleState* battle, uint16_t template_id, Position pos, Side owner) {
+uint32_t piece_spawn_with_cause(
+    BattleState*   battle,
+    uint16_t       template_id,
+    Position       pos,
+    Side           owner,
+    PlacementCause cause
+) {
     if (battle->piece_count >= MAX_PIECES) {
         log_warn("piece_spawn: MAX_PIECES (%d) reached\n", MAX_PIECES);
         return 0;
@@ -39,14 +44,13 @@ piece_spawn(BattleState* battle, uint16_t template_id, Position pos, Side owner)
     }
     PieceState* piece           = &battle->pieces[battle->piece_count++];
     piece->id                   = battle->next_piece_id++;
-    piece->template                 = template;
+    piece->template             = template;
     piece->owner                = owner;
     piece->pos                  = pos;
     piece->value_mod            = 0;
     piece->buff_count           = 0;
     piece->moves_used           = 0;
     piece->flags                = 0;
-    piece->streak_attack        = 0;
     piece->move_override.func   = NULL;
     piece->threat_override.func = NULL;
     board_place(&battle->board, piece, pos);
@@ -56,11 +60,19 @@ piece_spawn(BattleState* battle, uint16_t template_id, Position pos, Side owner)
         effect.owner     = owner;
         bus_register(&battle->bus, &effect);
     }
-    struct EffectCtx context = {0};
-    context.as.piece.piece   = piece;
-    context.as.piece.pos     = &pos;
+    struct EffectCtx context  = {0};
+    context.as.placed.piece   = piece;
+    context.as.placed.pos     = &pos;
+    context.as.placed.cause   = cause;
     bus_emit(&battle->bus, battle, TRIGGER_PIECE_PLACED, &context);
     return piece->id;
+}
+
+uint32_t
+piece_spawn(BattleState* battle, uint16_t template_id, Position pos, Side owner) {
+    return piece_spawn_with_cause(
+        battle, template_id, pos, owner, PLACED_SPAWN
+    );
 }
 
 /*--------------------------------------------------------------------------*\
@@ -75,14 +87,19 @@ piece_spawn(BattleState* battle, uint16_t template_id, Position pos, Side owner)
 /// - BattleState* battle -> battle state to modify
 /// - uint32_t piece_id -> runtime id of piece to remove
 ///
-void piece_remove(BattleState* battle, uint32_t piece_id) {
+void piece_remove_with_cause(
+    BattleState* battle,
+    uint32_t     piece_id,
+    RemovalCause cause
+) {
     PieceState* piece = piece_by_id(battle, piece_id);
     if (piece == NULL)
         return;
     board_remove(&battle->board, piece->pos);
     bus_evict_by_source(&battle->bus, piece_id);
-    struct EffectCtx context = {0};
-    context.as.piece.piece   = piece;
+    struct EffectCtx context  = {0};
+    context.as.removed.piece  = piece;
+    context.as.removed.cause  = cause;
     bus_emit(&battle->bus, battle, TRIGGER_PIECE_REMOVED, &context);
     for (uint16_t i = 0; i < battle->piece_count; i++) {
         if (battle->pieces[i].id == piece_id) {
@@ -90,6 +107,10 @@ void piece_remove(BattleState* battle, uint32_t piece_id) {
             return;
         }
     }
+}
+
+void piece_remove(BattleState* battle, uint32_t piece_id) {
+    piece_remove_with_cause(battle, piece_id, REMOVED_SACRIFICE);
 }
 
 /*--------------------------------------------------------------------------*\
@@ -104,14 +125,23 @@ void piece_remove(BattleState* battle, uint32_t piece_id) {
 /// - BattleState* battle -> battle state to modify
 /// - uint32_t piece_id -> runtime id of piece to flip
 ///
-void piece_flip(BattleState* battle, uint32_t piece_id) {
+void piece_flip_with_cause(
+    BattleState* battle,
+    uint32_t     piece_id,
+    FlipCause    cause
+) {
     PieceState* piece = piece_by_id(battle, piece_id);
     if (piece == NULL)
         return;
-    struct EffectCtx context = {0};
-    context.as.piece.piece   = piece;
+    Side old_owner = piece->owner;
+    Side new_owner = side_opposite(piece->owner);
+    struct EffectCtx context     = {0};
+    context.as.flipped.piece     = piece;
+    context.as.flipped.old_owner = old_owner;
+    context.as.flipped.new_owner = new_owner;
+    context.as.flipped.cause     = cause;
     bus_emit(&battle->bus, battle, TRIGGER_PIECE_FLIPPED, &context);
-    piece->owner = side_opposite(piece->owner);
+    piece->owner = new_owner;
     board_remove(&battle->board, piece->pos);
     board_place(&battle->board, piece, piece->pos);
     bus_evict_by_source(&battle->bus, piece_id);
@@ -121,6 +151,10 @@ void piece_flip(BattleState* battle, uint32_t piece_id) {
         effect.owner     = piece->owner;
         bus_register(&battle->bus, &effect);
     }
+}
+
+void piece_flip(BattleState* battle, uint32_t piece_id) {
+    piece_flip_with_cause(battle, piece_id, FLIPPED_METER_CASCADE);
 }
 
 /*--------------------------------------------------------------------------*\

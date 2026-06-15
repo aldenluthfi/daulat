@@ -45,9 +45,11 @@ void eff_fh_tomohito(
     (void)count;
     if (context->battle == NULL || context->battle->config.run == NULL)
         return;
-    RunState* run = context->battle->config.run;
-    run->reclaim_cost_override =
-        (run->mastery_l3[KINGDOM_HARUSHIMA] != 0) ? 5 : 10;
+    int* out = context->as.query.reclaim_cost_out;
+    if (out == NULL)
+        return;
+    const RunState* run = context->battle->config.run;
+    *out = (run->mastery_l3[KINGDOM_HARUSHIMA] != 0) ? 5 : 10;
 }
 
 void eff_fh_selassie(
@@ -71,9 +73,11 @@ void eff_fh_timur(
     (void)count;
     if (context->battle == NULL || context->battle->config.run == NULL)
         return;
-    RunState* run = context->battle->config.run;
-    run->royal_sub_per_battle =
-        (run->mastery_l3[KINGDOM_ZARQAN] != 0) ? 3 : 2;
+    int* out = context->as.query.royal_sub_count_out;
+    if (out == NULL)
+        return;
+    const RunState* run = context->battle->config.run;
+    *out = (run->mastery_l3[KINGDOM_ZARQAN] != 0) ? 3 : 2;
 }
 
 void eff_fh_isabella(

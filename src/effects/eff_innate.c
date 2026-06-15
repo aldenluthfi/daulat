@@ -96,8 +96,9 @@ void eff_innate_royal_sub(
     (void)context;
     (void)args;
     (void)count;
-    /* Royal Substitution exposes battle_action_substitute; the
-     * latch counter lives on RunState.royal_sub_per_battle. */
+    /* Royal Substitution exposes battle_action_substitute. The per-
+     * battle use count comes from TRIGGER_QUERY_ROYAL_SUB_COUNT; the
+     * default count is 1, Timur's figurehead overrides to 2 or 3. */
 }
 
 void eff_innate_conquerors_reward(

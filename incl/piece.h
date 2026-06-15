@@ -47,22 +47,53 @@ typedef struct PieceState {
     uint8_t              buff_count;
     uint8_t              moves_used;
     uint16_t             flags;
-    uint8_t              streak_attack;
 } PieceState;
 
 /*--------------------------------------------------------------------------*\
                               PIECE API
 \*--------------------------------------------------------------------------*/
 
-/// Spawn a piece from a template at position. Registers passives to bus.
-uint32_t
-piece_spawn(struct BattleState* battle, uint16_t template_id, Position pos, Side owner);
+/// Spawn a piece from a template at position. Registers passives to
+/// the bus and emits TRIGGER_PIECE_PLACED with PLACED_SPAWN.
+uint32_t piece_spawn(
+    struct BattleState* battle,
+    uint16_t            template_id,
+    Position            pos,
+    Side                owner
+);
+
+/// Spawn a piece with an explicit placement cause (BOUGHT, COMBINE,
+/// SPLIT, ...). The standard `piece_spawn` is the SPAWN-cause shortcut.
+uint32_t piece_spawn_with_cause(
+    struct BattleState* battle,
+    uint16_t            template_id,
+    Position            pos,
+    Side                owner,
+    PlacementCause      cause
+);
 
 /// Remove a piece from the board and evict its passives from the bus.
+/// Default cause is SACRIFICE; use `piece_remove_with_cause` for the
+/// other cases (Mandate card, splitter substitution).
 void piece_remove(struct BattleState* battle, uint32_t piece_id);
 
-/// Flip a piece to the opposite side. Emits TRIGGER_PIECE_FLIPPED first.
+/// Remove a piece with an explicit removal cause.
+void piece_remove_with_cause(
+    struct BattleState* battle,
+    uint32_t            piece_id,
+    RemovalCause        cause
+);
+
+/// Flip a piece to the opposite side. Default cause is METER_CASCADE;
+/// use `piece_flip_with_cause` for Reclaim, forced flips, or Mercy.
 void piece_flip(struct BattleState* battle, uint32_t piece_id);
+
+/// Flip a piece with an explicit flip cause.
+void piece_flip_with_cause(
+    struct BattleState* battle,
+    uint32_t            piece_id,
+    FlipCause           cause
+);
 
 /// Find a piece by its runtime id. Returns NULL if not found.
 PieceState* piece_by_id(struct BattleState* battle, uint32_t piece_id);

@@ -386,8 +386,8 @@ static int cli_test_save(void) {
     before.revealed_recipes              = 0xDEADBEEFCAFEBABEULL;
     before.forbidden_recipes             = 0x1234567890ABCDEFULL;
     before.flags = RUN_FOREIGN_MARKUP_OFF | RUN_VISION_ENEMY_VALUES;
-    before.reclaim_cost_override         = 10;
-    before.royal_sub_per_battle          = 3;
+    before.chain_silver_pending[KINGDOM_LONGWEI] = 2;
+    before.chain_silver_pending[KINGDOM_CAELAN]  = 1;
 
     if (!run_save(&before)) {
         log_err("--test-save: run_save failed");
