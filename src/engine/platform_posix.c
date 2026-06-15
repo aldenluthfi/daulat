@@ -35,7 +35,7 @@ static bool PREF_PATH_READY = false;
 /// Create `path` and every missing parent directory along the way.
 /// Returns true if the leaf exists at the end.
 static bool ensure_directory(const char* path) {
-    char buffer[1024];
+    char   buffer[1024];
     size_t length = strlen(path);
     if (length >= sizeof(buffer))
         return false;
@@ -63,25 +63,40 @@ const char* platform_pref_path(const char* org, const char* application) {
     }
 #ifdef __APPLE__
     snprintf(
-        PREF_PATH, sizeof(PREF_PATH),
-        "%s/Library/Application Support/%s/%s/", home, org, application
+        PREF_PATH,
+        sizeof(PREF_PATH),
+        "%s/Library/Application Support/%s/%s/",
+        home,
+        org,
+        application
     );
 #else
     const char* xdg = getenv("XDG_DATA_HOME");
     if (xdg != NULL && xdg[0] != '\0')
         snprintf(
-            PREF_PATH, sizeof(PREF_PATH),
-            "%s/%s/%s/", xdg, org, application
+            PREF_PATH,
+            sizeof(PREF_PATH),
+            "%s/%s/%s/",
+            xdg,
+            org,
+            application
         );
     else
         snprintf(
-            PREF_PATH, sizeof(PREF_PATH),
-            "%s/.local/share/%s/%s/", home, org, application
+            PREF_PATH,
+            sizeof(PREF_PATH),
+            "%s/.local/share/%s/%s/",
+            home,
+            org,
+            application
         );
 #endif
     if (!ensure_directory(PREF_PATH)) {
-        log_err("platform_pref_path: mkdir %s failed (%s)",
-                PREF_PATH, strerror(errno));
+        log_err(
+            "platform_pref_path: mkdir %s failed (%s)",
+            PREF_PATH,
+            strerror(errno)
+        );
         return NULL;
     }
     PREF_PATH_READY = true;
@@ -99,8 +114,8 @@ uint64_t platform_time_ns(void) {
 #else
     clock_gettime(CLOCK_REALTIME, &timespec_now);
 #endif
-    return (uint64_t)timespec_now.tv_sec * 1000000000ULL
-           + (uint64_t)timespec_now.tv_nsec;
+    return (uint64_t)timespec_now.tv_sec * 1000000000ULL +
+           (uint64_t)timespec_now.tv_nsec;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -138,11 +153,8 @@ size_t platform_read(PlatformStream* stream, void* buffer, size_t capacity) {
     return fread(buffer, 1, capacity, stream->fp);
 }
 
-size_t platform_write(
-    PlatformStream* stream,
-    const void*     buffer,
-    size_t          count
-) {
+size_t
+platform_write(PlatformStream* stream, const void* buffer, size_t count) {
     if (stream == NULL || stream->fp == NULL)
         return 0;
     return fwrite(buffer, 1, count, stream->fp);

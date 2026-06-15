@@ -55,8 +55,10 @@ static int cli_debug_jump_results(bool won) {
     log_info(
         "--debug-jump-results: prestige=%u defeats=%u "
         "wins=%u losses=%u",
-        profile.prestige_tier, profile.vorath_defeat_count,
-        profile.total_wins, profile.total_losses
+        profile.prestige_tier,
+        profile.vorath_defeat_count,
+        profile.total_wins,
+        profile.total_losses
     );
     for (size_t k = 0; k < KINGDOM_COUNT; k++)
         log_info("  mastery[%zu]=%u", k, profile.mastery_levels[k]);
@@ -111,12 +113,20 @@ static int cli_debug_map(const char* kingdom_arg, const char* tier_arg) {
     map_generate(&map, k, tier, 0xC0FFEEABCDULL);
 
     static const char* TYPE_NAMES[] = {
-        "BATTLE", "ELITE", "ARCHIVE", "OFFERING",
-        "EVENT", "OVERSEER", "LIBERATION"
+        "BATTLE",
+        "ELITE",
+        "ARCHIVE",
+        "OFFERING",
+        "EVENT",
+        "OVERSEER",
+        "LIBERATION"
     };
     log_info(
         "map: %s %s | seed=%llx | nodes=%u",
-        kingdom_arg, tier_arg, (unsigned long long)map.seed, map.node_count
+        kingdom_arg,
+        tier_arg,
+        (unsigned long long)map.seed,
+        map.node_count
     );
     for (uint8_t i = 0; i < map.node_count; i++) {
         const MapNode* node = &map.nodes[i];
@@ -137,20 +147,20 @@ static int cli_debug_map(const char* kingdom_arg, const char* tier_arg) {
 static int cli_test_save(void) {
     RunState before;
     run_init(&before, 0xC0FFEE12345678ULL);
-    before.current_kingdom         = KINGDOM_HARUSHIMA;
-    before.current_map_tier        = TIER_TOWN;
-    before.relic_count             = 0;
+    before.current_kingdom  = KINGDOM_HARUSHIMA;
+    before.current_map_tier = TIER_TOWN;
+    before.relic_count      = 0;
     run_add_relic(&before, RELIC_MINTED_COIN);
     run_add_relic(&before, RELIC_IRON_KING);
-    before.chain_levels[KINGDOM_LONGWEI] = 2;
-    before.subjugated[KINGDOM_ZARQAN]    = true;
-    before.vorath_counter                = 7;
-    before.vorath_pressure               = 3;
-    before.cleared_kingdoms[KINGDOM_CAELAN] = true;
+    before.chain_levels[KINGDOM_LONGWEI]              = 2;
+    before.subjugated[KINGDOM_ZARQAN]                 = true;
+    before.vorath_counter                             = 7;
+    before.vorath_pressure                            = 3;
+    before.cleared_kingdoms[KINGDOM_CAELAN]           = true;
     before.cleared_maps[KINGDOM_HARUSHIMA][TIER_TOWN] = true;
-    before.mastery_l3[KINGDOM_HARUSHIMA]  = 1;
-    before.revealed_recipes              = 0xDEADBEEFCAFEBABEULL;
-    before.forbidden_recipes             = 0x1234567890ABCDEFULL;
+    before.mastery_l3[KINGDOM_HARUSHIMA]              = 1;
+    before.revealed_recipes                           = 0xDEADBEEFCAFEBABEULL;
+    before.forbidden_recipes                          = 0x1234567890ABCDEFULL;
     before.flags = RUN_FOREIGN_MARKUP_OFF | RUN_VISION_ENEMY_VALUES;
     before.chain_silver_pending[KINGDOM_LONGWEI] = 2;
     before.chain_silver_pending[KINGDOM_CAELAN]  = 1;
@@ -202,8 +212,7 @@ int main(int argc, char* argv[]) {
     if (!engine_init(&engine, stdin, stdout))
         return 1;
     char line[PROTOCOL_LINE_BYTES];
-    while (!engine.quitting
-           && protocol_read_line(stdin, line, sizeof(line))) {
+    while (!engine.quitting && protocol_read_line(stdin, line, sizeof(line))) {
         engine_handle_line(&engine, line);
     }
     engine_destroy(&engine);

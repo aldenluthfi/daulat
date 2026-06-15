@@ -47,7 +47,8 @@ void eff_syn_harushima(
     (void)count;
     if (!in_battle_kingdom(context->battle, KINGDOM_CAELAN))
         return;
-    if (context->as.card.card == NULL || context->as.card.card->template == NULL)
+    if (context->as.card.card == NULL ||
+        context->as.card.card->template == NULL)
         return;
     if (context->as.card.card->template->kingdom != KINGDOM_CAELAN)
         return;
@@ -65,7 +66,7 @@ void eff_syn_kewarani(
         return;
     if (context->as.query.cost_out == NULL)
         return;
-    uint16_t template_id = context->as.query.template_id;
+    uint16_t template_id          = context->as.query.template_id;
     const PieceTemplate* template = piece_template(template_id);
     if (template == NULL || template->kingdom != KINGDOM_KEWARANI)
         return;
@@ -88,8 +89,8 @@ void eff_syn_zarqan(
         PieceState* piece = &battle->pieces[i];
         if (piece->owner != SIDE_PLAYER || piece->template == NULL)
             continue;
-        if (piece->template->id == PIECE_ZIRAAFA
-            || piece->template->id == PIECE_TALLIYA)
+        if (piece->template->id == PIECE_ZIRAAFA ||
+            piece->template->id == PIECE_TALLIYA)
             piece->value_mod += 5;
     }
 }
@@ -103,7 +104,8 @@ void eff_syn_caelan(
     (void)count;
     if (!in_battle_kingdom(context->battle, KINGDOM_KEWARANI))
         return;
-    if (context->as.card.card == NULL || context->as.card.card->template == NULL)
+    if (context->as.card.card == NULL ||
+        context->as.card.card->template == NULL)
         return;
     if (context->as.card.card->template->id != CARD_SULTANS_GOLD)
         return;

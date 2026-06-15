@@ -81,8 +81,10 @@ static void title_handle(EngineState* engine, const ProtocolVerb* verb) {
 
 static void title_emit(EngineState* engine) {
     protocol_emit_show(
-        engine->out, SCREEN_TITLE,
-        "resume=%d", engine->title.resume_available ? 1 : 0
+        engine->out,
+        SCREEN_TITLE,
+        "resume=%d",
+        engine->title.resume_available ? 1 : 0
     );
 }
 

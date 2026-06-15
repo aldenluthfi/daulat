@@ -35,7 +35,7 @@ void mg_zq_ziraafa(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
@@ -53,7 +53,10 @@ void mg_zq_ziraafa(
         {0, -1},
     };
     for (int dir = 0; dir < 4; dir++) {
-        Position diag = {piece->pos.x + DIAG[dir][0], piece->pos.y + DIAG[dir][1]};
+        Position diag = {
+            piece->pos.x + DIAG[dir][0],
+            piece->pos.y + DIAG[dir][1]
+        };
         if (!pos_in_bounds(diag, battle->board.width, battle->board.height)) {
             continue;
         }
@@ -100,7 +103,7 @@ void mg_zq_swap_with_king(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
@@ -138,7 +141,7 @@ void mg_zq_war_elephant(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;

@@ -50,7 +50,7 @@ typedef void (*MoveGenFunc)(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -183,7 +183,7 @@ void mg_step(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -197,7 +197,7 @@ void mg_step_set(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -211,7 +211,7 @@ void mg_slide(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -225,7 +225,7 @@ void mg_slide_dirs(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -239,7 +239,7 @@ void mg_leap_set(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -252,7 +252,7 @@ void mg_blockable_leap(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -265,7 +265,7 @@ void mg_compound(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -278,7 +278,7 @@ void mg_choice(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -291,7 +291,7 @@ void mg_double_act(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -304,7 +304,7 @@ void mg_territory_restricted(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -318,7 +318,7 @@ void mg_attack_only_subset(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -333,7 +333,7 @@ void mg_todo(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -350,7 +350,7 @@ void mg_lw_ma(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -363,7 +363,7 @@ void mg_lw_xiang(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -377,7 +377,7 @@ void mg_lw_pao(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -390,7 +390,7 @@ void mg_lw_hwacha(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -404,7 +404,7 @@ void mg_lw_sang(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -417,7 +417,7 @@ void mg_lw_liubo(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -435,7 +435,7 @@ void mg_hs_kinsho(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -448,7 +448,7 @@ void mg_hs_ginsho(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -462,7 +462,7 @@ void mg_hs_honorable_horse(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -476,7 +476,7 @@ void mg_hs_shishi(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -494,7 +494,7 @@ void mg_kw_berolina(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -508,7 +508,7 @@ void mg_kw_negus_guard(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -526,7 +526,7 @@ void mg_zq_ziraafa(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -539,7 +539,7 @@ void mg_zq_swap_with_king(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -553,7 +553,7 @@ void mg_zq_war_elephant(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 
@@ -571,7 +571,7 @@ void mg_ca_gryphon(
     const struct PieceState*  piece,
     const struct BattleState* battle,
     const EffectArg*          params,
-    size_t count,
+    size_t                    count,
     MoveList*                 out
 );
 

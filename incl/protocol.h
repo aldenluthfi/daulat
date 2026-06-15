@@ -46,8 +46,8 @@
 
 #include "screen.h"
 
-#define PROTOCOL_LINE_BYTES 1024
-#define PROTOCOL_VERB_BYTES 64
+#define PROTOCOL_LINE_BYTES  1024
+#define PROTOCOL_VERB_BYTES  64
 #define PROTOCOL_VALUE_BYTES 64
 
 /*--------------------------------------------------------------------------*\
@@ -104,12 +104,7 @@ bool protocol_arg_xy(const char* tail, const char* key, int* x, int* y);
 \*--------------------------------------------------------------------------*/
 
 /// Emit `< SHOW <screen> [tail]\n`.
-void protocol_emit_show(
-    FILE*       out,
-    ScreenId    screen,
-    const char* fmt,
-    ...
-);
+void protocol_emit_show(FILE* out, ScreenId screen, const char* fmt, ...);
 
 /// Emit `< STATE <topic> [tail]\n`.
 void protocol_emit_state(FILE* out, const char* topic, const char* fmt, ...);

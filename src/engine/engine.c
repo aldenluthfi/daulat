@@ -101,7 +101,10 @@ void engine_handle_line(EngineState* engine, const char* line) {
         engine->codex.kind[length] = '\0';
         engine->codex.open         = true;
         protocol_emit_popup(
-            engine->out, "codex", "kind=%s", engine->codex.kind
+            engine->out,
+            "codex",
+            "kind=%s",
+            engine->codex.kind
         );
     } else if (strcmp(parsed.verb, "close_popup") == 0) {
         engine->codex.open = false;

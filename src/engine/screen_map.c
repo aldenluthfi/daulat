@@ -32,7 +32,8 @@ static void map_emit(EngineState* engine) {
         return;
     }
     protocol_emit_show(
-        engine->out, SCREEN_MAP,
+        engine->out,
+        SCREEN_MAP,
         "kingdom=%d tier=%d node_cursor=%u",
         (int)run->current_kingdom,
         (int)run->current_map_tier,
@@ -41,10 +42,14 @@ static void map_emit(EngineState* engine) {
     for (uint8_t i = 0; i < run->current_map.node_count; i++) {
         const MapNode* node = &run->current_map.nodes[i];
         protocol_emit_state(
-            engine->out, "map.node",
+            engine->out,
+            "map.node",
             "id=%u type=%u payload=%u x=%u y=%u",
-            node->id, (unsigned)node->type, node->payload_id,
-            (unsigned)node->id, (unsigned)i
+            node->id,
+            (unsigned)node->type,
+            node->payload_id,
+            (unsigned)node->id,
+            (unsigned)i
         );
     }
 }

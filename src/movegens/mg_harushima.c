@@ -35,7 +35,7 @@ void mg_hs_kinsho(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
@@ -76,7 +76,7 @@ void mg_hs_ginsho(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
@@ -117,7 +117,7 @@ void mg_hs_honorable_horse(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     int dir = 1;
@@ -157,7 +157,7 @@ void mg_hs_shishi(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;

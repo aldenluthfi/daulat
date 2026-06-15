@@ -279,7 +279,11 @@ Side battle_territory(const BattleState* battle, Position position);
 /// Return:
 /// int -> number of threatening pieces
 ///
-int battle_threat_count(const BattleState* battle, Position position, Side attacker);
+int battle_threat_count(
+    const BattleState* battle,
+    Position           position,
+    Side               attacker
+);
 
 /// battle_hand
 ///
@@ -437,7 +441,11 @@ const Recipe* battle_recipe_preview(uint16_t a, uint16_t b);
 /// Return:
 /// int -> base value of template, or 0 if not found
 ///
-int battle_query_cost(const BattleState* battle, Side side, uint16_t template_id);
+int battle_query_cost(
+    const BattleState* battle,
+    Side               side,
+    uint16_t           template_id
+);
 
 /// battle_query_sell_value
 ///
@@ -543,7 +551,11 @@ bool battle_can_play_card(
 /// Return:
 /// bool -> true if the card was played
 ///
-bool battle_play_card(BattleState* battle, uint8_t index, const TargetSpec* target);
+bool battle_play_card(
+    BattleState*      battle,
+    uint8_t           index,
+    const TargetSpec* target
+);
 
 /// battle_can_sell_card
 ///
@@ -611,7 +623,11 @@ bool battle_action_move(BattleState* battle, uint32_t piece_id, Position to);
 /// Return:
 /// bool -> true if the purchase is legal
 ///
-bool battle_can_buy(const BattleState* battle, uint16_t template_id, Position at);
+bool battle_can_buy(
+    const BattleState* battle,
+    uint16_t           template_id,
+    Position           at
+);
 
 /// battle_action_buy
 ///

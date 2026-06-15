@@ -42,13 +42,10 @@ typedef enum {
 /// V-table of per-screen lifecycle and per-verb hooks. Any hook
 /// may be NULL; the dispatcher treats NULL as a no-op.
 typedef struct Screen {
-    void (*enter) (struct EngineState* engine);
-    void (*leave) (struct EngineState* engine);
-    void (*handle)(
-        struct EngineState*        engine,
-        const struct ProtocolVerb* verb
-    );
-    void (*emit)  (struct EngineState* engine);
+    void (*enter)(struct EngineState* engine);
+    void (*leave)(struct EngineState* engine);
+    void (*handle)(struct EngineState* engine, const struct ProtocolVerb* verb);
+    void (*emit)(struct EngineState* engine);
 } Screen;
 
 /*--------------------------------------------------------------------------*\

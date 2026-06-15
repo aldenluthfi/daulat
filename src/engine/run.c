@@ -128,7 +128,9 @@ static bool write_run_chunk(SaveWriter* writer, const RunState* run) {
     if (!save_write_u32(writer, run->flags))
         return false;
     if (!save_write_bytes(
-            writer, run->chain_silver_pending, sizeof(run->chain_silver_pending)
+            writer,
+            run->chain_silver_pending,
+            sizeof(run->chain_silver_pending)
         ))
         return false;
 
@@ -197,7 +199,9 @@ static bool read_run_chunk(SaveReader* reader, RunState* run) {
     if (!save_read_u32(reader, &run->flags))
         return false;
     if (!save_read_bytes(
-            reader, run->chain_silver_pending, sizeof(run->chain_silver_pending)
+            reader,
+            run->chain_silver_pending,
+            sizeof(run->chain_silver_pending)
         ))
         return false;
 

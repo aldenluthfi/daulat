@@ -72,7 +72,7 @@ bool board_place(Board* board, PieceState* piece, Position pos) {
     if (board->squares[index] != NULL)
         return false;
     board->squares[index] = piece;
-    piece->pos          = pos;
+    piece->pos            = pos;
     return true;
 }
 
@@ -91,7 +91,7 @@ PieceState* board_remove(Board* board, Position pos) {
     if (!pos_in_bounds(pos, board->width, board->height))
         return NULL;
     int         index     = board_index(board, pos);
-    PieceState* piece   = board->squares[index];
+    PieceState* piece     = board->squares[index];
     board->squares[index] = NULL;
     return piece;
 }
@@ -225,8 +225,8 @@ void board_threat_map(const Board* board, int threats[]) {
 /// bool -> true if the path is clear
 ///
 bool board_has_line_of_sight(const Board* board, Position from, Position to) {
-    int delta_x  = to.x - from.x;
-    int delta_y  = to.y - from.y;
+    int delta_x     = to.x - from.x;
+    int delta_y     = to.y - from.y;
     int abs_delta_x = (delta_x > 0) ? delta_x : -delta_x;
     int abs_delta_y = (delta_y > 0) ? delta_y : -delta_y;
     if (abs_delta_x != 0 && abs_delta_y != 0 && abs_delta_x != abs_delta_y)

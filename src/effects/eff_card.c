@@ -12,21 +12,33 @@
 \*--------------------------------------------------------------------------*/
 
 /// Increase draw count by delta this turn.
-void eff_draw_extra(struct EffectCtx* context, const EffectArg* args, size_t count) {
+void eff_draw_extra(
+    struct EffectCtx* context,
+    const EffectArg*  args,
+    size_t            count
+) {
     (void)context;
     (void)args;
     (void)count;
 }
 
 /// Remove a card from hand without selling it.
-void eff_discard_card(struct EffectCtx* context, const EffectArg* args, size_t count) {
+void eff_discard_card(
+    struct EffectCtx* context,
+    const EffectArg*  args,
+    size_t            count
+) {
     (void)context;
     (void)args;
     (void)count;
 }
 
 /// Peek at the top N cards of the cardset.
-void eff_peek_cards(struct EffectCtx* context, const EffectArg* args, size_t count) {
+void eff_peek_cards(
+    struct EffectCtx* context,
+    const EffectArg*  args,
+    size_t            count
+) {
     (void)context;
     (void)args;
     (void)count;

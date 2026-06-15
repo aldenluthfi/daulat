@@ -32,7 +32,8 @@ static void mastery_l2(struct EffectCtx* context, CardId card_id) {
     const CardTemplate* template = card_template(card_id);
     if (template == NULL)
         return;
-    battle->cardset[SIDE_PLAYER][battle->cardset_count[SIDE_PLAYER]++] = template;
+    battle->cardset[SIDE_PLAYER][battle->cardset_count[SIDE_PLAYER]++] =
+        template;
 }
 
 static void mastery_l3(struct EffectCtx* context, Kingdom k) {
@@ -46,29 +47,49 @@ static void mastery_l3(struct EffectCtx* context, Kingdom k) {
 \*--------------------------------------------------------------------------*/
 
 void eff_mastery_l1_longwei(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l1(context, KINGDOM_LONGWEI);
+    (void)a;
+    (void)count;
+    mastery_l1(context, KINGDOM_LONGWEI);
 }
 void eff_mastery_l1_harushima(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l1(context, KINGDOM_HARUSHIMA);
+    (void)a;
+    (void)count;
+    mastery_l1(context, KINGDOM_HARUSHIMA);
 }
 void eff_mastery_l1_kewarani(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l1(context, KINGDOM_KEWARANI);
+    (void)a;
+    (void)count;
+    mastery_l1(context, KINGDOM_KEWARANI);
 }
 void eff_mastery_l1_zarqan(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l1(context, KINGDOM_ZARQAN);
+    (void)a;
+    (void)count;
+    mastery_l1(context, KINGDOM_ZARQAN);
 }
 void eff_mastery_l1_caelan(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l1(context, KINGDOM_CAELAN);
+    (void)a;
+    (void)count;
+    mastery_l1(context, KINGDOM_CAELAN);
 }
 
 /*--------------------------------------------------------------------------*\
@@ -76,29 +97,49 @@ void eff_mastery_l1_caelan(
 \*--------------------------------------------------------------------------*/
 
 void eff_mastery_l2_longwei(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l2(context, CARD_MINGZHUS_SEAL);
+    (void)a;
+    (void)count;
+    mastery_l2(context, CARD_MINGZHUS_SEAL);
 }
 void eff_mastery_l2_harushima(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l2(context, CARD_TOMOHITOS_PATIENCE);
+    (void)a;
+    (void)count;
+    mastery_l2(context, CARD_TOMOHITOS_PATIENCE);
 }
 void eff_mastery_l2_kewarani(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l2(context, CARD_SELASSIES_MARCH);
+    (void)a;
+    (void)count;
+    mastery_l2(context, CARD_SELASSIES_MARCH);
 }
 void eff_mastery_l2_zarqan(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l2(context, CARD_TIMURS_CONQUEST);
+    (void)a;
+    (void)count;
+    mastery_l2(context, CARD_TIMURS_CONQUEST);
 }
 void eff_mastery_l2_caelan(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l2(context, CARD_ISABELLAS_CORONATION);
+    (void)a;
+    (void)count;
+    mastery_l2(context, CARD_ISABELLAS_CORONATION);
 }
 
 /*--------------------------------------------------------------------------*\
@@ -106,27 +147,47 @@ void eff_mastery_l2_caelan(
 \*--------------------------------------------------------------------------*/
 
 void eff_mastery_l3_longwei(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l3(context, KINGDOM_LONGWEI);
+    (void)a;
+    (void)count;
+    mastery_l3(context, KINGDOM_LONGWEI);
 }
 void eff_mastery_l3_harushima(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l3(context, KINGDOM_HARUSHIMA);
+    (void)a;
+    (void)count;
+    mastery_l3(context, KINGDOM_HARUSHIMA);
 }
 void eff_mastery_l3_kewarani(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l3(context, KINGDOM_KEWARANI);
+    (void)a;
+    (void)count;
+    mastery_l3(context, KINGDOM_KEWARANI);
 }
 void eff_mastery_l3_zarqan(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l3(context, KINGDOM_ZARQAN);
+    (void)a;
+    (void)count;
+    mastery_l3(context, KINGDOM_ZARQAN);
 }
 void eff_mastery_l3_caelan(
-    struct EffectCtx* context, const EffectArg* a, size_t count
+    struct EffectCtx* context,
+    const EffectArg*  a,
+    size_t            count
 ) {
-    (void)a; (void)count; mastery_l3(context, KINGDOM_CAELAN);
+    (void)a;
+    (void)count;
+    mastery_l3(context, KINGDOM_CAELAN);
 }

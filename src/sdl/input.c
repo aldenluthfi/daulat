@@ -32,31 +32,31 @@ void input_begin_frame(Input* in) {
 
 void input_consume_event(Input* in, const SDL_Event* event) {
     switch (event->type) {
-        case SDL_EVENT_QUIT:
-            in->quit_requested = true;
+    case SDL_EVENT_QUIT:
+        in->quit_requested = true;
+        break;
+    case SDL_EVENT_KEY_DOWN: {
+        SDL_Scancode key = event->key.scancode;
+        if (key < 0 || key >= SDL_SCANCODE_COUNT)
             break;
-        case SDL_EVENT_KEY_DOWN: {
-            SDL_Scancode key = event->key.scancode;
-            if (key < 0 || key >= SDL_SCANCODE_COUNT)
-                break;
-            if (event->key.repeat)
-                break;
-            if (!in->down[key])
-                in->pressed[key] = true;
-            in->down[key] = true;
+        if (event->key.repeat)
             break;
-        }
-        case SDL_EVENT_KEY_UP: {
-            SDL_Scancode key = event->key.scancode;
-            if (key < 0 || key >= SDL_SCANCODE_COUNT)
-                break;
-            if (in->down[key])
-                in->released[key] = true;
-            in->down[key] = false;
+        if (!in->down[key])
+            in->pressed[key] = true;
+        in->down[key] = true;
+        break;
+    }
+    case SDL_EVENT_KEY_UP: {
+        SDL_Scancode key = event->key.scancode;
+        if (key < 0 || key >= SDL_SCANCODE_COUNT)
             break;
-        }
-        default:
-            break;
+        if (in->down[key])
+            in->released[key] = true;
+        in->down[key] = false;
+        break;
+    }
+    default:
+        break;
     }
 }
 

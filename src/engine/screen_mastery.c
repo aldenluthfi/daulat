@@ -25,8 +25,11 @@ static void mastery_emit(EngineState* engine) {
         return;
     for (size_t kingdom = 0; kingdom < KINGDOM_COUNT; kingdom++) {
         protocol_emit_state(
-            engine->out, "mastery.kingdom",
-            "id=%zu level=%u", kingdom, profile->mastery_levels[kingdom]
+            engine->out,
+            "mastery.kingdom",
+            "id=%zu level=%u",
+            kingdom,
+            profile->mastery_levels[kingdom]
         );
     }
 }

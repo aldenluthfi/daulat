@@ -49,11 +49,11 @@ typedef struct App {
     Input    input;
     uint64_t last_tick_ns;
 
-    pid_t    engine_pid;
-    FILE*    engine_in;     /* parent writes "> ..." here          */
-    FILE*    engine_out;    /* parent reads  "< ..." here          */
-    char     read_buffer[1024];
-    size_t   read_length;
+    pid_t  engine_pid;
+    FILE*  engine_in; /* parent writes "> ..." here          */
+    FILE*  engine_out; /* parent reads  "< ..." here          */
+    char   read_buffer[1024];
+    size_t read_length;
 
     FrontendModel model;
 } App;

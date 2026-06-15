@@ -76,10 +76,10 @@ typedef struct RunState {
                               FLAG BITS
 \*--------------------------------------------------------------------------*/
 
-#define RUN_FOREIGN_MARKUP_OFF   (1u << 0)
-#define RUN_DOUBLE_ARCHIVE       (1u << 1)
-#define RUN_VISION_ENEMY_VALUES  (1u << 2)
-#define RUN_PREREVEAL_MODIFIER   (1u << 3)
+#define RUN_FOREIGN_MARKUP_OFF  (1u << 0)
+#define RUN_DOUBLE_ARCHIVE      (1u << 1)
+#define RUN_VISION_ENEMY_VALUES (1u << 2)
+#define RUN_PREREVEAL_MODIFIER  (1u << 3)
 
 /*--------------------------------------------------------------------------*\
                               API
@@ -196,10 +196,7 @@ void run_delete(void);
 /// Outcome of a run, consulted by run_finalize when updating the
 /// Profile's mastery / prestige / win-loss counters.
 ///
-typedef enum {
-    RUN_END_VORATH_WIN,
-    RUN_END_LOSS
-} RunEnd;
+typedef enum { RUN_END_VORATH_WIN, RUN_END_LOSS } RunEnd;
 
 /// run_finalize
 ///

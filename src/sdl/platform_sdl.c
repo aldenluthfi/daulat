@@ -72,11 +72,8 @@ size_t platform_read(PlatformStream* stream, void* buffer, size_t capacity) {
     return SDL_ReadIO(stream->io, buffer, capacity);
 }
 
-size_t platform_write(
-    PlatformStream* stream,
-    const void*     buffer,
-    size_t          count
-) {
+size_t
+platform_write(PlatformStream* stream, const void* buffer, size_t count) {
     if (stream == NULL || stream->io == NULL)
         return 0;
     return SDL_WriteIO(stream->io, buffer, count);

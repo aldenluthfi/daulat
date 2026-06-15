@@ -27,8 +27,10 @@
 const Recipe* recipe_find(uint16_t ingredient_a, uint16_t ingredient_b) {
     for (size_t i = 0; i < RECIPES_COUNT; i++) {
         const Recipe* r = &RECIPES[i];
-        if ((r->ingredient_a == ingredient_a && r->ingredient_b == ingredient_b) ||
-            (r->ingredient_a == ingredient_b && r->ingredient_b == ingredient_a)) {
+        if ((r->ingredient_a == ingredient_a &&
+             r->ingredient_b == ingredient_b) ||
+            (r->ingredient_a == ingredient_b &&
+             r->ingredient_b == ingredient_a)) {
             return r;
         }
     }

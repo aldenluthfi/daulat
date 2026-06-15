@@ -1390,12 +1390,12 @@ Capstone).
 
 #### Librarian's Notes
 
-| Field                 | Value                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------------ |
+| Field                 | Value                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------------- |
 | Descriptive Behaviour | Once per turn, before drawing, see the top card and choose to skip it. The librarian's peek. |
-| Trigger               | `TRIGGER_QUERY_DRAW_COUNT`                                                                |
-| Apply                 | `eff_librarians_notes`, args: none                                                         |
-| Scope                 | battle                                                                                    |
+| Trigger               | `TRIGGER_QUERY_DRAW_COUNT`                                                                   |
+| Apply                 | `eff_librarians_notes`, args: none                                                           |
+| Scope                 | battle                                                                                       |
 
 #### Country Seal
 

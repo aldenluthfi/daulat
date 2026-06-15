@@ -84,7 +84,11 @@ bool is_enemy(const PieceState* piece, const PieceState* at) {
 /// Return:
 /// bool -> true when the destination is reachable
 ///
-bool can_move_to(const BattleState* battle, const PieceState* piece, Position to) {
+bool can_move_to(
+    const BattleState* battle,
+    const PieceState*  piece,
+    Position           to
+) {
     if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
         return false;
     }
@@ -106,7 +110,11 @@ bool can_move_to(const BattleState* battle, const PieceState* piece, Position to
 /// Return:
 /// bool -> true when an enemy piece sits at `to` within the board
 ///
-bool can_capture(const BattleState* battle, const PieceState* piece, Position to) {
+bool can_capture(
+    const BattleState* battle,
+    const PieceState*  piece,
+    Position           to
+) {
     if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
         return false;
     }
@@ -160,7 +168,7 @@ void mg_step(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     if (count < 2)
@@ -194,7 +202,7 @@ void mg_step_set(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     for (size_t i = 0; i + 1 < count; i += 2) {
@@ -227,17 +235,20 @@ void mg_slide(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     if (count < 4)
         return;
-    int delta_x    = (int)params[0].v.i;
-    int delta_y    = (int)params[1].v.i;
-    int min_d = (int)params[2].v.i;
-    int max_d = (int)params[3].v.i;
+    int delta_x = (int)params[0].v.i;
+    int delta_y = (int)params[1].v.i;
+    int min_d   = (int)params[2].v.i;
+    int max_d   = (int)params[3].v.i;
     for (int dist = min_d; dist <= max_d; dist++) {
-        Position to = {piece->pos.x + delta_x * dist, piece->pos.y + delta_y * dist};
+        Position to = {
+            piece->pos.x + delta_x * dist,
+            piece->pos.y + delta_y * dist
+        };
         if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
             break;
         }
@@ -271,7 +282,7 @@ void mg_slide_dirs(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     if (count < 3)
@@ -323,7 +334,7 @@ void mg_leap_set(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     for (size_t i = 0; i + 1 < count; i += 2) {
@@ -357,14 +368,14 @@ void mg_blockable_leap(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     if (count < 2)
         return;
     int      delta_x = (int)params[0].v.i;
     int      delta_y = (int)params[1].v.i;
-    Position to = {piece->pos.x + delta_x, piece->pos.y + delta_y};
+    Position to      = {piece->pos.x + delta_x, piece->pos.y + delta_y};
     if (!can_capture(battle, piece, to))
         return;
     bool blocked = true;
@@ -396,7 +407,7 @@ void mg_compound(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
@@ -404,34 +415,62 @@ void mg_compound(
     out->count = 0;
     switch (piece->id) {
     case PIECE_PROMOTED_BISHOP:
-        mg_slide_dirs(piece, battle,
+        mg_slide_dirs(
+            piece,
+            battle,
             (EffectArg[]){
                 {.type = EARG_INT, .v.i = 0xAA},
                 {.type = EARG_INT, .v.i = 1},
                 {.type = EARG_INT, .v.i = 20}
-            }, 3, out);
-        mg_step_set(piece, battle,
+            },
+            3,
+            out
+        );
+        mg_step_set(
+            piece,
+            battle,
             (EffectArg[]){
-                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 0},
-                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = 0},
-                {.type = EARG_INT, .v.i = 0}, {.type = EARG_INT, .v.i = 1},
-                {.type = EARG_INT, .v.i = 0}, {.type = EARG_INT, .v.i = -1}
-            }, 8, out);
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 0},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = 0},
+                {.type = EARG_INT, .v.i = 0},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 0},
+                {.type = EARG_INT, .v.i = -1}
+            },
+            8,
+            out
+        );
         break;
     case PIECE_DRAGON:
-        mg_slide_dirs(piece, battle,
+        mg_slide_dirs(
+            piece,
+            battle,
             (EffectArg[]){
                 {.type = EARG_INT, .v.i = 0x55},
                 {.type = EARG_INT, .v.i = 1},
                 {.type = EARG_INT, .v.i = 20}
-            }, 3, out);
-        mg_step_set(piece, battle,
+            },
+            3,
+            out
+        );
+        mg_step_set(
+            piece,
+            battle,
             (EffectArg[]){
-                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 1},
-                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = -1},
-                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = 1},
-                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = -1}
-            }, 8, out);
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -1}
+            },
+            8,
+            out
+        );
         break;
     default:
         break;
@@ -452,7 +491,7 @@ void mg_choice(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
@@ -461,47 +500,91 @@ void mg_choice(
     MoveList a = {0}, b = {0};
     switch (piece->id) {
     case PIECE_CATAPHRACT:
-        mg_leap_set(piece, battle,
+        mg_leap_set(
+            piece,
+            battle,
             (EffectArg[]){
-                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 2},
-                {.type = EARG_INT, .v.i = 2}, {.type = EARG_INT, .v.i = 1},
-                {.type = EARG_INT, .v.i = 2}, {.type = EARG_INT, .v.i = -1},
-                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = -2},
-                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = -2},
-                {.type = EARG_INT, .v.i = -2}, {.type = EARG_INT, .v.i = -1},
-                {.type = EARG_INT, .v.i = -2}, {.type = EARG_INT, .v.i = 1},
-                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = 2}
-            }, 16, &a);
-        mg_leap_set(piece, battle,
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 2},
+                {.type = EARG_INT, .v.i = 2},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 2},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = 2}
+            },
+            16,
+            &a
+        );
+        mg_leap_set(
+            piece,
+            battle,
             (EffectArg[]){
-                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 3},
-                {.type = EARG_INT, .v.i = 3}, {.type = EARG_INT, .v.i = 1},
-                {.type = EARG_INT, .v.i = 3}, {.type = EARG_INT, .v.i = -1},
-                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = -3},
-                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = -3},
-                {.type = EARG_INT, .v.i = -3}, {.type = EARG_INT, .v.i = -1},
-                {.type = EARG_INT, .v.i = -3}, {.type = EARG_INT, .v.i = 1},
-                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 3}
-            }, 16, &b);
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 3},
+                {.type = EARG_INT, .v.i = 3},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 3},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = -3},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -3},
+                {.type = EARG_INT, .v.i = -3},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -3},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 3}
+            },
+            16,
+            &b
+        );
         break;
     case PIECE_CHANCELLOR:
-        mg_slide_dirs(piece, battle,
+        mg_slide_dirs(
+            piece,
+            battle,
             (EffectArg[]){
                 {.type = EARG_INT, .v.i = 0x55},
                 {.type = EARG_INT, .v.i = 1},
                 {.type = EARG_INT, .v.i = 20}
-            }, 3, &a);
-        mg_leap_set(piece, battle,
+            },
+            3,
+            &a
+        );
+        mg_leap_set(
+            piece,
+            battle,
             (EffectArg[]){
-                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 2},
-                {.type = EARG_INT, .v.i = 2}, {.type = EARG_INT, .v.i = 1},
-                {.type = EARG_INT, .v.i = 2}, {.type = EARG_INT, .v.i = -1},
-                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = -2},
-                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = -2},
-                {.type = EARG_INT, .v.i = -2}, {.type = EARG_INT, .v.i = -1},
-                {.type = EARG_INT, .v.i = -2}, {.type = EARG_INT, .v.i = 1},
-                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = 2}
-            }, 16, &b);
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 2},
+                {.type = EARG_INT, .v.i = 2},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 2},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = 2}
+            },
+            16,
+            &b
+        );
         break;
     default:
         return;
@@ -533,7 +616,7 @@ void mg_double_act(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)piece;
@@ -564,7 +647,7 @@ void mg_territory_restricted(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)piece;
@@ -595,7 +678,7 @@ void mg_attack_only_subset(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)piece;
@@ -626,7 +709,7 @@ void mg_todo(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)piece;

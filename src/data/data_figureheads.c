@@ -29,8 +29,7 @@ const FigureheadPower FIGUREHEADS[] = {
         .description = "Spawn a free Pao in Longwei; +20 cp elsewhere.",
         .effects =
             {
-                {.trigger = TRIGGER_BATTLE_START,
-                 EFF(FH_MINGZHU, fh_mingzhu)},
+                {.trigger = TRIGGER_BATTLE_START, EFF(FH_MINGZHU, fh_mingzhu)},
             },
         .effect_count = 1,
     },

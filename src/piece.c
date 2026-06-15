@@ -60,18 +60,26 @@ uint32_t piece_spawn_with_cause(
         effect.owner     = owner;
         bus_register(&battle->bus, &effect);
     }
-    struct EffectCtx context  = {0};
-    context.as.placed.piece   = piece;
-    context.as.placed.pos     = &pos;
-    context.as.placed.cause   = cause;
+    struct EffectCtx context = {0};
+    context.as.placed.piece  = piece;
+    context.as.placed.pos    = &pos;
+    context.as.placed.cause  = cause;
     bus_emit(&battle->bus, battle, TRIGGER_PIECE_PLACED, &context);
     return piece->id;
 }
 
-uint32_t
-piece_spawn(BattleState* battle, uint16_t template_id, Position pos, Side owner) {
+uint32_t piece_spawn(
+    BattleState* battle,
+    uint16_t     template_id,
+    Position     pos,
+    Side         owner
+) {
     return piece_spawn_with_cause(
-        battle, template_id, pos, owner, PLACED_SPAWN
+        battle,
+        template_id,
+        pos,
+        owner,
+        PLACED_SPAWN
     );
 }
 
@@ -97,9 +105,9 @@ void piece_remove_with_cause(
         return;
     board_remove(&battle->board, piece->pos);
     bus_evict_by_source(&battle->bus, piece_id);
-    struct EffectCtx context  = {0};
-    context.as.removed.piece  = piece;
-    context.as.removed.cause  = cause;
+    struct EffectCtx context = {0};
+    context.as.removed.piece = piece;
+    context.as.removed.cause = cause;
     bus_emit(&battle->bus, battle, TRIGGER_PIECE_REMOVED, &context);
     for (uint16_t i = 0; i < battle->piece_count; i++) {
         if (battle->pieces[i].id == piece_id) {
@@ -133,8 +141,8 @@ void piece_flip_with_cause(
     PieceState* piece = piece_by_id(battle, piece_id);
     if (piece == NULL)
         return;
-    Side old_owner = piece->owner;
-    Side new_owner = side_opposite(piece->owner);
+    Side             old_owner   = piece->owner;
+    Side             new_owner   = side_opposite(piece->owner);
     struct EffectCtx context     = {0};
     context.as.flipped.piece     = piece;
     context.as.flipped.old_owner = old_owner;

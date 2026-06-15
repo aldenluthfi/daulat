@@ -35,7 +35,7 @@ void mg_kw_berolina(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     int fwd_dy = -1;
@@ -83,7 +83,7 @@ void mg_kw_negus_guard(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;

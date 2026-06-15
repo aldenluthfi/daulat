@@ -36,17 +36,17 @@ typedef struct PieceTemplate {
 
 /// Runtime instance of a piece on the board.
 typedef struct PieceState {
-    uint32_t             id;
+    uint32_t id;
     const PieceTemplate* template;
-    MoveGen              move_override;
-    MoveGen              threat_override;
-    Side                 owner;
-    Position             pos;
-    int                  value_mod;
-    Effect               buffs[MAX_PIECE_BUFFS];
-    uint8_t              buff_count;
-    uint8_t              moves_used;
-    uint16_t             flags;
+    MoveGen  move_override;
+    MoveGen  threat_override;
+    Side     owner;
+    Position pos;
+    int      value_mod;
+    Effect   buffs[MAX_PIECE_BUFFS];
+    uint8_t  buff_count;
+    uint8_t  moves_used;
+    uint16_t flags;
 } PieceState;
 
 /*--------------------------------------------------------------------------*\

@@ -28,9 +28,11 @@ static void battle_emit(EngineState* engine) {
     const char* side =
         (battle->active_side == SIDE_PLAYER) ? "player" : "enemy";
     protocol_emit_show(
-        engine->out, SCREEN_BATTLE,
+        engine->out,
+        SCREEN_BATTLE,
         "turn=%u active=%s cp=%d meter=%d/%d",
-        battle->turn_no, side,
+        battle->turn_no,
+        side,
         battle->cp[SIDE_PLAYER],
         battle->meter[SIDE_PLAYER],
         battle->meter_cap[SIDE_PLAYER]

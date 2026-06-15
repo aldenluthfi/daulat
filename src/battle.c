@@ -26,7 +26,7 @@
 static void push_event(BattleState* battle, EventKind kind) {
     if (battle->event_count >= MAX_EVENTS)
         return;
-    uint16_t index            = (battle->event_head + battle->event_count) % MAX_EVENTS;
+    uint16_t index = (battle->event_head + battle->event_count) % MAX_EVENTS;
     battle->events[index].kind    = kind;
     battle->events[index].turn_no = battle->turn_no;
     battle->event_count++;
@@ -134,11 +134,11 @@ void battle_turn_start(BattleState* battle) {
     bus_tick_turn_start(&battle->bus);
     struct EffectCtx context = {0};
     bus_emit(&battle->bus, battle, TRIGGER_TURN_START, &context);
-    int income              = 5;
+    int income                  = 5;
     context.as.query.income_out = &income;
     bus_emit(&battle->bus, battle, TRIGGER_QUERY_TURN_INCOME, &context);
     battle->cp[battle->active_side] += income;
-    int draw_count        = 1;
+    int draw_count            = 1;
     context.as.card.count_out = &draw_count;
     bus_emit(&battle->bus, battle, TRIGGER_QUERY_DRAW_COUNT, &context);
     for (int i = 0; i < draw_count; i++) {
@@ -161,8 +161,11 @@ void battle_turn_start(BattleState* battle) {
 /// - Side defender -> side taking damage
 /// - int damage -> total damage to apply
 ///
-static void
-apply_damage_with_cascading_flips(BattleState* battle, Side defender, int damage) {
+static void apply_damage_with_cascading_flips(
+    BattleState* battle,
+    Side         defender,
+    int          damage
+) {
     while (damage > 0) {
         int meter_value = battle->meter[defender];
         if (meter_value <= damage) {
@@ -189,11 +192,11 @@ apply_damage_with_cascading_flips(BattleState* battle, Side defender, int damage
                     battle->event_count++;
                 }
                 /* Emit TRIGGER_RESOLVE_FLIP before actual flip for immunity effects */
-                struct EffectCtx flip_ctx = {0};
-                flip_ctx.as.flipped.piece = &battle->pieces[pick];
+                struct EffectCtx flip_ctx     = {0};
+                flip_ctx.as.flipped.piece     = &battle->pieces[pick];
                 flip_ctx.as.flipped.old_owner = defender;
                 flip_ctx.as.flipped.new_owner = side_opposite(defender);
-                flip_ctx.as.flipped.cause = FLIPPED_METER_CASCADE;
+                flip_ctx.as.flipped.cause     = FLIPPED_METER_CASCADE;
                 bus_emit(&battle->bus, battle, TRIGGER_RESOLVE_FLIP, &flip_ctx);
                 /* Check if piece gained immunity from TRIGGER_RESOLVE_FLIP */
                 if (!(battle->pieces[pick].flags & PSF_IMMUNE_FLIP)) {
@@ -227,11 +230,11 @@ apply_damage_with_cascading_flips(BattleState* battle, Side defender, int damage
 /// - BattleState* battle -> battle state to resolve
 ///
 void battle_resolve(BattleState* battle) {
-    Side             active  = battle->active_side;
-    Side             passive = side_opposite(active);
-    struct EffectCtx context     = {0};
-    context.as.resolve.attacker  = NULL;
-    context.as.resolve.target    = NULL;
+    Side             active     = battle->active_side;
+    Side             passive    = side_opposite(active);
+    struct EffectCtx context    = {0};
+    context.as.resolve.attacker = NULL;
+    context.as.resolve.target   = NULL;
     bus_emit(&battle->bus, battle, TRIGGER_RESOLVE_DEFENSE, &context);
     bus_emit(&battle->bus, battle, TRIGGER_RESOLVE_ATTACK, &context);
     int total_damage = 0;
@@ -252,13 +255,14 @@ void battle_resolve(BattleState* battle) {
                 uint16_t event_index =
                     (battle->event_head + battle->event_count) % MAX_EVENTS;
                 if (battle->event_count < MAX_EVENTS) {
-                    battle->events[event_index].kind    = EVT_PIECE_DEALT_DAMAGE;
+                    battle->events[event_index].kind = EVT_PIECE_DEALT_DAMAGE;
                     battle->events[event_index].turn_no = battle->turn_no;
                     battle->events[event_index].as.dealt_damage.attacker =
                         piece->id;
                     battle->events[event_index].as.dealt_damage.victim_side =
                         passive;
-                    battle->events[event_index].as.dealt_damage.dmg = piece_damage;
+                    battle->events[event_index].as.dealt_damage.dmg =
+                        piece_damage;
                     battle->event_count++;
                 }
             }
@@ -309,7 +313,8 @@ void battle_turn_end(BattleState* battle) {
 /// BattleResult -> BATTLE_IN_PROGRESS, PLAYER_WON, ENEMY_WON, or DRAW
 ///
 BattleResult battle_check_end(const BattleState* battle) {
-    const PieceState* player_king = find_king(battle, battle->config.player_side);
+    const PieceState* player_king =
+        find_king(battle, battle->config.player_side);
     const PieceState* enemy_king =
         find_king(battle, side_opposite(battle->config.player_side));
     if (player_king == NULL)
@@ -337,7 +342,11 @@ BattleResult battle_check_end(const BattleState* battle) {
 /// Return:
 /// bool -> true if the move is legal
 ///
-bool battle_can_move(const BattleState* battle, uint32_t piece_id, Position to) {
+bool battle_can_move(
+    const BattleState* battle,
+    uint32_t           piece_id,
+    Position           to
+) {
     const PieceState* piece = piece_by_id((BattleState*)battle, piece_id);
     if (piece == NULL)
         return false;
@@ -374,7 +383,8 @@ bool battle_action_move(BattleState* battle, uint32_t piece_id, Position to) {
     piece->moves_used++;
     piece->flags |= PSF_HAS_MOVED;
     battle->actions_left--;
-    uint16_t event_index = (battle->event_head + battle->event_count) % MAX_EVENTS;
+    uint16_t event_index =
+        (battle->event_head + battle->event_count) % MAX_EVENTS;
     if (battle->event_count < MAX_EVENTS) {
         battle->events[event_index].kind              = EVT_PIECE_MOVED;
         battle->events[event_index].turn_no           = battle->turn_no;
@@ -388,7 +398,12 @@ bool battle_action_move(BattleState* battle, uint32_t piece_id, Position to) {
     bus_emit(&battle->bus, battle, TRIGGER_PIECE_MOVED, &context);
     Side enemy = side_opposite(piece->owner);
     if (board_at(&battle->board, piece->pos)->owner == enemy) {
-        bus_emit(&battle->bus, battle, TRIGGER_PIECE_ENTERED_ENEMY_TERR, &context);
+        bus_emit(
+            &battle->bus,
+            battle,
+            TRIGGER_PIECE_ENTERED_ENEMY_TERR,
+            &context
+        );
     }
     return true;
 }
@@ -405,7 +420,11 @@ bool battle_action_move(BattleState* battle, uint32_t piece_id, Position to) {
 /// Return:
 /// bool -> true if the purchase is legal
 ///
-bool battle_can_buy(const BattleState* battle, uint16_t template_id, Position at) {
+bool battle_can_buy(
+    const BattleState* battle,
+    uint16_t           template_id,
+    Position           at
+) {
     const PieceTemplate* template = piece_template(template_id);
     if (template == NULL)
         return false;
@@ -479,8 +498,8 @@ bool battle_can_combine(
 ///
 bool battle_action_combine(
     BattleState* battle,
-    uint32_t      ingredient_a,
-    uint32_t      ingredient_b
+    uint32_t     ingredient_a,
+    uint32_t     ingredient_b
 ) {
     (void)battle;
     (void)ingredient_a;
@@ -507,8 +526,10 @@ bool battle_can_play_card(
 ) {
     if (index >= battle->hand_count[battle->active_side])
         return false;
-    const CardTemplate* template = battle->hand[battle->active_side][index].template;
-    if (template->play_cost >= 0 && battle->cp[battle->active_side] < template->play_cost)
+    const CardTemplate* template =
+        battle->hand[battle->active_side][index].template;
+    if (template->play_cost >= 0 &&
+        battle->cp[battle->active_side] < template->play_cost)
         return false;
     (void)target;
     return true;
@@ -526,10 +547,15 @@ bool battle_can_play_card(
 /// Return:
 /// bool -> true if the card was played
 ///
-bool battle_play_card(BattleState* battle, uint8_t index, const TargetSpec* target) {
+bool battle_play_card(
+    BattleState*      battle,
+    uint8_t           index,
+    const TargetSpec* target
+) {
     if (!battle_can_play_card(battle, index, target))
         return false;
-    const CardTemplate* template = battle->hand[battle->active_side][index].template;
+    const CardTemplate* template =
+        battle->hand[battle->active_side][index].template;
     battle->cp[battle->active_side] -= template->play_cost;
     for (uint8_t i = 0; i < template->play_effect_count; i++) {
         Effect effect    = template->on_play[i];
@@ -571,7 +597,8 @@ bool battle_can_sell_card(const BattleState* battle, uint8_t index) {
 bool battle_sell_card(BattleState* battle, uint8_t index) {
     if (!battle_can_sell_card(battle, index))
         return false;
-    const CardTemplate* template = battle->hand[battle->active_side][index].template;
+    const CardTemplate* template =
+        battle->hand[battle->active_side][index].template;
     battle->cp[battle->active_side] += template->sell_value;
     for (uint8_t i = 0; i < template->sell_effect_count; i++) {
         Effect effect    = template->on_sell[i];
@@ -610,7 +637,8 @@ void battle_end_player_turn(BattleState* battle) {
 /// Return:
 /// const PieceState* -> piece at position or NULL
 ///
-const PieceState* battle_piece_at(const BattleState* battle, Position position) {
+const PieceState*
+battle_piece_at(const BattleState* battle, Position position) {
     return board_at(&battle->board, position);
 }
 
@@ -686,7 +714,11 @@ Side battle_territory(const BattleState* battle, Position position) {
 /// Return:
 /// int -> number of threatening pieces
 ///
-int battle_threat_count(const BattleState* battle, Position position, Side attacker) {
+int battle_threat_count(
+    const BattleState* battle,
+    Position           position,
+    Side               attacker
+) {
     int count = 0;
     for (uint16_t i = 0; i < battle->piece_count; i++) {
         const PieceState* piece = &battle->pieces[i];
@@ -773,8 +805,11 @@ const PieceTemplate* battle_piece_tmpl(uint16_t id) {
 /// Return:
 /// size_t -> number of legal moves
 ///
-size_t
-battle_legal_moves(const BattleState* battle, uint32_t piece_id, MoveList* out) {
+size_t battle_legal_moves(
+    const BattleState* battle,
+    uint32_t           piece_id,
+    MoveList*          out
+) {
     const PieceState* piece = piece_by_id((BattleState*)battle, piece_id);
     if (piece == NULL) {
         out->count = 0;
@@ -879,7 +914,8 @@ size_t battle_card_targets(
 /// Return:
 /// const Recipe* -> recipe or NULL
 ///
-const Recipe* battle_recipe_preview(uint16_t ingredient_a, uint16_t ingredient_b) {
+const Recipe*
+battle_recipe_preview(uint16_t ingredient_a, uint16_t ingredient_b) {
     return recipe_find(ingredient_a, ingredient_b);
 }
 
@@ -899,7 +935,11 @@ const Recipe* battle_recipe_preview(uint16_t ingredient_a, uint16_t ingredient_b
 /// Return:
 /// int -> base value of template, or 0 if not found
 ///
-int battle_query_cost(const BattleState* battle, Side side, uint16_t template_id) {
+int battle_query_cost(
+    const BattleState* battle,
+    Side               side,
+    uint16_t           template_id
+) {
     (void)battle;
     (void)side;
     const PieceTemplate* template = piece_template(template_id);
@@ -1017,7 +1057,8 @@ int battle_projected_flips(const BattleState* battle, Side attacker) {
 /// size_t -> number of events drained
 ///
 size_t battle_drain_events(BattleState* battle, Event* out, size_t capacity) {
-    size_t count = (battle->event_count < capacity) ? battle->event_count : capacity;
+    size_t count =
+        (battle->event_count < capacity) ? battle->event_count : capacity;
     for (size_t i = 0; i < count; i++) {
         uint16_t event_index = (battle->event_head + i) % MAX_EVENTS;
         out[i]               = battle->events[event_index];

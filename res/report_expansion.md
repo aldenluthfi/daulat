@@ -219,24 +219,24 @@ is needed.
 
 ### Step 1 — Choose the file
 
-| File | Handles |
-|------|---------|
-| `eff_meter.c` | Meter adjustments, overflow, cap |
-| `eff_economy.c` | CP adjustments, cost/sell modifiers, income |
-| `eff_damage.c` | Damage multipliers, reductions, immunities |
-| `eff_movement.c` | Movegen swaps, extra steps, free moves |
-| `eff_piece.c` | Spawn, remove, swap, force flip |
-| `eff_card.c` | Draw extra, skip, peek, target removal |
-| `eff_flip.c` | On-flip handlers, splitter spawns |
-| `eff_chain.c` | Penalty chain effects |
-| `eff_figurehead.c` | Figurehead power effects |
-| `eff_innate.c` | Innate power effects |
-| `eff_mastery.c` | Mastery hook effects |
-| `eff_overseer.c` | Overseer mechanic effects |
-| `eff_relic.c` | Relic effects |
-| `eff_synergy.c` | Kingdom synergy effects |
-| `eff_vorath_memory.c` | Vorath memory tracking |
-| `eff_run.c` | Universal stub (`eff_todo`) and run handlers |
+| File                  | Handles                                      |
+| --------------------- | -------------------------------------------- |
+| `eff_meter.c`         | Meter adjustments, overflow, cap             |
+| `eff_economy.c`       | CP adjustments, cost/sell modifiers, income  |
+| `eff_damage.c`        | Damage multipliers, reductions, immunities   |
+| `eff_movement.c`      | Movegen swaps, extra steps, free moves       |
+| `eff_piece.c`         | Spawn, remove, swap, force flip              |
+| `eff_card.c`          | Draw extra, skip, peek, target removal       |
+| `eff_flip.c`          | On-flip handlers, splitter spawns            |
+| `eff_chain.c`         | Penalty chain effects                        |
+| `eff_figurehead.c`    | Figurehead power effects                     |
+| `eff_innate.c`        | Innate power effects                         |
+| `eff_mastery.c`       | Mastery hook effects                         |
+| `eff_overseer.c`      | Overseer mechanic effects                    |
+| `eff_relic.c`         | Relic effects                                |
+| `eff_synergy.c`       | Kingdom synergy effects                      |
+| `eff_vorath_memory.c` | Vorath memory tracking                       |
+| `eff_run.c`           | Universal stub (`eff_todo`) and run handlers |
 
 If the effect doesn't fit an existing file, create `eff_<name>.c` with the
 appropriate content and add it to the Makefile's `EFFECT_SRCS`.
@@ -286,6 +286,7 @@ array using its `EffectFuncId` enum value.
 ### When to add a new primitive
 
 Add a new primitive in `mg_basics.c` only when:
+
 1. The pattern is reusable across multiple kingdoms, AND
 2. It cannot be expressed as a parameterization of an existing primitive.
 
@@ -309,6 +310,7 @@ mg_my_pattern(const PieceState *piece, const BattleState *bs,
 ```
 
 Key helpers available in all movegens:
+
 - `pos_in_bounds(bs, pos)` — check board bounds
 - `battle_piece_at(bs, pos)` — get piece at position (NULL = empty)
 - `piece->owner` — owner of moving piece
@@ -567,6 +569,7 @@ typedef struct Profile {
 ```
 
 **Load/Save cycle:**
+
 ```c
 /* At engine startup (engine_init) */
 engine->profile = calloc(1, sizeof(Profile));
@@ -598,6 +601,7 @@ typedef struct RunState {
 ```
 
 **Run Flags:**
+
 - `RUN_FOREIGN_MARKUP_OFF` — Trade Routes relic
 - `RUN_DOUBLE_ARCHIVE` — Master's Notes relic
 - `RUN_VISION_ENEMY_VALUES` — Eagle Eye relic
@@ -852,16 +856,16 @@ Add to `data_figureheads.c` for the kingdom's starting power.
 
 Edit the `AIWeights` values in `data_archetypes.c`. Each weight field:
 
-| Field | Meaning |
-|-------|---------|
-| `value_diff_w` | Weight for piece value difference |
-| `territory_w` | Weight for territory control |
-| `aggression_w` | Weight for offensive play |
-| `sell_threshold` | Sell if hand value exceeds this |
-| `save_threshold` | Keep if value exceeds this |
-| `max_piece_cost` | Don't buy above this cost |
-| `combo_chain_bonus` | Bonus for chain combos |
-| `reclaim_priority` | Priority for Harushima reclaim behavior |
+| Field               | Meaning                                 |
+| ------------------- | --------------------------------------- |
+| `value_diff_w`      | Weight for piece value difference       |
+| `territory_w`       | Weight for territory control            |
+| `aggression_w`      | Weight for offensive play               |
+| `sell_threshold`    | Sell if hand value exceeds this         |
+| `save_threshold`    | Keep if value exceeds this              |
+| `max_piece_cost`    | Don't buy above this cost               |
+| `combo_chain_bonus` | Bonus for chain combos                  |
+| `reclaim_priority`  | Priority for Harushima reclaim behavior |
 
 ### Adding a Custom Pick Function
 
@@ -953,6 +957,7 @@ int projected = battle_projected_damage(bs, SIDE_PLAYER);
 ### Serialization Strategy
 
 `BattleState` and `RunState` contain:
+
 - Plain data (arrays, ints) — serialize directly
 - Pointers to templates — resolve via id at load time
 - Function pointers in `EffectBus.slots[]` — **cannot serialize directly**
@@ -987,6 +992,7 @@ static const EffectFunc EFFECT_TABLE[] = {
 ```
 
 `src/run.c`:
+
 ```c
 bool run_save(const RunState *rs, FILE *fp);
 bool run_load(RunState *rs, FILE *fp);
@@ -1061,15 +1067,15 @@ test: $(TEST_SRCS)
 
 ### Coverage targets
 
-| Area | What to test |
-|------|-------------|
-| `eff_meter.c` | Meter cap, overflow, cascade |
+| Area           | What to test                      |
+| -------------- | --------------------------------- |
+| `eff_meter.c`  | Meter cap, overflow, cascade      |
 | `eff_damage.c` | Multipliers, reductions, immunity |
-| `eff_piece.c` | Spawn, flip, remove |
-| `eff_*.c` | Each effect function |
-| `mg_*.c` | Each movegen covers legal squares |
-| `piece.c` | Flip cascades, splitter intercept |
-| `battle.c` | Turn flow, resolve order |
+| `eff_piece.c`  | Spawn, flip, remove               |
+| `eff_*.c`      | Each effect function              |
+| `mg_*.c`       | Each movegen covers legal squares |
+| `piece.c`      | Flip cascades, splitter intercept |
+| `battle.c`     | Turn flow, resolve order          |
 
 ---
 
@@ -1091,6 +1097,7 @@ typedef struct ActionLog {
 ```
 
 At end of battle, serialize `ActionLog[]` to file. To replay:
+
 1. Load initial `BattleState` from save
 2. Replay `ActionLog[]` by calling `battle_action_*` in order
 3. Skip rendering during replay; capture final state
@@ -1199,24 +1206,26 @@ The SDL layer (`src/sdl/`) intentionally opts out and includes headers directly.
 **Layer 1+**: All other headers include `core.h` and/or other domain headers
 
 Most-depended headers:
+
 - `defs.h` — included by 11 other headers
 - `types.h` — included by 7 other headers
 - `effect.h`, `screen.h`, `recipe.h`, `piece.h`, `movegen.h`, `meta.h`, `card.h`, `ai.h` — each included by 4 headers
 
 ### Naming Conventions
 
-| Category | Convention | Example |
-|----------|------------|---------|
-| Files | lowercase_underscores | `eff_meter.c`, `mg_basics.c` |
-| Types (structs/enums) | PascalCase | `BattleState`, `PieceTemplate` |
-| Functions | lowercase_with_underscores | `battle_resolve`, `piece_flip` |
-| Enum values | UPPER_SNAKE_CASE | `SIDE_PLAYER`, `KINGDOM_LONGWEI` |
-| Macros | UPPER_SNAKE_CASE | `MAX_PIECES`, `DIR_N` |
-| Variables | lowercase_with_underscores | `active_side`, `piece_count` |
+| Category              | Convention                 | Example                          |
+| --------------------- | -------------------------- | -------------------------------- |
+| Files                 | lowercase_underscores      | `eff_meter.c`, `mg_basics.c`     |
+| Types (structs/enums) | PascalCase                 | `BattleState`, `PieceTemplate`   |
+| Functions             | lowercase_with_underscores | `battle_resolve`, `piece_flip`   |
+| Enum values           | UPPER_SNAKE_CASE           | `SIDE_PLAYER`, `KINGDOM_LONGWEI` |
+| Macros                | UPPER_SNAKE_CASE           | `MAX_PIECES`, `DIR_N`            |
+| Variables             | lowercase_with_underscores | `active_side`, `piece_count`     |
 
 ### Code Organization Patterns
 
 **One effect file per effect**:
+
 ```
 src/effects/
 ├── eff_meter.c        # Meter +/-, cap, overflow, refill
@@ -1226,6 +1235,7 @@ src/effects/
 ```
 
 **One movegen file per kingdom**:
+
 ```
 src/movegens/
 ├── mg_basics.c        # Universal primitives
@@ -1235,6 +1245,7 @@ src/movegens/
 ```
 
 **Data files per kingdom**:
+
 ```
 src/data/
 ├── data_longwei.c     # Longwei pieces, cards
@@ -1261,6 +1272,7 @@ src/data/
 ### Prelude Enforcement
 
 Every `.c` file under `src/` (except `src/sdl/`) must:
+
 ```c
 #include "prelude.h"  // only include; no other internal headers
 ```

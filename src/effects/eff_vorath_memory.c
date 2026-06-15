@@ -68,9 +68,9 @@ void eff_vorath_memory_apply(
     /* Counter-piece mapping is content-tuning; for now we spawn two
      * copies of whatever the most-played piece type was, mirrored to
      * the enemy side. Counter tuning lives in VORATH_COUNTER_TABLE. */
-    int top = context->battle->board.height - 1;
-    Position p0 = {0, (int8_t)top};
-    Position p1 = {(int8_t)(context->battle->board.width - 1), (int8_t)top};
+    int      top = context->battle->board.height - 1;
+    Position p0  = {0, (int8_t)top};
+    Position p1  = {(int8_t)(context->battle->board.width - 1), (int8_t)top};
     piece_spawn(context->battle, top_id, p0, SIDE_ENEMY);
     piece_spawn(context->battle, top_id, p1, SIDE_ENEMY);
 }

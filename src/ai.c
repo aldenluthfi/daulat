@@ -33,7 +33,11 @@ static void ai_execute_action(BattleState* battle, const Action* a) {
         battle_action_combine(battle, a->as.combine.a, a->as.combine.b);
         break;
     case ACTION_PLAY_CARD:
-        battle_play_card(battle, a->as.play_card.hand_index, &a->as.play_card.target);
+        battle_play_card(
+            battle,
+            a->as.play_card.hand_index,
+            &a->as.play_card.target
+        );
         break;
     case ACTION_SELL_CARD:
         battle_sell_card(battle, a->as.sell_card.hand_index);
@@ -82,7 +86,7 @@ Action ai_pick_one(BattleState* battle) {
         MoveList move_list = {0};
         mg_generate(piece, battle, &move_list);
         if (move_list.count > 0) {
-            uint64_t index          = rng_range(&battle->rng, move_list.count);
+            uint64_t index        = rng_range(&battle->rng, move_list.count);
             best.kind             = ACTION_MOVE;
             best.as.move.piece_id = piece->id;
             best.as.move.to       = move_list.squares[index];
@@ -91,8 +95,9 @@ Action ai_pick_one(BattleState* battle) {
     }
 
     if (battle->hand_count[battle->active_side] > 0) {
-        uint64_t index = rng_range(&battle->rng, battle->hand_count[battle->active_side]);
-        best.kind    = ACTION_SELL_CARD;
+        uint64_t index =
+            rng_range(&battle->rng, battle->hand_count[battle->active_side]);
+        best.kind                    = ACTION_SELL_CARD;
         best.as.sell_card.hand_index = (uint8_t)index;
     }
 

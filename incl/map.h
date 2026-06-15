@@ -59,8 +59,8 @@ typedef enum {
 ///
 typedef struct {
     uint16_t id;
-    uint8_t  type;     /* NodeType */
-    uint8_t  kingdom;  /* Kingdom */
+    uint8_t  type; /* NodeType */
+    uint8_t  kingdom; /* Kingdom */
     uint16_t payload_id;
     uint16_t modifier_id;
     uint16_t trait_id;

@@ -61,9 +61,7 @@ void eff_innate_bulwark(struct EffectCtx*, const EffectArg*, size_t);
 void eff_innate_reclaim(struct EffectCtx*, const EffectArg*, size_t);
 void eff_innate_double_time(struct EffectCtx*, const EffectArg*, size_t);
 void eff_innate_royal_sub(struct EffectCtx*, const EffectArg*, size_t);
-void eff_innate_conquerors_reward(
-    struct EffectCtx*, const EffectArg*, size_t
-);
+void eff_innate_conquerors_reward(struct EffectCtx*, const EffectArg*, size_t);
 
 /*--------------------------------------------------------------------------*\
                               FIGUREHEADS (5)
@@ -109,21 +107,19 @@ void eff_mastery_l3_caelan(struct EffectCtx*, const EffectArg*, size_t);
                               OVERSEERS (5)
 \*--------------------------------------------------------------------------*/
 
-void eff_overseer_iron_strategist(
-    struct EffectCtx*, const EffectArg*, size_t
-);
+void eff_overseer_iron_strategist(struct EffectCtx*, const EffectArg*, size_t);
 void eff_overseer_eternal_recursion(
-    struct EffectCtx*, const EffectArg*, size_t
+    struct EffectCtx*,
+    const EffectArg*,
+    size_t
 );
 void eff_overseer_caravan_of_conquest(
-    struct EffectCtx*, const EffectArg*, size_t
+    struct EffectCtx*,
+    const EffectArg*,
+    size_t
 );
-void eff_overseer_many_faced_king(
-    struct EffectCtx*, const EffectArg*, size_t
-);
-void eff_overseer_crowned_heretic(
-    struct EffectCtx*, const EffectArg*, size_t
-);
+void eff_overseer_many_faced_king(struct EffectCtx*, const EffectArg*, size_t);
+void eff_overseer_crowned_heretic(struct EffectCtx*, const EffectArg*, size_t);
 
 /*--------------------------------------------------------------------------*\
                               VORATH MEMORY

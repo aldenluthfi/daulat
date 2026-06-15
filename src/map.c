@@ -19,17 +19,29 @@
 /// Country:         4 battles + 1 elite + 1 offering + 2 events + 1 overseer
 static void layout_for_tier(Tier tier, NodeType* out, uint8_t* count_out) {
     static const NodeType TOWN_PROVINCE[] = {
-        NODE_BATTLE, NODE_BATTLE, NODE_EVENT,
-        NODE_ELITE,  NODE_BATTLE, NODE_OFFERING,
-        NODE_EVENT,  NODE_BATTLE, NODE_BATTLE
+        NODE_BATTLE,
+        NODE_BATTLE,
+        NODE_EVENT,
+        NODE_ELITE,
+        NODE_BATTLE,
+        NODE_OFFERING,
+        NODE_EVENT,
+        NODE_BATTLE,
+        NODE_BATTLE
     };
     static const NodeType COUNTRY[] = {
-        NODE_BATTLE, NODE_BATTLE, NODE_EVENT,
-        NODE_ELITE,  NODE_BATTLE, NODE_OFFERING,
-        NODE_EVENT,  NODE_BATTLE, NODE_OVERSEER
+        NODE_BATTLE,
+        NODE_BATTLE,
+        NODE_EVENT,
+        NODE_ELITE,
+        NODE_BATTLE,
+        NODE_OFFERING,
+        NODE_EVENT,
+        NODE_BATTLE,
+        NODE_OVERSEER
     };
     const NodeType* source = (tier == TIER_COUNTRY) ? COUNTRY : TOWN_PROVINCE;
-    size_t          count  = (tier == TIER_COUNTRY)
+    size_t count = (tier == TIER_COUNTRY)
                        ? sizeof(COUNTRY) / sizeof(COUNTRY[0])
                        : sizeof(TOWN_PROVINCE) / sizeof(TOWN_PROVINCE[0]);
     for (size_t i = 0; i < count; i++)
@@ -43,42 +55,59 @@ static uint16_t roll_event_payload(Rng* rng, Kingdom kingdom) {
         EVENT_UNIVERSAL_MARKET,
         EVENT_UNIVERSAL_AMBUSH
     };
-    static const EventId LONGWEI[]   = {
-        EVENT_LONGWEI_RIVER_FESTIVAL, EVENT_LONGWEI_SKY_LADDER
+    static const EventId LONGWEI[] = {
+        EVENT_LONGWEI_RIVER_FESTIVAL,
+        EVENT_LONGWEI_SKY_LADDER
     };
     static const EventId HARUSHIMA[] = {
-        EVENT_HARUSHIMA_HONOR_TRIAL, EVENT_HARUSHIMA_TAKENOKO_SWARM
+        EVENT_HARUSHIMA_HONOR_TRIAL,
+        EVENT_HARUSHIMA_TAKENOKO_SWARM
     };
-    static const EventId KEWARANI[]  = {
-        EVENT_KEWARANI_PILGRIMAGE_SEASON, EVENT_KEWARANI_BAZAAR_RUMOR
+    static const EventId KEWARANI[] = {
+        EVENT_KEWARANI_PILGRIMAGE_SEASON,
+        EVENT_KEWARANI_BAZAAR_RUMOR
     };
-    static const EventId ZARQAN[]    = {
-        EVENT_ZARQAN_SANDSTORM, EVENT_ZARQAN_OASIS_DISCOVERY
+    static const EventId ZARQAN[] = {
+        EVENT_ZARQAN_SANDSTORM,
+        EVENT_ZARQAN_OASIS_DISCOVERY
     };
-    static const EventId CAELAN[]    = {
-        EVENT_CAELAN_TOURNAMENT, EVENT_CAELAN_CASTLE_FESTIVAL
+    static const EventId CAELAN[] = {
+        EVENT_CAELAN_TOURNAMENT,
+        EVENT_CAELAN_CASTLE_FESTIVAL
     };
 
     if ((rng_next(rng) & 1u) == 0u)
         return UNIVERSAL[rng_range(rng, 3)];
     switch (kingdom) {
-        case KINGDOM_LONGWEI:   return LONGWEI[rng_range(rng, 2)];
-        case KINGDOM_HARUSHIMA: return HARUSHIMA[rng_range(rng, 2)];
-        case KINGDOM_KEWARANI:  return KEWARANI[rng_range(rng, 2)];
-        case KINGDOM_ZARQAN:    return ZARQAN[rng_range(rng, 2)];
-        case KINGDOM_CAELAN:    return CAELAN[rng_range(rng, 2)];
-        default:                return UNIVERSAL[0];
+    case KINGDOM_LONGWEI:
+        return LONGWEI[rng_range(rng, 2)];
+    case KINGDOM_HARUSHIMA:
+        return HARUSHIMA[rng_range(rng, 2)];
+    case KINGDOM_KEWARANI:
+        return KEWARANI[rng_range(rng, 2)];
+    case KINGDOM_ZARQAN:
+        return ZARQAN[rng_range(rng, 2)];
+    case KINGDOM_CAELAN:
+        return CAELAN[rng_range(rng, 2)];
+    default:
+        return UNIVERSAL[0];
     }
 }
 
 static uint16_t roll_overseer_for(Kingdom kingdom) {
     switch (kingdom) {
-        case KINGDOM_LONGWEI:   return OVERSEER_IRON_STRATEGIST;
-        case KINGDOM_HARUSHIMA: return OVERSEER_ETERNAL_RECURSION;
-        case KINGDOM_KEWARANI:  return OVERSEER_CARAVAN_OF_CONQUEST;
-        case KINGDOM_ZARQAN:    return OVERSEER_MANY_FACED_KING;
-        case KINGDOM_CAELAN:    return OVERSEER_CROWNED_HERETIC;
-        default:                return OVERSEER_IRON_STRATEGIST;
+    case KINGDOM_LONGWEI:
+        return OVERSEER_IRON_STRATEGIST;
+    case KINGDOM_HARUSHIMA:
+        return OVERSEER_ETERNAL_RECURSION;
+    case KINGDOM_KEWARANI:
+        return OVERSEER_CARAVAN_OF_CONQUEST;
+    case KINGDOM_ZARQAN:
+        return OVERSEER_MANY_FACED_KING;
+    case KINGDOM_CAELAN:
+        return OVERSEER_CROWNED_HERETIC;
+    default:
+        return OVERSEER_IRON_STRATEGIST;
     }
 }
 
@@ -102,30 +131,30 @@ void map_generate(MapState* map, Kingdom kingdom, Tier tier, uint64_t seed) {
     map->current_node_id = MAP_NODE_INVALID;
 
     for (uint8_t i = 0; i < layout_count; i++) {
-        MapNode* node      = &map->nodes[i];
-        node->id           = i;
-        node->type         = (uint8_t)layout[i];
-        node->kingdom      = (uint8_t)kingdom;
-        node->visited      = false;
-        node->revealed     = false;
-        node->edge_count   = (uint8_t)((i + 1 < layout_count) ? 1 : 0);
-        node->edges[0]     = (uint16_t)(i + 1);
-        node->modifier_id  = (uint16_t)(rng_range(&rng, MODIFIER_COUNT));
-        node->trait_id     = (uint16_t)(rng_range(&rng, TRAIT_COUNT));
+        MapNode* node     = &map->nodes[i];
+        node->id          = i;
+        node->type        = (uint8_t)layout[i];
+        node->kingdom     = (uint8_t)kingdom;
+        node->visited     = false;
+        node->revealed    = false;
+        node->edge_count  = (uint8_t)((i + 1 < layout_count) ? 1 : 0);
+        node->edges[0]    = (uint16_t)(i + 1);
+        node->modifier_id = (uint16_t)(rng_range(&rng, MODIFIER_COUNT));
+        node->trait_id    = (uint16_t)(rng_range(&rng, TRAIT_COUNT));
 
         switch (layout[i]) {
-            case NODE_EVENT:
-                node->payload_id = roll_event_payload(&rng, kingdom);
-                break;
-            case NODE_OVERSEER:
-                node->payload_id = roll_overseer_for(kingdom);
-                break;
-            case NODE_ARCHIVE:
-                node->payload_id = (uint16_t)rng_range(&rng, MAX_RECIPES);
-                break;
-            default:
-                node->payload_id = 0;
-                break;
+        case NODE_EVENT:
+            node->payload_id = roll_event_payload(&rng, kingdom);
+            break;
+        case NODE_OVERSEER:
+            node->payload_id = roll_overseer_for(kingdom);
+            break;
+        case NODE_ARCHIVE:
+            node->payload_id = (uint16_t)rng_range(&rng, MAX_RECIPES);
+            break;
+        default:
+            node->payload_id = 0;
+            break;
         }
     }
 }
@@ -159,26 +188,26 @@ bool map_can_advance(const MapState* map, uint16_t to_id) {
 /// offering resolve immediately on the map.
 static void enter_node(EngineState* engine, MapNode* node) {
     switch ((NodeType)node->type) {
-        case NODE_BATTLE:
-        case NODE_ELITE:
-        case NODE_OVERSEER:
-        case NODE_LIBERATION_TRIAL:
-            screen_goto(engine, SCREEN_BATTLE);
-            break;
-        case NODE_EVENT:
-            screen_goto(engine, SCREEN_EVENT);
-            break;
-        case NODE_ARCHIVE:
-            if (engine->run != NULL && node->payload_id < MAX_RECIPES)
-                engine->run->revealed_recipes |= (1ULL << node->payload_id);
-            node->visited = true;
-            break;
-        case NODE_OFFERING:
-            /* The in-map remove-card prompt is surfaced here. */
-            node->visited = true;
-            break;
-        default:
-            break;
+    case NODE_BATTLE:
+    case NODE_ELITE:
+    case NODE_OVERSEER:
+    case NODE_LIBERATION_TRIAL:
+        screen_goto(engine, SCREEN_BATTLE);
+        break;
+    case NODE_EVENT:
+        screen_goto(engine, SCREEN_EVENT);
+        break;
+    case NODE_ARCHIVE:
+        if (engine->run != NULL && node->payload_id < MAX_RECIPES)
+            engine->run->revealed_recipes |= (1ULL << node->payload_id);
+        node->visited = true;
+        break;
+    case NODE_OFFERING:
+        /* The in-map remove-card prompt is surfaced here. */
+        node->visited = true;
+        break;
+    default:
+        break;
     }
 }
 
@@ -225,8 +254,8 @@ void map_on_battle_won(EngineState* engine) {
     node->visited = true;
 
     Kingdom kingdom = map->kingdom;
-    if ((unsigned)kingdom < KINGDOM_COUNT
-        && engine->run->chain_levels[kingdom] > 0)
+    if ((unsigned)kingdom < KINGDOM_COUNT &&
+        engine->run->chain_levels[kingdom] > 0)
         engine->run->chain_levels[kingdom]--;
 
     clear_kingdom_if_overseer(engine, node);
@@ -249,7 +278,7 @@ static void seed_liberation_trial(RunState* run, Kingdom subjugated_kingdom) {
 void map_on_battle_lost(EngineState* engine) {
     if (engine == NULL || engine->run == NULL)
         return;
-    RunState* run = engine->run;
+    RunState* run     = engine->run;
     Kingdom   kingdom = run->current_map.kingdom;
     if ((unsigned)kingdom >= KINGDOM_COUNT)
         return;

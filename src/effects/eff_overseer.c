@@ -74,9 +74,9 @@ void eff_overseer_caravan_of_conquest(
         return;
     if ((battle->turn_no & 1u) != 0u)
         return;
-    int      width = battle->board.width;
-    int      top   = battle->board.height - 1;
-    Position position     = {(int8_t)(width / 2), (int8_t)top};
+    int      width    = battle->board.width;
+    int      top      = battle->board.height - 1;
+    Position position = {(int8_t)(width / 2), (int8_t)top};
     piece_spawn(battle, PIECE_FARAS, position, SIDE_ENEMY);
 }
 
@@ -113,12 +113,17 @@ void eff_overseer_crowned_heretic(
      * across the top row, capped at board width. Ghost tally lives
      * in vision_flags bits 8..15 (8-bit counter). */
     static const uint16_t HERETIC_ROW[] = {
-        PIECE_PAWN, PIECE_KNIGHT, PIECE_BISHOP, PIECE_QUEEN,
-        PIECE_KNIGHT, PIECE_BISHOP, PIECE_PAWN, PIECE_PAWN
+        PIECE_PAWN,
+        PIECE_KNIGHT,
+        PIECE_BISHOP,
+        PIECE_QUEEN,
+        PIECE_KNIGHT,
+        PIECE_BISHOP,
+        PIECE_PAWN,
+        PIECE_PAWN
     };
-    int top = battle->board.height - 1;
-    int n_pieces =
-        (int)(sizeof(HERETIC_ROW) / sizeof(HERETIC_ROW[0]));
+    int top      = battle->board.height - 1;
+    int n_pieces = (int)(sizeof(HERETIC_ROW) / sizeof(HERETIC_ROW[0]));
     for (int i = 0; i < n_pieces && i < battle->board.width; i++) {
         Position position = {(int8_t)i, (int8_t)top};
         piece_spawn(battle, (uint16_t)HERETIC_ROW[i], position, SIDE_ENEMY);

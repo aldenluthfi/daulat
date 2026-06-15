@@ -68,8 +68,7 @@ const InnateTemplate INNATES[] = {
         .effects =
             {
                 {.trigger = TRIGGER_RESOLVE_FLIP,
-                 EFF(INNATE_CONQUERORS_REWARD,
-                     innate_conquerors_reward)},
+                 EFF(INNATE_CONQUERORS_REWARD, innate_conquerors_reward)},
             },
         .effect_count = 1,
     },

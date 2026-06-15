@@ -58,7 +58,11 @@ void card_add_to_hand(
 );
 
 /// Remove a card from a side's hand by index. Returns true if removed.
-bool card_remove_from_hand(struct BattleState* battle, Side side, uint8_t index);
+bool card_remove_from_hand(
+    struct BattleState* battle,
+    Side                side,
+    uint8_t             index
+);
 
 /// Get a card from a side's hand.
 const CardInstance*

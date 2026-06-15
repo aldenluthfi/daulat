@@ -24,7 +24,7 @@ uint32_t crc32_ieee(const void* data, size_t count) {
         crc ^= bytes[i];
         for (int j = 0; j < 8; j++) {
             uint32_t mask = -(int32_t)(crc & 1u);
-            crc = (crc >> 1) ^ (0xEDB88320u & mask);
+            crc           = (crc >> 1) ^ (0xEDB88320u & mask);
         }
     }
     return crc ^ 0xFFFFFFFFu;
@@ -123,12 +123,12 @@ bool save_write_chunk_end(SaveWriter* w) {
         log_err("save_write_chunk_end: no chunk open");
         return false;
     }
-    uint32_t body_len = w->pos - (w->chunk_origin + 4u);
+    uint32_t body_len           = w->pos - (w->chunk_origin + 4u);
     w->buf[w->chunk_origin + 0] = (uint8_t)(body_len & 0xFFu);
     w->buf[w->chunk_origin + 1] = (uint8_t)((body_len >> 8) & 0xFFu);
     w->buf[w->chunk_origin + 2] = (uint8_t)((body_len >> 16) & 0xFFu);
     w->buf[w->chunk_origin + 3] = (uint8_t)((body_len >> 24) & 0xFFu);
-    w->in_chunk = false;
+    w->in_chunk                 = false;
     return true;
 }
 
@@ -173,8 +173,8 @@ bool save_writer_flush(const SaveWriter* w, const char* path) {
 \*--------------------------------------------------------------------------*/
 
 static uint32_t read_u32_le(const uint8_t* position) {
-    return ((uint32_t)position[0]) | ((uint32_t)position[1] << 8)
-           | ((uint32_t)position[2] << 16) | ((uint32_t)position[3] << 24);
+    return ((uint32_t)position[0]) | ((uint32_t)position[1] << 8) |
+           ((uint32_t)position[2] << 16) | ((uint32_t)position[3] << 24);
 }
 
 static uint16_t read_u16_le(const uint8_t* position) {
@@ -191,7 +191,8 @@ bool save_reader_open(SaveReader* r, const char* path) {
     if (size < 16 || size > (int64_t)SAVE_BUFFER_BYTES) {
         log_err(
             "save_reader_open: %s has invalid size %lld",
-            path, (long long)size
+            path,
+            (long long)size
         );
         platform_close(stream);
         return false;
@@ -210,7 +211,9 @@ bool save_reader_open(SaveReader* r, const char* path) {
     if (stored_crc != computed_crc) {
         log_err(
             "save_reader_open: CRC mismatch on %s (file=%08x calc=%08x)",
-            path, stored_crc, computed_crc
+            path,
+            stored_crc,
+            computed_crc
         );
         return false;
     }
@@ -308,10 +311,14 @@ bool save_skip(SaveReader* r, uint32_t count) {
 
 static const char* chunk_name(SaveChunkId id) {
     switch (id) {
-        case CHUNK_PROFILE:   return "PROFILE";
-        case CHUNK_RUN_META:  return "RUN_META";
-        case CHUNK_MAP_STATE: return "MAP_STATE";
-        default:              return "UNKNOWN";
+    case CHUNK_PROFILE:
+        return "PROFILE";
+    case CHUNK_RUN_META:
+        return "RUN_META";
+    case CHUNK_MAP_STATE:
+        return "MAP_STATE";
+    default:
+        return "UNKNOWN";
     }
 }
 
@@ -323,7 +330,10 @@ int save_dump(const char* path) {
     }
     log_info(
         "save: %s | version=%u | chunks=%u | size=%u bytes",
-        path, reader.version, reader.chunk_count, reader.total
+        path,
+        reader.version,
+        reader.chunk_count,
+        reader.total
     );
     for (uint32_t i = 0; i < reader.chunk_count; i++) {
         SaveChunkId id;
@@ -334,7 +344,11 @@ int save_dump(const char* path) {
         }
         log_info(
             "  [%u] id=%08x %-10s length=%u offset=%u",
-            i, (uint32_t)id, chunk_name(id), length, reader.pos
+            i,
+            (uint32_t)id,
+            chunk_name(id),
+            length,
+            reader.pos
         );
         if (!save_skip(&reader, length)) {
             log_err("save_dump: chunk body too long at %u", i);

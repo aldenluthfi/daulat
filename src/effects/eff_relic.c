@@ -63,7 +63,7 @@ void eff_bulk_discount(
         return;
     if (context->as.query.cost_out == NULL)
         return;
-    int buys_this_turn = context->self->scratch[0].v.i;
+    int buys_this_turn  = context->self->scratch[0].v.i;
     int cheapest_so_far = context->self->scratch[1].v.i;
     if (buys_this_turn < 3)
         return;
@@ -147,8 +147,8 @@ void eff_dead_mans_pact(
         return;
     if (battle->meter[SIDE_PLAYER] > 0)
         return;
-    battle->meter[SIDE_PLAYER]      = 20;
-    context->self->scratch[0].v.i  = 1;
+    battle->meter[SIDE_PLAYER]    = 20;
+    context->self->scratch[0].v.i = 1;
 }
 
 void eff_iron_king(
@@ -183,8 +183,8 @@ void eff_last_breath(
 ) {
     (void)args;
     (void)count;
-    struct BattleState* battle    = context->battle;
-    struct PieceState*  piece = context->as.piece.piece;
+    struct BattleState* battle = context->battle;
+    struct PieceState*  piece  = context->as.piece.piece;
     if (battle == NULL || piece == NULL)
         return;
     if (piece->owner != SIDE_PLAYER)
@@ -301,7 +301,7 @@ void eff_philosophers_stone(
     if (context->self == NULL || context->self->scratch[0].v.i != 0)
         return;
     context->as.piece.piece->value_mod += 20;
-    context->self->scratch[0].v.i      = 1;
+    context->self->scratch[0].v.i = 1;
 }
 
 void eff_inherited_power(
@@ -355,9 +355,10 @@ void eff_forward_command(
         return;
     if (context->as.resolve.damage_out == NULL)
         return;
-    Position position = context->as.resolve.attacker->pos;
+    Position position      = context->as.resolve.attacker->pos;
     Side     attacker_side = context->as.resolve.attacker->owner;
-    if (battle_territory(context->battle, position) != side_opposite(attacker_side))
+    if (battle_territory(context->battle, position) !=
+        side_opposite(attacker_side))
         return;
     *context->as.resolve.damage_out += 5;
 }

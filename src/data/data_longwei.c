@@ -188,7 +188,7 @@ const CardTemplate CARDS_LONGWEI[] = {
             .tier       = TIER_TOWN,
             .play_cost  = 0,
             .sell_value = 30,
-            .on_play    = {{.trigger = TRIGGER_RESOLVE_ATTACK, EFF(TODO, todo)}},
+            .on_play = {{.trigger = TRIGGER_RESOLVE_ATTACK, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_DIVINATION] =

@@ -21,8 +21,10 @@ static void codex_handle(EngineState* engine, const ProtocolVerb* verb) {
 
 static void codex_emit(EngineState* engine) {
     protocol_emit_show(
-        engine->out, SCREEN_CODEX,
-        "kind=%s", engine->codex.kind[0] ? engine->codex.kind : "piece"
+        engine->out,
+        SCREEN_CODEX,
+        "kind=%s",
+        engine->codex.kind[0] ? engine->codex.kind : "piece"
     );
 }
 

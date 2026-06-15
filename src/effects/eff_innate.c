@@ -20,9 +20,7 @@ static bool has_friendly_neighbour(
     const struct BattleState* battle,
     const PieceState*         piece
 ) {
-    static const Position OFFSETS[4] = {
-        {1, 0}, {-1, 0}, {0, 1}, {0, -1}
-    };
+    static const Position OFFSETS[4] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
     for (int i = 0; i < 4; i++) {
         Position position = {
             (int8_t)(piece->pos.x + OFFSETS[i].x),
@@ -48,7 +46,7 @@ void eff_innate_bulwark(
 ) {
     (void)args;
     (void)count;
-    struct BattleState* battle    = context->battle;
+    struct BattleState* battle = context->battle;
     PieceState*         target = context->as.resolve.target;
     if (battle == NULL || target == NULL || target->template == NULL)
         return;

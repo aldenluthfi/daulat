@@ -35,7 +35,7 @@ void mg_lw_ma(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
@@ -101,7 +101,7 @@ void mg_lw_xiang(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
@@ -113,8 +113,11 @@ void mg_lw_xiang(
         {-1, -1},
     };
     for (int dir = 0; dir < 4; dir++) {
-        Position mid = {piece->pos.x + DIRS[dir][0], piece->pos.y + DIRS[dir][1]};
-        Position to  = {
+        Position mid = {
+            piece->pos.x + DIRS[dir][0],
+            piece->pos.y + DIRS[dir][1]
+        };
+        Position to = {
             piece->pos.x + DIRS[dir][0] * 2,
             piece->pos.y + DIRS[dir][1] * 2
         };
@@ -150,7 +153,7 @@ void mg_lw_pao(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
@@ -212,14 +215,20 @@ void mg_lw_hwacha(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
     (void)count;
     static const int8_t DIRS[8][2] = {
-        {1, 0}, {-1, 0}, {0, 1}, {0, -1},
-        {1, 1}, {1, -1}, {-1, 1}, {-1, -1},
+        {1, 0},
+        {-1, 0},
+        {0, 1},
+        {0, -1},
+        {1, 1},
+        {1, -1},
+        {-1, 1},
+        {-1, -1},
     };
     for (int dir = 0; dir < 8; dir++) {
         bool found_screen = false;
@@ -269,7 +278,7 @@ void mg_lw_sang(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
@@ -298,7 +307,10 @@ void mg_lw_sang(
             continue;
         for (int dir = 0; dir < 4; dir++) {
             Position mid2 = {mid1.x + DIAG[dir][0], mid1.y + DIAG[dir][1]};
-            Position to   = {mid1.x + DIAG[dir][0] * 2, mid1.y + DIAG[dir][1] * 2};
+            Position to   = {
+                mid1.x + DIAG[dir][0] * 2,
+                mid1.y + DIAG[dir][1] * 2
+            };
             if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                 continue;
             }
@@ -332,7 +344,7 @@ void mg_lw_liubo(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;

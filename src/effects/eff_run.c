@@ -28,7 +28,11 @@
 /// - const EffectArg *args -> args[0] carries the relic template id
 /// - size_t count              -> argument count from the caller
 ///
-void eff_apply_relic(struct EffectCtx* context, const EffectArg* args, size_t count) {
+void eff_apply_relic(
+    struct EffectCtx* context,
+    const EffectArg*  args,
+    size_t            count
+) {
     (void)context;
     (void)args;
     (void)count;
@@ -45,7 +49,11 @@ void eff_apply_relic(struct EffectCtx* context, const EffectArg* args, size_t co
 /// - const EffectArg *args -> args[0] carries the chain level (1-3)
 /// - size_t count              -> argument count from the caller
 ///
-void eff_apply_chain(struct EffectCtx* context, const EffectArg* args, size_t count) {
+void eff_apply_chain(
+    struct EffectCtx* context,
+    const EffectArg*  args,
+    size_t            count
+) {
     (void)context;
     (void)args;
     (void)count;
@@ -62,7 +70,11 @@ void eff_apply_chain(struct EffectCtx* context, const EffectArg* args, size_t co
 /// - const EffectArg *args -> args[0] carries the cleared kingdom id
 /// - size_t count              -> argument count from the caller
 ///
-void eff_apply_synergy(struct EffectCtx* context, const EffectArg* args, size_t count) {
+void eff_apply_synergy(
+    struct EffectCtx* context,
+    const EffectArg*  args,
+    size_t            count
+) {
     (void)context;
     (void)args;
     (void)count;

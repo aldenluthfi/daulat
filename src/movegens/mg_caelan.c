@@ -34,7 +34,7 @@ void mg_ca_gryphon(
     const PieceState*  piece,
     const BattleState* battle,
     const EffectArg*   params,
-    size_t count,
+    size_t             count,
     MoveList*          out
 ) {
     (void)params;
@@ -52,7 +52,10 @@ void mg_ca_gryphon(
         {0, -1},
     };
     for (int dir = 0; dir < 4; dir++) {
-        Position diag = {piece->pos.x + DIAG[dir][0], piece->pos.y + DIAG[dir][1]};
+        Position diag = {
+            piece->pos.x + DIAG[dir][0],
+            piece->pos.y + DIAG[dir][1]
+        };
         if (!pos_in_bounds(diag, battle->board.width, battle->board.height)) {
             continue;
         }
@@ -64,7 +67,11 @@ void mg_ca_gryphon(
                     diag.x + ORTHO[od][0] * dist,
                     diag.y + ORTHO[od][1] * dist
                 };
-                if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
+                if (!pos_in_bounds(
+                        to,
+                        battle->board.width,
+                        battle->board.height
+                    )) {
                     break;
                 }
                 const PieceState* at = board_at(&battle->board, to);

@@ -78,8 +78,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .tier       = TIER_DISTRICT,
             .play_cost  = 0,
             .sell_value = 15,
-            .on_play =
-                {{.trigger = TRIGGER_CARD_PLAYED, EFF(TODO, todo)}},
+            .on_play    = {{.trigger = TRIGGER_CARD_PLAYED, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_REVITALIZE] =
@@ -167,8 +166,7 @@ const CardTemplate CARDS_UNIVERSAL[] = {
             .tier       = TIER_PROVINCE,
             .play_cost  = 0,
             .sell_value = 50,
-            .on_play =
-                {{.trigger = TRIGGER_RESOLVE_DEFENSE, EFF(TODO, todo)}},
+            .on_play = {{.trigger = TRIGGER_RESOLVE_DEFENSE, EFF(TODO, todo)}},
             .play_effect_count = 1,
         },
     [CARD_SPITE] =

@@ -28,16 +28,17 @@ static void results_enter(EngineState* engine) {
 }
 
 static void results_handle(EngineState* engine, const ProtocolVerb* verb) {
-    if (strcmp(verb->verb, "continue") == 0
-        || strcmp(verb->verb, "ack") == 0) {
+    if (strcmp(verb->verb, "continue") == 0 || strcmp(verb->verb, "ack") == 0) {
         screen_goto(engine, SCREEN_TITLE);
     }
 }
 
 static void results_emit(EngineState* engine) {
     protocol_emit_show(
-        engine->out, SCREEN_RESULTS,
-        "outcome=%s", engine->results.outcome ? "win" : "loss"
+        engine->out,
+        SCREEN_RESULTS,
+        "outcome=%s",
+        engine->results.outcome ? "win" : "loss"
     );
 }
 

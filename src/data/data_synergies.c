@@ -30,36 +30,35 @@ const Synergy SYNERGIES[] = {
         .cleared     = KINGDOM_LONGWEI,
         .name        = "Pao Vanguard",
         .description = "Pao attacks deal +10 damage in Harushima.",
-        .bonus       = {.trigger = TRIGGER_RESOLVE_ATTACK,
-                        EFF(SYN_LONGWEI, syn_longwei)},
+        .bonus =
+            {.trigger = TRIGGER_RESOLVE_ATTACK, EFF(SYN_LONGWEI, syn_longwei)},
     },
     {
         .cleared     = KINGDOM_HARUSHIMA,
         .name        = "Reclaimed Honor",
         .description = "Caelan card plays draw 1 in Caelan battles.",
-        .bonus       = {.trigger = TRIGGER_CARD_PLAYED,
-                        EFF(SYN_HARUSHIMA, syn_harushima)},
+        .bonus =
+            {.trigger = TRIGGER_CARD_PLAYED, EFF(SYN_HARUSHIMA, syn_harushima)},
     },
     {
         .cleared     = KINGDOM_KEWARANI,
         .name        = "Caravan Discount",
         .description = "Kewarani pieces cost 10 cp less in Zarqan.",
-        .bonus       = {.trigger = TRIGGER_QUERY_PIECE_COST,
-                        EFF(SYN_KEWARANI, syn_kewarani)},
+        .bonus =
+            {.trigger = TRIGGER_QUERY_PIECE_COST,
+             EFF(SYN_KEWARANI, syn_kewarani)},
     },
     {
         .cleared     = KINGDOM_ZARQAN,
         .name        = "Imperial Tribute",
         .description = "Ziraafa and Talliya gain +5 value in Longwei.",
-        .bonus       = {.trigger = TRIGGER_BATTLE_START,
-                        EFF(SYN_ZARQAN, syn_zarqan)},
+        .bonus = {.trigger = TRIGGER_BATTLE_START, EFF(SYN_ZARQAN, syn_zarqan)},
     },
     {
         .cleared     = KINGDOM_CAELAN,
         .name        = "Golden Sultanate",
         .description = "Sultan's Gold yields +10 cp in Kewarani.",
-        .bonus       = {.trigger = TRIGGER_CARD_PLAYED,
-                        EFF(SYN_CAELAN, syn_caelan)},
+        .bonus = {.trigger = TRIGGER_CARD_PLAYED, EFF(SYN_CAELAN, syn_caelan)},
     },
 };
 

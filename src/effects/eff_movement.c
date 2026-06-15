@@ -16,7 +16,11 @@
 /// Swap a piece's movegen to a new pattern for the rest of the battle.
 /// args[0]: MoveGenFunc id (stored in piece->move_override).
 ///
-void eff_swap_movegen(struct EffectCtx* context, const EffectArg* args, size_t count) {
+void eff_swap_movegen(
+    struct EffectCtx* context,
+    const EffectArg*  args,
+    size_t            count
+) {
     (void)context;
     (void)args;
     (void)count;

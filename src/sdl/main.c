@@ -46,7 +46,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     (void)argv;
     App*          app    = NULL;
     SDL_AppResult result = app_init(&app, resolve_engine_path());
-    *appstate = app;
+    *appstate            = app;
     return result;
 }
 

@@ -52,11 +52,7 @@ size_t platform_read(PlatformStream* stream, void* buffer, size_t capacity);
 
 /// Write count bytes from buffer to the stream. Returns the number
 /// of bytes successfully written.
-size_t platform_write(
-    PlatformStream* stream,
-    const void*     buffer,
-    size_t          count
-);
+size_t platform_write(PlatformStream* stream, const void* buffer, size_t count);
 
 /// Total byte size of the underlying file at the time the stream
 /// was opened. Returns -1 on error.

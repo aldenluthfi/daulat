@@ -514,7 +514,11 @@ EffectFunc eff_lookup(EffectFuncId id);
 /// per-file static duplicates — the stand-in must remain a single
 /// symbol so counting unimplemented effects stays trivial.
 ///
-void eff_grant_flip_immunity(struct EffectCtx* ctx, const EffectArg* a, size_t n);
+void eff_grant_flip_immunity(
+    struct EffectCtx* ctx,
+    const EffectArg*  a,
+    size_t            n
+);
 void eff_splitter_medeq(struct EffectCtx* ctx, const EffectArg* a, size_t n);
 void eff_swap_movegen(struct EffectCtx* ctx, const EffectArg* a, size_t n);
 

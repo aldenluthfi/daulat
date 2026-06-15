@@ -31,10 +31,10 @@ size_t card_draw(BattleState* battle, Side side) {
     uint8_t current = battle->hand_count[side];
     if (current >= MAX_HAND)
         return 0;
-    uint64_t            index       = rng_range(&battle->rng, csz);
-    const CardTemplate* template      = battle->cardset[side][index];
-    battle->hand[side][current].template  = template;
-    battle->hand[side][current].flags = 0;
+    uint64_t index                       = rng_range(&battle->rng, csz);
+    const CardTemplate* template         = battle->cardset[side][index];
+    battle->hand[side][current].template = template;
+    battle->hand[side][current].flags    = 0;
     battle->hand_count[side]++;
     struct EffectCtx context = {0};
     context.as.card.side     = side;
@@ -52,12 +52,16 @@ size_t card_draw(BattleState* battle, Side side) {
 /// - Side side -> side to receive the card
 /// - const CardTemplate* template -> card template to add
 ///
-void card_add_to_hand(BattleState* battle, Side side, const CardTemplate* template) {
+void card_add_to_hand(
+    BattleState* battle,
+    Side         side,
+    const CardTemplate* template
+) {
     uint8_t current = battle->hand_count[side];
     if (current >= MAX_HAND)
         return;
-    battle->hand[side][current].template  = template;
-    battle->hand[side][current].flags = 0;
+    battle->hand[side][current].template = template;
+    battle->hand[side][current].flags    = 0;
     battle->hand_count[side]++;
 }
 
@@ -95,7 +99,8 @@ bool card_remove_from_hand(BattleState* battle, Side side, uint8_t index) {
 /// Return:
 /// const CardInstance* -> card at index or NULL if out of bounds
 ///
-const CardInstance* card_get(const BattleState* battle, Side side, uint8_t index) {
+const CardInstance*
+card_get(const BattleState* battle, Side side, uint8_t index) {
     if (index >= battle->hand_count[side])
         return NULL;
     return &battle->hand[side][index];

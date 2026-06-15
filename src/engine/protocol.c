@@ -46,8 +46,8 @@ bool protocol_read_line(FILE* in, char* buffer, size_t capacity) {
     if (fgets(buffer, (int)capacity, in) == NULL)
         return false;
     size_t length = strlen(buffer);
-    while (length > 0
-           && (buffer[length - 1] == '\n' || buffer[length - 1] == '\r')) {
+    while (length > 0 &&
+           (buffer[length - 1] == '\n' || buffer[length - 1] == '\r')) {
         buffer[--length] = '\0';
     }
     return true;
@@ -60,8 +60,8 @@ void protocol_parse(const char* line, ProtocolVerb* out) {
         return;
     while (*line != '\0' && isspace((unsigned char)*line))
         line++;
-    if ((line[0] == '>' || line[0] == '<')
-        && (line[1] == ' ' || line[1] == '\t' || line[1] == '\0')) {
+    if ((line[0] == '>' || line[0] == '<') &&
+        (line[1] == ' ' || line[1] == '\t' || line[1] == '\0')) {
         line += (line[1] == '\0') ? 1 : 2;
     }
     while (*line != '\0' && isspace((unsigned char)*line))
@@ -69,8 +69,8 @@ void protocol_parse(const char* line, ProtocolVerb* out) {
     if (*line == '\0' || *line == '#')
         return;
     size_t index = 0;
-    while (*line != '\0' && !isspace((unsigned char)*line)
-           && index < PROTOCOL_VERB_BYTES - 1) {
+    while (*line != '\0' && !isspace((unsigned char)*line) &&
+           index < PROTOCOL_VERB_BYTES - 1) {
         out->verb[index++] = *line++;
     }
     out->verb[index] = '\0';
@@ -88,20 +88,20 @@ void protocol_parse(const char* line, ProtocolVerb* out) {
 static const char* find_key(const char* tail, const char* key) {
     if (tail == NULL || key == NULL)
         return NULL;
-    size_t key_length = strlen(key);
-    const char* cursor = tail;
+    size_t      key_length = strlen(key);
+    const char* cursor     = tail;
     while (*cursor != '\0') {
         while (*cursor != '\0' && isspace((unsigned char)*cursor))
             cursor++;
         if (*cursor == '\0')
             return NULL;
         const char* start = cursor;
-        while (*cursor != '\0' && !isspace((unsigned char)*cursor)
-               && *cursor != '=') {
+        while (*cursor != '\0' && !isspace((unsigned char)*cursor) &&
+               *cursor != '=') {
             cursor++;
         }
-        if (*cursor == '=' && (size_t)(cursor - start) == key_length
-            && memcmp(start, key, key_length) == 0) {
+        if (*cursor == '=' && (size_t)(cursor - start) == key_length &&
+            memcmp(start, key, key_length) == 0) {
             return cursor + 1;
         }
         while (*cursor != '\0' && !isspace((unsigned char)*cursor))
@@ -120,8 +120,8 @@ bool protocol_arg_str(
     if (value == NULL || capacity == 0)
         return false;
     size_t index = 0;
-    while (*value != '\0' && !isspace((unsigned char)*value)
-           && index < capacity - 1) {
+    while (*value != '\0' && !isspace((unsigned char)*value) &&
+           index < capacity - 1) {
         out[index++] = *value++;
     }
     out[index] = '\0';
@@ -132,8 +132,8 @@ bool protocol_arg_int(const char* tail, const char* key, int* out) {
     char buffer[PROTOCOL_VALUE_BYTES];
     if (!protocol_arg_str(tail, key, buffer, sizeof(buffer)))
         return false;
-    char* end = NULL;
-    long parsed = strtol(buffer, &end, 10);
+    char* end    = NULL;
+    long  parsed = strtol(buffer, &end, 10);
     if (end == buffer)
         return false;
     *out = (int)parsed;
@@ -146,8 +146,8 @@ bool protocol_arg_xy(const char* tail, const char* key, int* x, int* y) {
         return false;
     if (buffer[0] != '(')
         return false;
-    char* end = NULL;
-    long parsed_x = strtol(buffer + 1, &end, 10);
+    char* end      = NULL;
+    long  parsed_x = strtol(buffer + 1, &end, 10);
     if (end == NULL || *end != ',')
         return false;
     long parsed_y = strtol(end + 1, &end, 10);
@@ -162,12 +162,8 @@ bool protocol_arg_xy(const char* tail, const char* key, int* x, int* y) {
                               EMIT
 \*--------------------------------------------------------------------------*/
 
-static void emit_prefixed(
-    FILE*       out,
-    const char* prefix,
-    const char* fmt,
-    va_list     args
-) {
+static void
+emit_prefixed(FILE* out, const char* prefix, const char* fmt, va_list args) {
     fputs(prefix, out);
     if (fmt != NULL && fmt[0] != '\0') {
         fputc(' ', out);
@@ -176,12 +172,7 @@ static void emit_prefixed(
     fputc('\n', out);
 }
 
-void protocol_emit_show(
-    FILE*       out,
-    ScreenId    screen,
-    const char* fmt,
-    ...
-) {
+void protocol_emit_show(FILE* out, ScreenId screen, const char* fmt, ...) {
     const char* name = screen_name(screen);
     if (name == NULL)
         name = "unknown";

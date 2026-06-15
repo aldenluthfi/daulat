@@ -22,17 +22,17 @@ void eff_splitter_medeq(
     const EffectArg*  args,
     size_t            count
 ) {
-    BattleState* bs = context->battle;
-    PieceState* flipped = context->as.flipped.piece;
+    BattleState* bs      = context->battle;
+    PieceState*  flipped = context->as.flipped.piece;
     if (count == 0 || flipped == NULL)
         return;
     int spawn_count = (int)args[0].v.i;
     if (spawn_count <= 0)
         spawn_count = 2;
     /* Spawn Medeq around the flipped piece's position */
-    static const int DX[] = {1, -1, 0, 0};
-    static const int DY[] = {0, 0, 1, -1};
-    int spawned = 0;
+    static const int DX[]    = {1, -1, 0, 0};
+    static const int DY[]    = {0, 0, 1, -1};
+    int              spawned = 0;
     for (int i = 0; i < 4 && spawned < spawn_count; i++) {
         Position spawn = {flipped->pos.x + DX[i], flipped->pos.y + DY[i]};
         if (!pos_in_bounds(spawn, bs->board.width, bs->board.height))
