@@ -388,16 +388,9 @@ void mg_blockable_leap(
 
 /// mg_compound
 ///
-/// Composition wrapper that unions multiple sub-movegens into one
-/// MoveList. Implementation pending; this stub remains so data files
-/// can declare compound patterns ahead of the engine support.
-///
-/// Params:
-/// - const PieceState  *piece  -> unused
-/// - const BattleState *battle     -> unused
-/// - const EffectArg   *params -> sub-movegen references (unused)
-/// - size_t             count      -> parameter count (unused)
-/// - MoveList          *out    -> destination list (unused)
+/// Combines two movement patterns: the piece moves like both sub-patterns.
+/// Used by Promoted Bishop (Bishop + 1-orthogonal) and Dragon (Rook + 1-diagonal).
+/// No params needed; piece_id determines the combination.
 ///
 void mg_compound(
     const PieceState*  piece,
@@ -406,11 +399,43 @@ void mg_compound(
     size_t count,
     MoveList*          out
 ) {
-    (void)piece;
-    (void)battle;
     (void)params;
     (void)count;
-    (void)out;
+    out->count = 0;
+    switch (piece->id) {
+    case PIECE_PROMOTED_BISHOP:
+        mg_slide_dirs(piece, battle,
+            (EffectArg[]){
+                {.type = EARG_INT, .v.i = 0xAA},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 20}
+            }, 3, out);
+        mg_step_set(piece, battle,
+            (EffectArg[]){
+                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 0},
+                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = 0},
+                {.type = EARG_INT, .v.i = 0}, {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 0}, {.type = EARG_INT, .v.i = -1}
+            }, 8, out);
+        break;
+    case PIECE_DRAGON:
+        mg_slide_dirs(piece, battle,
+            (EffectArg[]){
+                {.type = EARG_INT, .v.i = 0x55},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 20}
+            }, 3, out);
+        mg_step_set(piece, battle,
+            (EffectArg[]){
+                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = -1}
+            }, 8, out);
+        break;
+    default:
+        break;
+    }
 }
 
 /*--------------------------------------------------------------------------*\
@@ -419,16 +444,9 @@ void mg_compound(
 
 /// mg_choice
 ///
-/// Composition wrapper that enumerates sub-movegen options for the
-/// caller to pick from. Implementation pending; this stub keeps the
-/// signature stable for templates that already reference it.
-///
-/// Params:
-/// - const PieceState  *piece  -> unused
-/// - const BattleState *battle     -> unused
-/// - const EffectArg   *params -> sub-movegen references (unused)
-/// - size_t             count      -> parameter count (unused)
-/// - MoveList          *out    -> destination list (unused)
+/// Chooses between two movement patterns at runtime. The piece can move
+/// using either pattern each action. Used by Cataphract (Knight or Jamal)
+/// and Chancellor (Rook or Knight). No params needed; piece_id determines choices.
 ///
 void mg_choice(
     const PieceState*  piece,
@@ -437,11 +455,61 @@ void mg_choice(
     size_t count,
     MoveList*          out
 ) {
-    (void)piece;
-    (void)battle;
     (void)params;
     (void)count;
-    (void)out;
+    out->count = 0;
+    MoveList a = {0}, b = {0};
+    switch (piece->id) {
+    case PIECE_CATAPHRACT:
+        mg_leap_set(piece, battle,
+            (EffectArg[]){
+                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 2},
+                {.type = EARG_INT, .v.i = 2}, {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 2}, {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = -2}, {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -2}, {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = 2}
+            }, 16, &a);
+        mg_leap_set(piece, battle,
+            (EffectArg[]){
+                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 3},
+                {.type = EARG_INT, .v.i = 3}, {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 3}, {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = -3},
+                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = -3},
+                {.type = EARG_INT, .v.i = -3}, {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -3}, {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 3}
+            }, 16, &b);
+        break;
+    case PIECE_CHANCELLOR:
+        mg_slide_dirs(piece, battle,
+            (EffectArg[]){
+                {.type = EARG_INT, .v.i = 0x55},
+                {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 20}
+            }, 3, &a);
+        mg_leap_set(piece, battle,
+            (EffectArg[]){
+                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = 2},
+                {.type = EARG_INT, .v.i = 2}, {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = 2}, {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = 1}, {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = -2},
+                {.type = EARG_INT, .v.i = -2}, {.type = EARG_INT, .v.i = -1},
+                {.type = EARG_INT, .v.i = -2}, {.type = EARG_INT, .v.i = 1},
+                {.type = EARG_INT, .v.i = -1}, {.type = EARG_INT, .v.i = 2}
+            }, 16, &b);
+        break;
+    default:
+        return;
+    }
+    for (size_t i = 0; i < a.count; i++)
+        ml_push(out, a.squares[i]);
+    for (size_t i = 0; i < b.count; i++)
+        ml_push(out, b.squares[i]);
 }
 
 /*--------------------------------------------------------------------------*\
