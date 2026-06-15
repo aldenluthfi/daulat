@@ -111,7 +111,7 @@ const PieceTemplate PIECES_HARUSHIMA[] =
                 .passives =
                     {
                         {.trigger = TRIGGER_PIECE_ENTERED_ENEMY_TERR,
-                         .apply   = eff_todo},
+                         .apply   = eff_swap_movegen},
                     },
                 .passive_count = 1,
             },
@@ -157,7 +157,8 @@ const PieceTemplate PIECES_HARUSHIMA[] =
                      .param_count = 16},
                 .passives =
                     {
-                        {.trigger = TRIGGER_RESOLVE_FLIP, EFF(TODO, todo)},
+                        {.trigger = TRIGGER_RESOLVE_FLIP,
+                         .apply   = eff_grant_flip_immunity},
                     },
                 .passive_count = 1,
             },

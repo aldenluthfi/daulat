@@ -124,7 +124,9 @@ const PieceTemplate
                     .passives =
                         {
                             {.trigger = TRIGGER_PIECE_FLIPPED,
-                                EFF(TODO, todo)},
+                                .apply = eff_splitter_medeq,
+                                .args = {{.type = EARG_INT, .v.i = 2}},
+                                .arg_count = 1},
                         },
                     .passive_count = 1,
                 },
@@ -141,7 +143,9 @@ const PieceTemplate
                     .passives =
                         {
                             {.trigger = TRIGGER_PIECE_FLIPPED,
-                                EFF(TODO, todo)},
+                                .apply = eff_splitter_medeq,
+                                .args = {{.type = EARG_INT, .v.i = 2}},
+                                .arg_count = 1},
                         },
                     .passive_count = 1,
                 },
@@ -158,7 +162,9 @@ const PieceTemplate
                     .passives =
                         {
                             {.trigger = TRIGGER_PIECE_FLIPPED,
-                                EFF(TODO, todo)},
+                                .apply = eff_splitter_medeq,
+                                .args = {{.type = EARG_INT, .v.i = 3}},
+                                .arg_count = 1},
                         },
                     .passive_count = 1,
                 },

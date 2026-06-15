@@ -197,9 +197,9 @@ void mg_lw_pao(
 
 /// mg_lw_hwacha
 ///
-/// Cannon-rule capture applied to both rook lines and bishop lines.
-/// Each direction maintains its own screen counter so a single Hwacha
-/// can attack along any of the eight clock-face axes.
+/// Cannon-rule movement applied to all 8 directions. A Hwacha can move
+/// to any empty square, but can only capture when exactly one piece sits
+/// between it and the target. This is the Pao mechanic extended diagonally.
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
@@ -218,17 +218,11 @@ void mg_lw_hwacha(
     (void)params;
     (void)count;
     static const int8_t DIRS[8][2] = {
-        {1, 0},
-        {-1, 0},
-        {0, 1},
-        {0, -1},
-        {1, 1},
-        {1, -1},
-        {-1, 1},
-        {-1, -1},
+        {1, 0}, {-1, 0}, {0, 1}, {0, -1},
+        {1, 1}, {1, -1}, {-1, 1}, {-1, -1},
     };
     for (int dir = 0; dir < 8; dir++) {
-        bool found_first = false;
+        bool found_screen = false;
         for (int step = 1; step < 20; step++) {
             Position to = {
                 piece->pos.x + DIRS[dir][0] * step,
@@ -239,13 +233,15 @@ void mg_lw_hwacha(
             }
             const PieceState* at = board_at(&battle->board, to);
             if (at == NULL) {
-                if (!found_first)
-                    ml_push(out, to);
+                ml_push(out, to);
                 continue;
             }
-            if (!found_first) {
-                found_first = true;
+            if (!found_screen) {
+                found_screen = true;
                 continue;
+            }
+            if (is_enemy(piece, at)) {
+                ml_push(out, to);
             }
             break;
         }
