@@ -436,16 +436,20 @@ bool battle_action_buy(BattleState* battle, uint16_t template_id, Position at) {
 ///
 /// Params:
 /// - const BattleState* battle -> battle state (unused)
-/// - uint32_t a -> first piece id (unused)
-/// - uint32_t b -> second piece id (unused)
+/// - uint32_t ingredient_a -> first piece id (unused)
+/// - uint32_t ingredient_b -> second piece id (unused)
 ///
 /// Return:
 /// bool -> always false
 ///
-bool battle_can_combine(const BattleState* battle, uint32_t a, uint32_t b) {
+bool battle_can_combine(
+    const BattleState* battle,
+    uint32_t           ingredient_a,
+    uint32_t           ingredient_b
+) {
     (void)battle;
-    (void)a;
-    (void)b;
+    (void)ingredient_a;
+    (void)ingredient_b;
     return false;
 }
 
@@ -455,16 +459,20 @@ bool battle_can_combine(const BattleState* battle, uint32_t a, uint32_t b) {
 ///
 /// Params:
 /// - BattleState* battle -> battle state (unused)
-/// - uint32_t a -> first piece id (unused)
-/// - uint32_t b -> second piece id (unused)
+/// - uint32_t ingredient_a -> first piece id (unused)
+/// - uint32_t ingredient_b -> second piece id (unused)
 ///
 /// Return:
 /// bool -> always false
 ///
-bool battle_action_combine(BattleState* battle, uint32_t a, uint32_t b) {
+bool battle_action_combine(
+    BattleState* battle,
+    uint32_t      ingredient_a,
+    uint32_t      ingredient_b
+) {
     (void)battle;
-    (void)a;
-    (void)b;
+    (void)ingredient_a;
+    (void)ingredient_b;
     return false;
 }
 
@@ -853,14 +861,14 @@ size_t battle_card_targets(
 /// Look up a recipe for two piece templates.
 ///
 /// Params:
-/// - uint16_t a -> first ingredient template id
-/// - uint16_t b -> second ingredient template id
+/// - uint16_t ingredient_a -> first ingredient template id
+/// - uint16_t ingredient_b -> second ingredient template id
 ///
 /// Return:
 /// const Recipe* -> recipe or NULL
 ///
-const Recipe* battle_recipe_preview(uint16_t a, uint16_t b) {
-    return recipe_find(a, b);
+const Recipe* battle_recipe_preview(uint16_t ingredient_a, uint16_t ingredient_b) {
+    return recipe_find(ingredient_a, ingredient_b);
 }
 
 /*--------------------------------------------------------------------------*\

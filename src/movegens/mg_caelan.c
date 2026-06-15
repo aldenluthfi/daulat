@@ -2,8 +2,8 @@
 //!
 //! Bespoke Caelan movement patterns drawn from chess and Grant
 //! Acedrex. The kingdom's stock pieces (Pawn, Knight, Bishop, Rook,
-//! Queen) reuse mg_basics primitives directly; only the Gryphon's
-//! two-stage diagonal-then-orthogonal walk lives here.
+//! Queen) reuse mg_basics primitives directly. This file implements
+//! the Gryphon's two-stage diagonal-then-orthogonal movement.
 //!
 //! Shared movegen helpers live in mg_basics.c; this file simply
 //! consumes them and adds the Gryphon-specific pattern.
@@ -51,8 +51,8 @@ void mg_ca_gryphon(
         {0, 1},
         {0, -1},
     };
-    for (int d = 0; d < 4; d++) {
-        Position diag = {piece->pos.x + DIAG[d][0], piece->pos.y + DIAG[d][1]};
+    for (int dir = 0; dir < 4; dir++) {
+        Position diag = {piece->pos.x + DIAG[dir][0], piece->pos.y + DIAG[dir][1]};
         if (!pos_in_bounds(diag, battle->board.width, battle->board.height)) {
             continue;
         }

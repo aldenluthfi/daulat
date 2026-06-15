@@ -1295,7 +1295,7 @@ Capstone).
 | Field                 | Value                                                                                       |
 | --------------------- | ------------------------------------------------------------------------------------------- |
 | Descriptive Behaviour | If you bought 3 or more pieces this turn, your next piece is free. The bulk buyer rewarded. |
-| Trigger               | `TRIGGER_QUERY_PIECE_COST` (apply) + `TRIGGER_PIECE_PLACED` (count) |
+| Trigger               | `TRIGGER_QUERY_PIECE_COST` (apply) + `TRIGGER_PIECE_PLACED` (count)                         |
 | Apply                 | `eff_bulk_discount`, args: none                                                             |
 | Scope                 | battle                                                                                      |
 
@@ -1905,7 +1905,7 @@ All `EffectFunc` implementations live in `src/effects/`:
 | `eff_bulk_discount`                | `eff_relic.c`         | `TRIGGER_QUERY_PIECE_COST`         | Bulk Discount relic                   | IMPLEMENTED |
 | `eff_war_chest`                    | `eff_relic.c`         | `TRIGGER_TURN_END`                 | War Chest relic                       | IMPLEMENTED |
 | `eff_trade_routes`                 | `eff_relic.c`         | `TRIGGER_RUN_START`                | Trade Routes relic                    | IMPLEMENTED |
-| `eff_soul_shard`                   | `eff_relic.c`         | `TRIGGER_PIECE_FLIPPED` (new_owner=PLAYER) | Soul Shard relic               | IMPLEMENTED |
+| `eff_soul_shard`                   | `eff_relic.c`         | `TRIGGER_PIECE_FLIPPED`            | Soul Shard relic                      | IMPLEMENTED |
 | `eff_veterans_bond`                | `eff_relic.c`         | `TRIGGER_BATTLE_START`             | Veteran's Bond relic                  | IMPLEMENTED |
 | `eff_dead_mans_pact`               | `eff_relic.c`         | `TRIGGER_PIECE_REMOVED`            | Dead Man's Pact relic                 | IMPLEMENTED |
 | `eff_iron_king`                    | `eff_relic.c`         | `TRIGGER_BATTLE_START`             | Iron King relic                       | IMPLEMENTED |
@@ -2049,11 +2049,11 @@ All `MoveGenFunc` implementations live in `src/movegens/`:
 
 Causes that share a trigger:
 
-| Trigger              | Cause enum         | Values                                                       |
-| -------------------- | ------------------ | ------------------------------------------------------------ |
-| `TRIGGER_PIECE_PLACED`  | `PlacementCause` | `SPAWN`, `BOUGHT`, `COMBINE_RESULT`, `SPLIT`                 |
-| `TRIGGER_PIECE_FLIPPED` | `FlipCause`      | `METER_CASCADE`, `RECLAIM`, `FORCED`, `MERCY`                |
-| `TRIGGER_PIECE_REMOVED` | `RemovalCause`   | `SACRIFICE`, `MANDATE`, `SPLITTER_SUBSTITUTION`              |
+| Trigger                 | Cause enum       | Values                                          |
+| ----------------------- | ---------------- | ----------------------------------------------- |
+| `TRIGGER_PIECE_PLACED`  | `PlacementCause` | `SPAWN`, `BOUGHT`, `COMBINE_RESULT`, `SPLIT`    |
+| `TRIGGER_PIECE_FLIPPED` | `FlipCause`      | `METER_CASCADE`, `RECLAIM`, `FORCED`, `MERCY`   |
+| `TRIGGER_PIECE_REMOVED` | `RemovalCause`   | `SACRIFICE`, `MANDATE`, `SPLITTER_SUBSTITUTION` |
 
 "Gained" and "lost" are not separate triggers — handlers filter
 `TRIGGER_PIECE_FLIPPED` by `new_owner` or `old_owner`. "Bought"
@@ -2216,13 +2216,13 @@ of the relic itself, not on `BattleState`. Each latch handler
 checks `context->self->scratch[0].v.i` for its triggered flag and
 writes 1 after firing.
 
-| Relic               | Slot          | Semantics                                |
-| ------------------- | ------------- | ---------------------------------------- |
-| Dead Man's Pact     | `scratch[0]`  | 0 = unfired, 1 = used                    |
-| Philosopher's Stone | `scratch[0]`  | 0 = unfired, 1 = used                    |
-| Deep Hand           | `scratch[0]`  | 0 = unfired, 1 = used                    |
-| Bulk Discount       | `scratch[0]`  | buys this turn (PIECE_PLACED listener)   |
-| Bulk Discount       | `scratch[1]`  | min buy cost this turn                   |
+| Relic               | Slot         | Semantics                              |
+| ------------------- | ------------ | -------------------------------------- |
+| Dead Man's Pact     | `scratch[0]` | 0 = unfired, 1 = used                  |
+| Philosopher's Stone | `scratch[0]` | 0 = unfired, 1 = used                  |
+| Deep Hand           | `scratch[0]` | 0 = unfired, 1 = used                  |
+| Bulk Discount       | `scratch[0]` | buys this turn (PIECE_PLACED listener) |
+| Bulk Discount       | `scratch[1]` | min buy cost this turn                 |
 
 The `scratch[]` is wiped at battle end alongside the bus.
 
@@ -2251,4 +2251,3 @@ Located in `incl/battle.h`:
 | `EVT_CARD_SOLD`          | side, card_tmpl_id            |
 | `EVT_EFFECT_APPLIED`     | effect_source_id, trigger     |
 | `EVT_BATTLE_ENDED`       | —                             |
-

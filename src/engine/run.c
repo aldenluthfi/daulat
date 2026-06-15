@@ -75,129 +75,129 @@ const char* run_path(void) {
                               CHUNK CODEC
 \*--------------------------------------------------------------------------*/
 
-static bool write_run_chunk(SaveWriter* w, const RunState* run) {
-    if (!save_write_chunk_begin(w, CHUNK_RUN_META))
+static bool write_run_chunk(SaveWriter* writer, const RunState* run) {
+    if (!save_write_chunk_begin(writer, CHUNK_RUN_META))
         return false;
-    if (!save_write_u64(w, run->run_seed))
+    if (!save_write_u64(writer, run->run_seed))
         return false;
-    if (!save_write_u8(w, (uint8_t)run->current_kingdom))
+    if (!save_write_u8(writer, (uint8_t)run->current_kingdom))
         return false;
-    if (!save_write_u8(w, (uint8_t)run->current_map_tier))
-        return false;
-
-    if (!save_write_bytes(w, &run->current_map, sizeof(run->current_map)))
+    if (!save_write_u8(writer, (uint8_t)run->current_map_tier))
         return false;
 
-    if (!save_write_u8(w, run->relic_count))
+    if (!save_write_bytes(writer, &run->current_map, sizeof(run->current_map)))
+        return false;
+
+    if (!save_write_u8(writer, run->relic_count))
         return false;
     for (uint8_t i = 0; i < run->relic_count; i++)
-        if (!save_write_u16(w, (uint16_t)run->relic_ids[i]))
+        if (!save_write_u16(writer, (uint16_t)run->relic_ids[i]))
             return false;
 
-    if (!save_write_bytes(w, run->chain_levels, sizeof(run->chain_levels)))
+    if (!save_write_bytes(writer, run->chain_levels, sizeof(run->chain_levels)))
         return false;
     for (size_t i = 0; i < KINGDOM_COUNT; i++)
-        if (!save_write_bool(w, run->subjugated[i]))
+        if (!save_write_bool(writer, run->subjugated[i]))
             return false;
-    if (!save_write_u8(w, run->liberation_respawn_counter))
+    if (!save_write_u8(writer, run->liberation_respawn_counter))
         return false;
 
-    if (!save_write_u16(w, run->vorath_counter))
+    if (!save_write_u16(writer, run->vorath_counter))
         return false;
-    if (!save_write_u8(w, run->vorath_pressure))
+    if (!save_write_u8(writer, run->vorath_pressure))
         return false;
 
     for (size_t i = 0; i < KINGDOM_COUNT; i++)
         for (size_t t = 0; t < TIER_PER_KINGDOM; t++)
-            if (!save_write_bool(w, run->cleared_maps[i][t]))
+            if (!save_write_bool(writer, run->cleared_maps[i][t]))
                 return false;
     for (size_t i = 0; i < KINGDOM_COUNT; i++)
-        if (!save_write_bool(w, run->cleared_kingdoms[i]))
+        if (!save_write_bool(writer, run->cleared_kingdoms[i]))
             return false;
     for (size_t i = 0; i < KINGDOM_COUNT; i++)
-        if (!save_write_bool(w, run->mastery_disqualified[i]))
+        if (!save_write_bool(writer, run->mastery_disqualified[i]))
             return false;
-    if (!save_write_bytes(w, run->mastery_l3, sizeof(run->mastery_l3)))
+    if (!save_write_bytes(writer, run->mastery_l3, sizeof(run->mastery_l3)))
         return false;
 
-    if (!save_write_u64(w, run->revealed_recipes))
+    if (!save_write_u64(writer, run->revealed_recipes))
         return false;
-    if (!save_write_u64(w, run->forbidden_recipes))
+    if (!save_write_u64(writer, run->forbidden_recipes))
         return false;
 
-    if (!save_write_u32(w, run->flags))
+    if (!save_write_u32(writer, run->flags))
         return false;
     if (!save_write_bytes(
-            w, run->chain_silver_pending, sizeof(run->chain_silver_pending)
+            writer, run->chain_silver_pending, sizeof(run->chain_silver_pending)
         ))
         return false;
 
-    return save_write_chunk_end(w);
+    return save_write_chunk_end(writer);
 }
 
-static bool read_run_chunk(SaveReader* r, RunState* run) {
+static bool read_run_chunk(SaveReader* reader, RunState* run) {
     uint8_t  u8;
     uint16_t u16;
 
-    if (!save_read_u64(r, &run->run_seed))
+    if (!save_read_u64(reader, &run->run_seed))
         return false;
-    if (!save_read_u8(r, &u8))
+    if (!save_read_u8(reader, &u8))
         return false;
     run->current_kingdom = (Kingdom)u8;
-    if (!save_read_u8(r, &u8))
+    if (!save_read_u8(reader, &u8))
         return false;
     run->current_map_tier = (Tier)u8;
 
-    if (!save_read_bytes(r, &run->current_map, sizeof(run->current_map)))
+    if (!save_read_bytes(reader, &run->current_map, sizeof(run->current_map)))
         return false;
 
-    if (!save_read_u8(r, &run->relic_count))
+    if (!save_read_u8(reader, &run->relic_count))
         return false;
     if (run->relic_count > MAX_RELICS_HELD) {
         log_err("run_load: relic_count %u exceeds capacity", run->relic_count);
         return false;
     }
     for (uint8_t i = 0; i < run->relic_count; i++) {
-        if (!save_read_u16(r, &u16))
+        if (!save_read_u16(reader, &u16))
             return false;
         run->relic_ids[i] = (RelicId)u16;
     }
 
-    if (!save_read_bytes(r, run->chain_levels, sizeof(run->chain_levels)))
+    if (!save_read_bytes(reader, run->chain_levels, sizeof(run->chain_levels)))
         return false;
     for (size_t i = 0; i < KINGDOM_COUNT; i++)
-        if (!save_read_bool(r, &run->subjugated[i]))
+        if (!save_read_bool(reader, &run->subjugated[i]))
             return false;
-    if (!save_read_u8(r, &run->liberation_respawn_counter))
+    if (!save_read_u8(reader, &run->liberation_respawn_counter))
         return false;
 
-    if (!save_read_u16(r, &run->vorath_counter))
+    if (!save_read_u16(reader, &run->vorath_counter))
         return false;
-    if (!save_read_u8(r, &run->vorath_pressure))
+    if (!save_read_u8(reader, &run->vorath_pressure))
         return false;
 
     for (size_t i = 0; i < KINGDOM_COUNT; i++)
         for (size_t t = 0; t < TIER_PER_KINGDOM; t++)
-            if (!save_read_bool(r, &run->cleared_maps[i][t]))
+            if (!save_read_bool(reader, &run->cleared_maps[i][t]))
                 return false;
     for (size_t i = 0; i < KINGDOM_COUNT; i++)
-        if (!save_read_bool(r, &run->cleared_kingdoms[i]))
+        if (!save_read_bool(reader, &run->cleared_kingdoms[i]))
             return false;
     for (size_t i = 0; i < KINGDOM_COUNT; i++)
-        if (!save_read_bool(r, &run->mastery_disqualified[i]))
+        if (!save_read_bool(reader, &run->mastery_disqualified[i]))
             return false;
-    if (!save_read_bytes(r, run->mastery_l3, sizeof(run->mastery_l3)))
+    if (!save_read_bytes(reader, run->mastery_l3, sizeof(run->mastery_l3)))
         return false;
 
-    if (!save_read_u64(r, &run->revealed_recipes))
+    if (!save_read_u64(reader, &run->revealed_recipes))
         return false;
-    if (!save_read_u64(r, &run->forbidden_recipes))
+    if (!save_read_u64(reader, &run->forbidden_recipes))
         return false;
 
-    if (!save_read_u32(r, &run->flags))
+    if (!save_read_u32(reader, &run->flags))
         return false;
     if (!save_read_bytes(
-            r, run->chain_silver_pending, sizeof(run->chain_silver_pending)
+            reader, run->chain_silver_pending, sizeof(run->chain_silver_pending)
         ))
         return false;
 
@@ -213,19 +213,19 @@ bool run_load(RunState* run) {
     const char* path = run_path();
     if (path == NULL)
         return false;
-    SaveReader r;
-    if (!save_reader_open(&r, path))
+    SaveReader reader;
+    if (!save_reader_open(&reader, path))
         return false;
-    for (uint32_t i = 0; i < r.chunk_count; i++) {
+    for (uint32_t i = 0; i < reader.chunk_count; i++) {
         SaveChunkId id;
-        uint32_t    len;
-        if (!save_read_chunk_header(&r, &id, &len))
+        uint32_t    length;
+        if (!save_read_chunk_header(&reader, &id, &length))
             return false;
         if (id == CHUNK_RUN_META) {
-            if (!read_run_chunk(&r, run))
+            if (!read_run_chunk(&reader, run))
                 return false;
         } else {
-            if (!save_skip(&r, len))
+            if (!save_skip(&reader, length))
                 return false;
         }
     }
@@ -236,13 +236,13 @@ bool run_save(const RunState* run) {
     const char* path = run_path();
     if (path == NULL)
         return false;
-    SaveWriter w;
-    save_writer_init(&w);
-    if (!save_write_header(&w, 1u))
+    SaveWriter writer;
+    save_writer_init(&writer);
+    if (!save_write_header(&writer, 1u))
         return false;
-    if (!write_run_chunk(&w, run))
+    if (!write_run_chunk(&writer, run))
         return false;
-    return save_writer_flush(&w, path);
+    return save_writer_flush(&writer, path);
 }
 
 void run_delete(void) {

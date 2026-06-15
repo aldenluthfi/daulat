@@ -1,8 +1,8 @@
 //! data_figureheads.c
 //!
 //! Static templates for the five kingdom figureheads' starting
-//! powers. All five powers are simultaneously active for every run
-//! because the figureheads are allied against Vorath.
+//! powers. All five powers are simultaneously active for every run.
+//! The figureheads are allied against Vorath.
 //!
 //! Each effect maps to its kingdom-specific body. Mingzhu
 //! and Isabella fire at battle start, the other three configure

@@ -17,10 +17,10 @@ void eff_cp_add(struct EffectCtx* context, const EffectArg* args, size_t count) 
     if (count < 1)
         return;
     int  delta = (int)args[0].v.i;
-    Side s     = battle->active_side;
-    battle->cp[s] += delta;
-    if (battle->cp[s] < 0)
-        battle->cp[s] = 0;
+    Side side  = battle->active_side;
+    battle->cp[side] += delta;
+    if (battle->cp[side] < 0)
+        battle->cp[side] = 0;
 }
 
 /// Set cp to a specific value.
@@ -28,11 +28,11 @@ void eff_cp_set(struct EffectCtx* context, const EffectArg* args, size_t count) 
     struct BattleState* battle = (struct BattleState*)context;
     if (count < 1)
         return;
-    int  val  = (int)args[0].v.i;
-    Side s    = battle->active_side;
-    battle->cp[s] = val;
-    if (battle->cp[s] < 0)
-        battle->cp[s] = 0;
+    int  value = (int)args[0].v.i;
+    Side side  = battle->active_side;
+    battle->cp[side] = value;
+    if (battle->cp[side] < 0)
+        battle->cp[side] = 0;
 }
 
 /// Increase piece cost by delta (positive = more expensive).

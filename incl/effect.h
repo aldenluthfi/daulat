@@ -501,8 +501,8 @@ EffectFunc eff_lookup(EffectFuncId id);
 /// eff_todo
 ///
 /// Universal stand-in used as the `.apply` field for any effect
-/// whose behaviour is not yet implemented. Discards every argument
-/// and returns without mutating state.
+/// whose behaviour has not yet been implemented. Discards every
+/// argument and returns without mutating state.
 ///
 /// Params:
 /// - struct EffectCtx *context -> ignored

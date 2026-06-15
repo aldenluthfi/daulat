@@ -18,9 +18,8 @@
 
 /// INNATES
 ///
-/// Array of innate templates keyed by Kingdom. Lookup is linear
-/// because the array has five entries; the registry walks it once
-/// at activation time.
+/// Array of innate templates keyed by Kingdom. The registry walks the
+/// array once at activation time.
 ///
 const InnateTemplate INNATES[] = {
     {

@@ -309,8 +309,8 @@ void mg_slide_dirs(
 /// mg_leap_set
 ///
 /// Capture-only leap set. Each (delta_x, delta_y) pair in params is a leap
-/// offset that captures whatever sits at the destination; empty
-/// destinations are skipped because this pattern is threat-only.
+/// offset that captures whatever sits at the destination. Empty
+/// destinations are skipped for threat-only patterns.
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece

@@ -282,16 +282,16 @@ bool save_read_bytes(SaveReader* r, void* data, size_t count) {
 }
 
 bool save_read_chunk_header(
-    SaveReader*  r,
+    SaveReader*  reader,
     SaveChunkId* id_out,
-    uint32_t*    len_out
+    uint32_t*    length_out
 ) {
     uint32_t id;
-    uint32_t len;
-    if (!save_read_u32(r, &id) || !save_read_u32(r, &len))
+    uint32_t length;
+    if (!save_read_u32(reader, &id) || !save_read_u32(reader, &length))
         return false;
-    *id_out  = (SaveChunkId)id;
-    *len_out = len;
+    *id_out     = (SaveChunkId)id;
+    *length_out = length;
     return true;
 }
 
@@ -316,27 +316,27 @@ static const char* chunk_name(SaveChunkId id) {
 }
 
 int save_dump(const char* path) {
-    SaveReader r;
-    if (!save_reader_open(&r, path)) {
+    SaveReader reader;
+    if (!save_reader_open(&reader, path)) {
         log_err("save_dump: failed to open %s", path);
         return 1;
     }
     log_info(
         "save: %s | version=%u | chunks=%u | size=%u bytes",
-        path, r.version, r.chunk_count, r.total
+        path, reader.version, reader.chunk_count, reader.total
     );
-    for (uint32_t i = 0; i < r.chunk_count; i++) {
+    for (uint32_t i = 0; i < reader.chunk_count; i++) {
         SaveChunkId id;
-        uint32_t    len;
-        if (!save_read_chunk_header(&r, &id, &len)) {
+        uint32_t    length;
+        if (!save_read_chunk_header(&reader, &id, &length)) {
             log_err("save_dump: truncated at chunk %u", i);
             return 2;
         }
         log_info(
-            "  [%u] id=%08x %-10s len=%u offset=%u",
-            i, (uint32_t)id, chunk_name(id), len, r.pos
+            "  [%u] id=%08x %-10s length=%u offset=%u",
+            i, (uint32_t)id, chunk_name(id), length, reader.pos
         );
-        if (!save_skip(&r, len)) {
+        if (!save_skip(&reader, length)) {
             log_err("save_dump: chunk body too long at %u", i);
             return 3;
         }

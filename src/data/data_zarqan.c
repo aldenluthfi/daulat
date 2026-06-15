@@ -6,9 +6,9 @@
 //!
 //! Zarqan follows the Tamerlane / Shatranj tradition: the player
 //! sits at the bottom (y=0) and pieces face forward. The Ziraafa
-//! family's bespoke movement lives in mg_zarqan.c. The Rook combo
-//! result (Kyosha + Wazir, value 50) lives here because per the GDD
-//! it is exclusively obtainable through a Zarqan recipe.
+//! family's bespoke movement lives in mg_zarqan.c. The Kyosha+Wazir
+//! combo result (value 50) is exclusively obtainable through a
+//! Zarqan recipe and lives here alongside other combo results.
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi

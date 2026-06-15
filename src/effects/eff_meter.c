@@ -18,13 +18,13 @@ void eff_meter_add(struct EffectCtx* context, const EffectArg* args, size_t coun
     if (count < 1)
         return;
     int  delta = (int)args[0].v.i;
-    Side s     = battle->active_side;
-    battle->meter[s] += delta;
-    if (battle->meter[s] > battle->meter_cap[s]) {
-        battle->meter[s] = battle->meter_cap[s];
+    Side side  = battle->active_side;
+    battle->meter[side] += delta;
+    if (battle->meter[side] > battle->meter_cap[side]) {
+        battle->meter[side] = battle->meter_cap[side];
     }
-    if (battle->meter[s] < 0)
-        battle->meter[s] = 0;
+    if (battle->meter[side] < 0)
+        battle->meter[side] = 0;
 }
 
 /// Set meter to a specific value. Used for refill effects.
@@ -32,11 +32,11 @@ void eff_meter_set(struct EffectCtx* context, const EffectArg* args, size_t coun
     struct BattleState* battle = (struct BattleState*)context;
     if (count < 1)
         return;
-    int  val     = (int)args[0].v.i;
-    Side s       = battle->active_side;
-    battle->meter[s] = val;
-    if (battle->meter[s] > battle->meter_cap[s]) {
-        battle->meter[s] = battle->meter_cap[s];
+    int  value = (int)args[0].v.i;
+    Side side  = battle->active_side;
+    battle->meter[side] = value;
+    if (battle->meter[side] > battle->meter_cap[side]) {
+        battle->meter[side] = battle->meter_cap[side];
     }
 }
 
@@ -46,9 +46,9 @@ void eff_meter_cap_up(struct EffectCtx* context, const EffectArg* args, size_t c
     if (count < 1)
         return;
     int  delta = (int)args[0].v.i;
-    Side s     = battle->active_side;
-    battle->meter_cap[s] += delta;
-    battle->meter_overflow_cap[s] += delta;
+    Side side  = battle->active_side;
+    battle->meter_cap[side] += delta;
+    battle->meter_overflow_cap[side] += delta;
 }
 
 /// Increase overflow capacity by delta.
@@ -61,8 +61,8 @@ void eff_meter_overflow_up(
     if (count < 1)
         return;
     int  delta = (int)args[0].v.i;
-    Side s     = battle->active_side;
-    battle->meter_overflow_cap[s] += delta;
+    Side side  = battle->active_side;
+    battle->meter_overflow_cap[side] += delta;
 }
 
 /// Overflow: add to overflow meter, which absorbs damage beyond normal capacity.
@@ -81,6 +81,6 @@ void eff_meter_refill(struct EffectCtx* context, const EffectArg* args, size_t c
     struct BattleState* battle = (struct BattleState*)context;
     (void)args;
     (void)count;
-    Side s       = battle->active_side;
-    battle->meter[s] = battle->meter_cap[s];
+    Side side  = battle->active_side;
+    battle->meter[side] = battle->meter_cap[side];
 }

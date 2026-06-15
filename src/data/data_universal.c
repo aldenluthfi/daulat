@@ -4,9 +4,8 @@
 //! the universal card pool drawn alongside every kingdom's cards.
 //!
 //! These templates are always available regardless of which kingdom
-//! is being played. PIECE_KING lives here (not in any kingdom file)
-//! so the registry can look it up via PIECES_UNIVERSAL[0] without a
-//! second copy in any kingdom array.
+//! is being played. PIECE_KING lives in the universal registry for
+//! lookup via PIECES_UNIVERSAL[0] without duplication in any kingdom.
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi

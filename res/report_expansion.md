@@ -1111,6 +1111,164 @@ Player A <---> Game Server <---> Player B
 
 ---
 
+## 16. Project Structure
+
+This section documents the overall architecture for contributors unfamiliar with the codebase.
+
+### Directory Layout
+
+```
+regnum/
+├── incl/                    # Public headers (engine-only, no SDL)
+│   ├── prelude.h            # Umbrella header — every engine .c includes this
+│   ├── core.h               # Base layer: stddef.h, stdint.h, stdbool.h
+│   ├── defs.h               # All enums (PieceId, Kingdom, Side, etc.)
+│   ├── types.h              # Struct definitions (BattleState, Profile, etc.)
+│   ├── effect.h             # Effect system (Effect, EffectBus, triggers)
+│   ├── movegen.h            # MoveGen function signatures
+│   ├── card.h               # Card templates and hand management
+│   ├── recipe.h             # Combination recipes
+│   ├── screen.h             # Screen state machine
+│   ├── engine.h             # EngineState, run/map state
+│   └── ... (30 headers total)
+│
+├── src/                     # Implementation
+│   ├── battle.c             # Battle state, turn loop, resolve
+│   ├── board.c              # Board geometry, occupancy, threat
+│   ├── card.c               # Card draw, discard, hand management
+│   ├── piece.c              # Piece lifecycle, flip, spawn
+│   ├── meta.c               # Relic/meta apply
+│   ├── rng.c                # Seeded random number generator
+│   ├── registry.c           # Id-to-template lookup
+│   ├── map.c                # Overworld map generation + campaign loop
+│   ├── recipe.c             # Recipe lookup
+│   ├── log.c                # Structured logging
+│   ├── platform.c           # OS abstraction (paths, files)
+│   │
+│   ├── engine/              # Engine subsystems
+│   │   ├── run.c            # RunState persistence
+│   │   ├── profile.c        # Profile persistence
+│   │   └── save.c           # Chunked TLV codec (CRC32)
+│   │
+│   ├── data/                # Content definitions
+│   │   ├── data_<kingdom>.c # Piece/card templates per kingdom
+│   │   ├── data_universal.c # PIECE_KING, universal cards
+│   │   ├── data_recipes.c   # Combination recipe table
+│   │   ├── data_figureheads.c # Kingdom figurehead powers
+│   │   └── data_innates.c   # Innate abilities
+│   │
+│   ├── movegens/            # Movement pattern generators
+│   │   ├── mg_basics.c      # Universal primitives (slide, step, leap)
+│   │   ├── mg_longwei.c     # Bespoke Longwei patterns (Knight-L, cannon)
+│   │   ├── mg_caelan.c      # Bespoke Caelan patterns (Gryphon)
+│   │   └── mg_zarqan.c      # Bespoke Zarqan patterns (Ziraafa, Shahzadeh)
+│   │
+│   ├── effects/             # Effect handler bodies
+│   │   ├── eff_*.c          # One file per effect (eff_meter, eff_chain, etc.)
+│   │   └── eff_run.c        # Run-scope effects + eff_todo placeholder
+│   │
+│   └── sdl/                 # Frontend layer (outside prelude)
+│       ├── main.c           # Entry point, app lifecycle
+│       ├── app.c            # SDL window, renderer, event loop
+│       ├── ui.c             # Widget primitives
+│       ├── input.c         # Keyboard/mouse input
+│       └── platform_sdl.c   # SDL-specific platform implementations
+│
+├── tests/                   # Unit tests
+│
+├── res/                     # Documentation and assets
+│   ├── GDD.md               # Full game design document
+│   ├── plan.md              # Planning document
+│   ├── report_expansion.md  # This file
+│   └── report_elements.md   # Element reference
+│
+└── Makefile                 # Build system
+```
+
+### Include Hierarchy
+
+All engine `.c` files include exactly one header:
+
+```c
+#include "prelude.h"  // includes all 25 engine headers in dependency order
+```
+
+The SDL layer (`src/sdl/`) intentionally opts out and includes headers directly.
+
+**Layer 0**: `core.h` — only standard library headers (stdbool.h, stddef.h, stdint.h)
+**Layer 1+**: All other headers include `core.h` and/or other domain headers
+
+Most-depended headers:
+- `defs.h` — included by 11 other headers
+- `types.h` — included by 7 other headers
+- `effect.h`, `screen.h`, `recipe.h`, `piece.h`, `movegen.h`, `meta.h`, `card.h`, `ai.h` — each included by 4 headers
+
+### Naming Conventions
+
+| Category | Convention | Example |
+|----------|------------|---------|
+| Files | lowercase_underscores | `eff_meter.c`, `mg_basics.c` |
+| Types (structs/enums) | PascalCase | `BattleState`, `PieceTemplate` |
+| Functions | lowercase_with_underscores | `battle_resolve`, `piece_flip` |
+| Enum values | UPPER_SNAKE_CASE | `SIDE_PLAYER`, `KINGDOM_LONGWEI` |
+| Macros | UPPER_SNAKE_CASE | `MAX_PIECES`, `DIR_N` |
+| Variables | lowercase_with_underscores | `active_side`, `piece_count` |
+
+### Code Organization Patterns
+
+**One effect file per effect**:
+```
+src/effects/
+├── eff_meter.c        # Meter +/-, cap, overflow, refill
+├── eff_economy.c      # CP +/-, cost/sell/income modifiers
+├── eff_chain.c        # Bronze/Silver/Gold penalty chains
+└── ...
+```
+
+**One movegen file per kingdom**:
+```
+src/movegens/
+├── mg_basics.c        # Universal primitives
+├── mg_longwei.c       # Bespoke Longwei movement
+├── mg_caelan.c        # Bespoke Caelan movement
+└── mg_zarqan.c        # Bespoke Zarqan movement
+```
+
+**Data files per kingdom**:
+```
+src/data/
+├── data_longwei.c     # Longwei pieces, cards
+├── data_harushima.c   # Harushima pieces, cards
+├── data_kewarani.c    # Kewarani pieces, cards
+├── data_zarqan.c     # Zarqan pieces, cards
+├── data_caelan.c      # Caelan pieces, cards
+├── data_universal.c   # PIECE_KING, universal cards
+├── data_recipes.c     # All combination recipes
+├── data_figureheads.c # Figurehead powers
+└── data_innates.c     # Innate abilities
+```
+
+### Key Architecture Decisions
+
+**Function-pointer dispatch**: The engine never special-cases content by name. Pieces reference `MoveGenFunc` pointers; effects reference `EffectFunc` pointers. Adding new behavior requires only a new function and updating data templates.
+
+**EffectBus**: Effects are registered into a per-battle `EffectBus` that fires triggers at appropriate moments (battle start, turn start, resolve, etc.). Handlers are stateful within a battle.
+
+**Stateless battle engine**: The battle engine holds no network or save state. Persistence flows through separate `RunState` and `Profile` objects.
+
+**Chunked save format**: Save files use a TLV layout with magic + version header and CRC32 footer. Writers buffer everything atomically; readers validate CRC up-front.
+
+### Prelude Enforcement
+
+Every `.c` file under `src/` (except `src/sdl/`) must:
+```c
+#include "prelude.h"  // only include; no other internal headers
+```
+
+SDL files (`src/sdl/`) are frontend-only and may include headers directly since they live outside the engine layer.
+
+---
+
 ## 17. Makefile Checklist
 
 When adding new files:

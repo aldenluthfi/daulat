@@ -52,8 +52,8 @@ void mg_zq_ziraafa(
         {0, 1},
         {0, -1},
     };
-    for (int d = 0; d < 4; d++) {
-        Position diag = {piece->pos.x + DIAG[d][0], piece->pos.y + DIAG[d][1]};
+    for (int dir = 0; dir < 4; dir++) {
+        Position diag = {piece->pos.x + DIAG[dir][0], piece->pos.y + DIAG[dir][1]};
         if (!pos_in_bounds(diag, battle->board.width, battle->board.height)) {
             continue;
         }
@@ -61,8 +61,8 @@ void mg_zq_ziraafa(
             continue;
         for (int dist = 3; dist < 20; dist++) {
             Position to = {
-                diag.x + ORTHO[d][0] * dist,
-                diag.y + ORTHO[d][1] * dist
+                diag.x + ORTHO[dir][0] * dist,
+                diag.y + ORTHO[dir][1] * dist
             };
             if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                 break;

@@ -3,9 +3,8 @@
 //! Vorath Memory tally and apply handlers. The tally fires every
 //! time the player places a piece during a normal battle and bumps
 //! `Profile.vorath_memory[template_id]`. The apply handler is consulted
-//! at the Vorath fight to spawn two counter-pieces — that fight is
-//! not yet implemented, but the apply body is staged so it works
-//! once the Vorath encounter lands.
+//! at the Vorath fight to spawn two counter-pieces. The apply body
+//! is staged so it activates when the Vorath encounter is implemented.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi

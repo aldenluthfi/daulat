@@ -5,10 +5,8 @@
 //! migrate effects into the battle's EffectBus when the player
 //! enters a new battle or clears an Overseer.
 //!
-//! Also hosts the universal stand-in eff_todo, used by every
-//! data file that registers an effect whose behaviour is not yet
-//! implemented. Keeping it here avoids a separate translation unit
-//! whose only contents would be a one-line stub.
+//! Also hosts the universal stand-in eff_todo used by data files
+//! for unimplemented effects.
 //!
 //! Created: 2026-06-13
 //! Author : Alden Luthfi

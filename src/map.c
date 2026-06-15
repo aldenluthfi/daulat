@@ -28,16 +28,16 @@ static void layout_for_tier(Tier tier, NodeType* out, uint8_t* count_out) {
         NODE_ELITE,  NODE_BATTLE, NODE_OFFERING,
         NODE_EVENT,  NODE_BATTLE, NODE_OVERSEER
     };
-    const NodeType* src = (tier == TIER_COUNTRY) ? COUNTRY : TOWN_PROVINCE;
-    size_t          n   = (tier == TIER_COUNTRY)
+    const NodeType* source = (tier == TIER_COUNTRY) ? COUNTRY : TOWN_PROVINCE;
+    size_t          count  = (tier == TIER_COUNTRY)
                        ? sizeof(COUNTRY) / sizeof(COUNTRY[0])
                        : sizeof(TOWN_PROVINCE) / sizeof(TOWN_PROVINCE[0]);
-    for (size_t i = 0; i < n; i++)
-        out[i] = src[i];
-    *count_out = (uint8_t)n;
+    for (size_t i = 0; i < count; i++)
+        out[i] = source[i];
+    *count_out = (uint8_t)count;
 }
 
-static uint16_t roll_event_payload(Rng* rng, Kingdom k) {
+static uint16_t roll_event_payload(Rng* rng, Kingdom kingdom) {
     static const EventId UNIVERSAL[] = {
         EVENT_UNIVERSAL_WANDERER,
         EVENT_UNIVERSAL_MARKET,
@@ -61,7 +61,7 @@ static uint16_t roll_event_payload(Rng* rng, Kingdom k) {
 
     if ((rng_next(rng) & 1u) == 0u)
         return UNIVERSAL[rng_range(rng, 3)];
-    switch (k) {
+    switch (kingdom) {
         case KINGDOM_LONGWEI:   return LONGWEI[rng_range(rng, 2)];
         case KINGDOM_HARUSHIMA: return HARUSHIMA[rng_range(rng, 2)];
         case KINGDOM_KEWARANI:  return KEWARANI[rng_range(rng, 2)];
@@ -71,8 +71,8 @@ static uint16_t roll_event_payload(Rng* rng, Kingdom k) {
     }
 }
 
-static uint16_t roll_overseer_for(Kingdom k) {
-    switch (k) {
+static uint16_t roll_overseer_for(Kingdom kingdom) {
+    switch (kingdom) {
         case KINGDOM_LONGWEI:   return OVERSEER_IRON_STRATEGIST;
         case KINGDOM_HARUSHIMA: return OVERSEER_ETERNAL_RECURSION;
         case KINGDOM_KEWARANI:  return OVERSEER_CARAVAN_OF_CONQUEST;
@@ -86,7 +86,7 @@ static uint16_t roll_overseer_for(Kingdom k) {
                               GENERATOR
 \*--------------------------------------------------------------------------*/
 
-void map_generate(MapState* map, Kingdom k, Tier tier, uint64_t seed) {
+void map_generate(MapState* map, Kingdom kingdom, Tier tier, uint64_t seed) {
     Rng rng;
     rng_init(&rng, seed);
 
@@ -94,7 +94,7 @@ void map_generate(MapState* map, Kingdom k, Tier tier, uint64_t seed) {
     uint8_t  layout_count;
     layout_for_tier(tier, layout, &layout_count);
 
-    map->kingdom         = k;
+    map->kingdom         = kingdom;
     map->map_tier        = tier;
     map->seed            = seed;
     map->node_count      = layout_count;
@@ -105,7 +105,7 @@ void map_generate(MapState* map, Kingdom k, Tier tier, uint64_t seed) {
         MapNode* node      = &map->nodes[i];
         node->id           = i;
         node->type         = (uint8_t)layout[i];
-        node->kingdom      = (uint8_t)k;
+        node->kingdom      = (uint8_t)kingdom;
         node->visited      = false;
         node->revealed     = false;
         node->edge_count   = (uint8_t)((i + 1 < layout_count) ? 1 : 0);
@@ -115,10 +115,10 @@ void map_generate(MapState* map, Kingdom k, Tier tier, uint64_t seed) {
 
         switch (layout[i]) {
             case NODE_EVENT:
-                node->payload_id = roll_event_payload(&rng, k);
+                node->payload_id = roll_event_payload(&rng, kingdom);
                 break;
             case NODE_OVERSEER:
-                node->payload_id = roll_overseer_for(k);
+                node->payload_id = roll_overseer_for(kingdom);
                 break;
             case NODE_ARCHIVE:
                 node->payload_id = (uint16_t)rng_range(&rng, MAX_RECIPES);
@@ -203,12 +203,12 @@ static void clear_kingdom_if_overseer(EngineState* engine, MapNode* node) {
         return;
     if (node->type != NODE_OVERSEER)
         return;
-    Kingdom k = (Kingdom)node->kingdom;
-    if ((unsigned)k >= KINGDOM_COUNT)
+    Kingdom kingdom = (Kingdom)node->kingdom;
+    if ((unsigned)kingdom >= KINGDOM_COUNT)
         return;
-    engine->run->cleared_kingdoms[k] = true;
+    engine->run->cleared_kingdoms[kingdom] = true;
     for (size_t i = 0; i < KINGDOM_COUNT; i++) {
-        if (i == (size_t)k)
+        if (i == (size_t)kingdom)
             continue;
         if (engine->run->vorath_pressure < 255)
             engine->run->vorath_pressure++;
@@ -224,22 +224,22 @@ void map_on_battle_won(EngineState* engine) {
     MapNode* node = &map->nodes[map->current_node_id];
     node->visited = true;
 
-    Kingdom k = map->kingdom;
-    if ((unsigned)k < KINGDOM_COUNT
-        && engine->run->chain_levels[k] > 0)
-        engine->run->chain_levels[k]--;
+    Kingdom kingdom = map->kingdom;
+    if ((unsigned)kingdom < KINGDOM_COUNT
+        && engine->run->chain_levels[kingdom] > 0)
+        engine->run->chain_levels[kingdom]--;
 
     clear_kingdom_if_overseer(engine, node);
     run_save(engine->run);
 }
 
-static void seed_liberation_trial(RunState* run, Kingdom subjugated_k) {
+static void seed_liberation_trial(RunState* run, Kingdom subjugated_kingdom) {
     MapState* map = &run->current_map;
     for (uint8_t i = 0; i < map->node_count; i++) {
         MapNode* node = &map->nodes[i];
         if (node->type == NODE_EVENT && !node->visited) {
             node->type       = NODE_LIBERATION_TRIAL;
-            node->kingdom    = (uint8_t)subjugated_k;
+            node->kingdom    = (uint8_t)subjugated_kingdom;
             node->payload_id = 0;
             return;
         }
@@ -250,20 +250,20 @@ void map_on_battle_lost(EngineState* engine) {
     if (engine == NULL || engine->run == NULL)
         return;
     RunState* run = engine->run;
-    Kingdom   k   = run->current_map.kingdom;
-    if ((unsigned)k >= KINGDOM_COUNT)
+    Kingdom   kingdom = run->current_map.kingdom;
+    if ((unsigned)kingdom >= KINGDOM_COUNT)
         return;
 
-    if (run->chain_levels[k] < 3)
-        run->chain_levels[k]++;
+    if (run->chain_levels[kingdom] < 3)
+        run->chain_levels[kingdom]++;
     run->vorath_counter++;
-    run->mastery_disqualified[k] = true;
-    if (run->chain_levels[k] >= 3 && !run->subjugated[k]) {
-        run->subjugated[k] = true;
+    run->mastery_disqualified[kingdom] = true;
+    if (run->chain_levels[kingdom] >= 3 && !run->subjugated[kingdom]) {
+        run->subjugated[kingdom] = true;
         for (Kingdom other = 0; other < KINGDOM_COUNT; other++) {
-            if (other == k || run->subjugated[other])
+            if (other == kingdom || run->subjugated[other])
                 continue;
-            seed_liberation_trial(run, k);
+            seed_liberation_trial(run, kingdom);
             break;
         }
     }

@@ -112,11 +112,11 @@ void mg_lw_xiang(
         {-1, 1},
         {-1, -1},
     };
-    for (int d = 0; d < 4; d++) {
-        Position mid = {piece->pos.x + DIRS[d][0], piece->pos.y + DIRS[d][1]};
+    for (int dir = 0; dir < 4; dir++) {
+        Position mid = {piece->pos.x + DIRS[dir][0], piece->pos.y + DIRS[dir][1]};
         Position to  = {
-            piece->pos.x + DIRS[d][0] * 2,
-            piece->pos.y + DIRS[d][1] * 2
+            piece->pos.x + DIRS[dir][0] * 2,
+            piece->pos.y + DIRS[dir][1] * 2
         };
         if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
             continue;
@@ -161,13 +161,13 @@ void mg_lw_pao(
         {0, 1},
         {0, -1},
     };
-    for (int d = 0; d < 4; d++) {
+    for (int dir = 0; dir < 4; dir++) {
         int  screens     = 0;
         bool found_first = false;
         for (int step = 1; step < 20; step++) {
             Position to = {
-                piece->pos.x + DIRS[d][0] * step,
-                piece->pos.y + DIRS[d][1] * step
+                piece->pos.x + DIRS[dir][0] * step,
+                piece->pos.y + DIRS[dir][1] * step
             };
             if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                 break;
@@ -227,12 +227,12 @@ void mg_lw_hwacha(
         {-1, 1},
         {-1, -1},
     };
-    for (int d = 0; d < 8; d++) {
+    for (int dir = 0; dir < 8; dir++) {
         bool found_first = false;
         for (int step = 1; step < 20; step++) {
             Position to = {
-                piece->pos.x + DIRS[d][0] * step,
-                piece->pos.y + DIRS[d][1] * step
+                piece->pos.x + DIRS[dir][0] * step,
+                piece->pos.y + DIRS[dir][1] * step
             };
             if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                 break;
@@ -300,9 +300,9 @@ void mg_lw_sang(
         }
         if (board_at(&battle->board, mid1) != NULL)
             continue;
-        for (int d = 0; d < 4; d++) {
-            Position mid2 = {mid1.x + DIAG[d][0], mid1.y + DIAG[d][1]};
-            Position to   = {mid1.x + DIAG[d][0] * 2, mid1.y + DIAG[d][1] * 2};
+        for (int dir = 0; dir < 4; dir++) {
+            Position mid2 = {mid1.x + DIAG[dir][0], mid1.y + DIAG[dir][1]};
+            Position to   = {mid1.x + DIAG[dir][0] * 2, mid1.y + DIAG[dir][1] * 2};
             if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                 continue;
             }

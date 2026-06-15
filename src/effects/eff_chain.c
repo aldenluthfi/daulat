@@ -2,10 +2,10 @@
 //!
 //! Bodies for the three penalty chains (Bronze / Silver / Gold).
 //! Bronze trims starting cp; Silver flags the battle to spawn a free
-//! enemy piece (the actual spawn happens in battle_init since
-//! handlers can't yet allocate pieces with full templates); Gold has
-//! no per-battle body — the campaign-loop liberation lock is
-//! managed by the map layer reading `RunState.subjugated`.
+//! enemy piece. The actual spawn happens in battle_init where the piece
+//! can be allocated with full template data. Gold has no per-battle
+//! body — the campaign-loop liberation lock is managed by the map
+//! layer reading `RunState.subjugated`.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
