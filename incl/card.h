@@ -17,7 +17,7 @@ struct BattleState;
 
 /// A function that enumerates valid targets for a card.
 typedef size_t (*TargetFunc)(
-    const struct BattleState* bs,
+    const struct BattleState* battle,
     Side                      side,
     const CardInstance*       card,
     TargetSpec*               out,
@@ -48,20 +48,20 @@ typedef struct CardTemplate {
 \*--------------------------------------------------------------------------*/
 
 /// Draw cards for a side. Returns the number drawn.
-size_t card_draw(struct BattleState* bs, Side side);
+size_t card_draw(struct BattleState* battle, Side side);
 
 /// Add a card to a side's hand.
 void card_add_to_hand(
-    struct BattleState* bs,
+    struct BattleState* battle,
     Side                side,
-    const CardTemplate* tmpl
+    const CardTemplate* template
 );
 
 /// Remove a card from a side's hand by index. Returns true if removed.
-bool card_remove_from_hand(struct BattleState* bs, Side side, uint8_t idx);
+bool card_remove_from_hand(struct BattleState* battle, Side side, uint8_t index);
 
 /// Get a card from a side's hand.
 const CardInstance*
-card_get(const struct BattleState* bs, Side side, uint8_t idx);
+card_get(const struct BattleState* battle, Side side, uint8_t index);
 
 #endif /* CARD_H */

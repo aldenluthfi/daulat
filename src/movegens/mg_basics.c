@@ -21,17 +21,17 @@
 
 /// ml_push
 ///
-/// Append `p` to `ml`. Silently drops the addition if the list is
+/// Append `position` to `ml`. Silently drops the addition if the list is
 /// already at capacity; the caller never has to bounds-check.
 ///
 /// Params:
 /// - MoveList *ml -> destination list
-/// - Position  p  -> board square to append
+/// - Position  position  -> board square to append
 ///
-void ml_push(MoveList* ml, Position p) {
+void ml_push(MoveList* ml, Position position) {
     if (ml->count >= MAX_MOVES)
         return;
-    ml->squares[ml->count++] = p;
+    ml->squares[ml->count++] = position;
 }
 
 /// is_friendly
@@ -77,18 +77,18 @@ bool is_enemy(const PieceState* piece, const PieceState* at) {
 /// movement rules.
 ///
 /// Params:
-/// - const BattleState *bs    -> battle context
+/// - const BattleState *battle    -> battle context
 /// - const PieceState  *piece -> moving piece
 /// - Position           to    -> destination square
 ///
 /// Return:
 /// bool -> true when the destination is reachable
 ///
-bool can_move_to(const BattleState* bs, const PieceState* piece, Position to) {
-    if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+bool can_move_to(const BattleState* battle, const PieceState* piece, Position to) {
+    if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
         return false;
     }
-    const PieceState* at = board_at(&bs->board, to);
+    const PieceState* at = board_at(&battle->board, to);
     if (is_friendly(piece, at))
         return false;
     return true;
@@ -99,18 +99,18 @@ bool can_move_to(const BattleState* bs, const PieceState* piece, Position to) {
 /// Predicate: does `to` hold an enemy piece within the board.
 ///
 /// Params:
-/// - const BattleState *bs    -> battle context
+/// - const BattleState *battle    -> battle context
 /// - const PieceState  *piece -> querying piece
 /// - Position           to    -> target square
 ///
 /// Return:
 /// bool -> true when an enemy piece sits at `to` within the board
 ///
-bool can_capture(const BattleState* bs, const PieceState* piece, Position to) {
-    if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+bool can_capture(const BattleState* battle, const PieceState* piece, Position to) {
+    if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
         return false;
     }
-    const PieceState* at = board_at(&bs->board, to);
+    const PieceState* at = board_at(&battle->board, to);
     return is_enemy(piece, at);
 }
 
@@ -121,7 +121,7 @@ bool can_capture(const BattleState* bs, const PieceState* piece, Position to) {
 /// empty or holds an enemy.
 ///
 /// Params:
-/// - const BattleState *bs    -> battle context
+/// - const BattleState *battle    -> battle context
 /// - const PieceState  *piece -> querying piece
 /// - Position           to    -> target square
 ///
@@ -129,14 +129,14 @@ bool can_capture(const BattleState* bs, const PieceState* piece, Position to) {
 /// bool -> true when the square is occupiable by `piece`
 ///
 bool can_capture_or_empty(
-    const BattleState* bs,
+    const BattleState* battle,
     const PieceState*  piece,
     Position           to
 ) {
-    if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+    if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
         return false;
     }
-    const PieceState* at = board_at(&bs->board, to);
+    const PieceState* at = board_at(&battle->board, to);
     return at == NULL || is_enemy(piece, at);
 }
 
@@ -146,30 +146,30 @@ bool can_capture_or_empty(
 
 /// mg_step
 ///
-/// Single-step relocate by the (dx, dy) offset carried in params.
+/// Single-step relocate by the (delta_x, delta_y) offset carried in params.
 /// Validates against can_move_to before appending.
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
-/// - const EffectArg   *params -> [0]=dx, [1]=dy
-/// - size_t             n      -> parameter count (must be ≥ 2)
+/// - const BattleState *battle     -> battle context
+/// - const EffectArg   *params -> [0]=delta_x, [1]=delta_y
+/// - size_t             count      -> parameter count (must be ≥ 2)
 /// - MoveList          *out    -> destination list
 ///
 void mg_step(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
-    if (n < 2)
+    if (count < 2)
         return;
     Position to = {
         piece->pos.x + (int)params[0].v.i,
         piece->pos.y + (int)params[1].v.i
     };
-    if (can_move_to(bs, piece, to))
+    if (can_move_to(battle, piece, to))
         ml_push(out, to);
 }
 
@@ -179,30 +179,30 @@ void mg_step(
 
 /// mg_step_set
 ///
-/// Set of single-step relocations defined by interleaved (dx, dy)
+/// Set of single-step relocations defined by interleaved (delta_x, delta_y)
 /// pairs. Each pair contributes one destination if it passes
 /// can_move_to.
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
-/// - const EffectArg   *params -> alternating dx, dy values
-/// - size_t             n      -> parameter count (must be even)
+/// - const BattleState *battle     -> battle context
+/// - const EffectArg   *params -> alternating delta_x, delta_y values
+/// - size_t             count      -> parameter count (must be even)
 /// - MoveList          *out    -> destination list
 ///
 void mg_step_set(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
-    for (size_t i = 0; i + 1 < n; i += 2) {
+    for (size_t i = 0; i + 1 < count; i += 2) {
         Position to = {
             piece->pos.x + (int)params[i].v.i,
             piece->pos.y + (int)params[i + 1].v.i
         };
-        if (can_move_to(bs, piece, to))
+        if (can_move_to(battle, piece, to))
             ml_push(out, to);
     }
 }
@@ -218,30 +218,30 @@ void mg_step_set(
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
-/// - const EffectArg   *params -> [0]=dx, [1]=dy, [2]=min, [3]=max
-/// - size_t             n      -> parameter count (must be ≥ 4)
+/// - const BattleState *battle     -> battle context
+/// - const EffectArg   *params -> [0]=delta_x, [1]=delta_y, [2]=min, [3]=max
+/// - size_t             count      -> parameter count (must be ≥ 4)
 /// - MoveList          *out    -> destination list
 ///
 void mg_slide(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
-    if (n < 4)
+    if (count < 4)
         return;
-    int dx    = (int)params[0].v.i;
-    int dy    = (int)params[1].v.i;
+    int delta_x    = (int)params[0].v.i;
+    int delta_y    = (int)params[1].v.i;
     int min_d = (int)params[2].v.i;
     int max_d = (int)params[3].v.i;
     for (int dist = min_d; dist <= max_d; dist++) {
-        Position to = {piece->pos.x + dx * dist, piece->pos.y + dy * dist};
-        if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+        Position to = {piece->pos.x + delta_x * dist, piece->pos.y + delta_y * dist};
+        if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
             break;
         }
-        const PieceState* at = board_at(&bs->board, to);
+        const PieceState* at = board_at(&battle->board, to);
         if (is_friendly(piece, at))
             break;
         ml_push(out, to);
@@ -262,19 +262,19 @@ void mg_slide(
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> [0]=mask, [1]=min, [2]=max
-/// - size_t             n      -> parameter count (must be ≥ 3)
+/// - size_t             count      -> parameter count (must be ≥ 3)
 /// - MoveList          *out    -> destination list
 ///
 void mg_slide_dirs(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
-    if (n < 3)
+    if (count < 3)
         return;
     uint32_t            mask  = (uint32_t)params[0].v.i;
     int                 min_d = (int)params[1].v.i;
@@ -289,10 +289,10 @@ void mg_slide_dirs(
                 piece->pos.x + DX[dir] * dist,
                 piece->pos.y + DY[dir] * dist
             };
-            if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+            if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                 break;
             }
-            const PieceState* at = board_at(&bs->board, to);
+            const PieceState* at = board_at(&battle->board, to);
             if (is_friendly(piece, at))
                 break;
             ml_push(out, to);
@@ -308,30 +308,30 @@ void mg_slide_dirs(
 
 /// mg_leap_set
 ///
-/// Capture-only leap set. Each (dx, dy) pair in params is a leap
+/// Capture-only leap set. Each (delta_x, delta_y) pair in params is a leap
 /// offset that captures whatever sits at the destination; empty
 /// destinations are skipped because this pattern is threat-only.
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
-/// - const EffectArg   *params -> alternating dx, dy values
-/// - size_t             n      -> parameter count (must be even)
+/// - const BattleState *battle     -> battle context
+/// - const EffectArg   *params -> alternating delta_x, delta_y values
+/// - size_t             count      -> parameter count (must be even)
 /// - MoveList          *out    -> destination list
 ///
 void mg_leap_set(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
-    for (size_t i = 0; i + 1 < n; i += 2) {
+    for (size_t i = 0; i + 1 < count; i += 2) {
         Position to = {
             piece->pos.x + (int)params[i].v.i,
             piece->pos.y + (int)params[i + 1].v.i
         };
-        if (can_capture(bs, piece, to))
+        if (can_capture(battle, piece, to))
             ml_push(out, to);
     }
 }
@@ -342,38 +342,38 @@ void mg_leap_set(
 
 /// mg_blockable_leap
 ///
-/// Leap to a single (dx, dy) destination, but only if at least one
+/// Leap to a single (delta_x, delta_y) destination, but only if at least one
 /// of the listed intermediate squares is empty. params layout:
-/// [0]=dx, [1]=dy, then pairs of (mid_dx, mid_dy).
+/// [0]=delta_x, [1]=delta_y, then pairs of (mid_delta_x, mid_delta_y).
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> destination + intermediates
-/// - size_t             n      -> parameter count (must be ≥ 2)
+/// - size_t             count      -> parameter count (must be ≥ 2)
 /// - MoveList          *out    -> destination list
 ///
 void mg_blockable_leap(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
-    if (n < 2)
+    if (count < 2)
         return;
-    int      dx = (int)params[0].v.i;
-    int      dy = (int)params[1].v.i;
-    Position to = {piece->pos.x + dx, piece->pos.y + dy};
-    if (!can_capture(bs, piece, to))
+    int      delta_x = (int)params[0].v.i;
+    int      delta_y = (int)params[1].v.i;
+    Position to = {piece->pos.x + delta_x, piece->pos.y + delta_y};
+    if (!can_capture(battle, piece, to))
         return;
     bool blocked = true;
-    for (size_t i = 2; i + 1 < n; i += 2) {
+    for (size_t i = 2; i + 1 < count; i += 2) {
         Position mid = {
             piece->pos.x + (int)params[i].v.i,
             piece->pos.y + (int)params[i + 1].v.i
         };
-        if (board_at(&bs->board, mid) == NULL) {
+        if (board_at(&battle->board, mid) == NULL) {
             blocked = false;
             break;
         }
@@ -394,22 +394,22 @@ void mg_blockable_leap(
 ///
 /// Params:
 /// - const PieceState  *piece  -> unused
-/// - const BattleState *bs     -> unused
+/// - const BattleState *battle     -> unused
 /// - const EffectArg   *params -> sub-movegen references (unused)
-/// - size_t             n      -> parameter count (unused)
+/// - size_t             count      -> parameter count (unused)
 /// - MoveList          *out    -> destination list (unused)
 ///
 void mg_compound(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)piece;
-    (void)bs;
+    (void)battle;
     (void)params;
-    (void)n;
+    (void)count;
     (void)out;
 }
 
@@ -425,22 +425,22 @@ void mg_compound(
 ///
 /// Params:
 /// - const PieceState  *piece  -> unused
-/// - const BattleState *bs     -> unused
+/// - const BattleState *battle     -> unused
 /// - const EffectArg   *params -> sub-movegen references (unused)
-/// - size_t             n      -> parameter count (unused)
+/// - size_t             count      -> parameter count (unused)
 /// - MoveList          *out    -> destination list (unused)
 ///
 void mg_choice(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)piece;
-    (void)bs;
+    (void)battle;
     (void)params;
-    (void)n;
+    (void)count;
     (void)out;
 }
 
@@ -456,22 +456,22 @@ void mg_choice(
 ///
 /// Params:
 /// - const PieceState  *piece  -> unused
-/// - const BattleState *bs     -> unused
+/// - const BattleState *battle     -> unused
 /// - const EffectArg   *params -> sub-movegen reference (unused)
-/// - size_t             n      -> parameter count (unused)
+/// - size_t             count      -> parameter count (unused)
 /// - MoveList          *out    -> destination list (unused)
 ///
 void mg_double_act(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)piece;
-    (void)bs;
+    (void)battle;
     (void)params;
-    (void)n;
+    (void)count;
     (void)out;
 }
 
@@ -487,22 +487,22 @@ void mg_double_act(
 ///
 /// Params:
 /// - const PieceState  *piece  -> unused
-/// - const BattleState *bs     -> unused
+/// - const BattleState *battle     -> unused
 /// - const EffectArg   *params -> [0]=sub ref, [1]=mask (unused)
-/// - size_t             n      -> parameter count (unused)
+/// - size_t             count      -> parameter count (unused)
 /// - MoveList          *out    -> destination list (unused)
 ///
 void mg_territory_restricted(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)piece;
-    (void)bs;
+    (void)battle;
     (void)params;
-    (void)n;
+    (void)count;
     (void)out;
 }
 
@@ -518,22 +518,22 @@ void mg_territory_restricted(
 ///
 /// Params:
 /// - const PieceState  *piece  -> unused
-/// - const BattleState *bs     -> unused
+/// - const BattleState *battle     -> unused
 /// - const EffectArg   *params -> relocate / attack refs (unused)
-/// - size_t             n      -> parameter count (unused)
+/// - size_t             count      -> parameter count (unused)
 /// - MoveList          *out    -> destination list (unused)
 ///
 void mg_attack_only_subset(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)piece;
-    (void)bs;
+    (void)battle;
     (void)params;
-    (void)n;
+    (void)count;
     (void)out;
 }
 
@@ -549,22 +549,22 @@ void mg_attack_only_subset(
 ///
 /// Params:
 /// - const PieceState  *piece  -> unused
-/// - const BattleState *bs     -> unused
+/// - const BattleState *battle     -> unused
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> cleared to zero entries
 ///
 void mg_todo(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)piece;
-    (void)bs;
+    (void)battle;
     (void)params;
-    (void)n;
+    (void)count;
     out->count = 0;
 }
 
@@ -580,12 +580,12 @@ void mg_todo(
 ///
 /// Params:
 /// - const PieceState  *piece -> querying piece
-/// - const BattleState *bs    -> battle context
+/// - const BattleState *battle    -> battle context
 /// - MoveList          *out   -> destination list (reset to empty)
 ///
 void mg_generate(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     MoveList*          out
 ) {
     out->count        = 0;
@@ -593,11 +593,11 @@ void mg_generate(
     if (piece->move_override.func != NULL) {
         mg = &piece->move_override;
     } else {
-        mg = &piece->tmpl->move;
+        mg = &piece->template->move;
     }
     if (mg->func == NULL)
         return;
-    mg->func(piece, bs, mg->params, mg->param_count, out);
+    mg->func(piece, battle, mg->params, mg->param_count, out);
 }
 
 /// mg_generate_threat
@@ -609,24 +609,24 @@ void mg_generate(
 ///
 /// Params:
 /// - const PieceState  *piece -> querying piece
-/// - const BattleState *bs    -> battle context
+/// - const BattleState *battle    -> battle context
 /// - MoveList          *out   -> destination list (reset to empty)
 ///
 void mg_generate_threat(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     MoveList*          out
 ) {
     out->count        = 0;
     const MoveGen* mg = NULL;
     if (piece->threat_override.func != NULL) {
         mg = &piece->threat_override;
-    } else if (piece->tmpl->threat.func != NULL) {
-        mg = &piece->tmpl->threat;
+    } else if (piece->template->threat.func != NULL) {
+        mg = &piece->template->threat;
     } else {
-        mg = &piece->tmpl->move;
+        mg = &piece->template->move;
     }
     if (mg->func == NULL)
         return;
-    mg->func(piece, bs, mg->params, mg->param_count, out);
+    mg->func(piece, battle, mg->params, mg->param_count, out);
 }

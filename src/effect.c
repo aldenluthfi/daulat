@@ -60,25 +60,25 @@ void bus_register(EffectBus* bus, const Effect* effect) {
 ///
 /// Params:
 /// - EffectBus* bus -> bus to scan
-/// - BattleState* bs -> battle state for handler use
+/// - BattleState* battle -> battle state for handler use
 /// - EffectTrigger trigger -> trigger key to dispatch
-/// - struct EffectCtx* ctx -> evidence (mutated with trigger)
+/// - struct EffectCtx* context -> evidence (mutated with trigger)
 ///
 void bus_emit(
     EffectBus*        bus,
-    BattleState*      bs,
+    BattleState*      battle,
     EffectTrigger     trigger,
-    struct EffectCtx* ctx
+    struct EffectCtx* context
 ) {
-    ctx->trigger = trigger;
-    ctx->bs      = bs;
+    context->trigger = trigger;
+    context->battle      = battle;
     for (uint16_t i = 0; i < bus->count; i++) {
         if (!bus->slots[i].active)
             continue;
         if (bus->slots[i].effect->trigger != trigger)
             continue;
         bus->slots[i].effect->apply(
-            ctx,
+            context,
             bus->slots[i].effect->args,
             bus->slots[i].effect->arg_count
         );
@@ -137,7 +137,7 @@ void bus_tick_turn_start(EffectBus* bus) {
 ///
 /// Params:
 /// - const EffectBus* bus -> bus to scan
-/// - EffectTrigger t -> trigger key to count
+/// - EffectTrigger trigger -> trigger key to count
 ///
 /// Return:
 /// size_t -> number of active matching slots

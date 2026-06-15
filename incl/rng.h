@@ -16,7 +16,7 @@
                               RNG STATE
 \*--------------------------------------------------------------------------*/
 
-/// Xorshift64 state. Seed with cfg->rng_seed in battle_init().
+/// Xorshift64 state. Seed with config->rng_seed in battle_init().
 typedef struct {
     uint64_t state;
 } Rng;

@@ -1,15 +1,12 @@
 //! screen_battle.c
 //!
-//! Battle screen — placeholder. Phase 4 wires this to drive the
-//! existing battle engine via the map-node payload. Phase 1 only
-//! renders a clear colour and label.
+//! Battle screen. Drives the battle engine via the map-node
+//! payload and forwards player input to `battle_action_*`.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "app.h"
-#include "screens.h"
-#include "ui.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               HOOKS

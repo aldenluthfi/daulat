@@ -9,21 +9,19 @@
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "save.h"
-
 #include <SDL3/SDL.h>
 #include <string.h>
 
-#include "log.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               CRC32
 \*--------------------------------------------------------------------------*/
 
-uint32_t crc32_ieee(const void* data, size_t n) {
+uint32_t crc32_ieee(const void* data, size_t count) {
     const uint8_t* bytes = (const uint8_t*)data;
     uint32_t       crc   = 0xFFFFFFFFu;
-    for (size_t i = 0; i < n; i++) {
+    for (size_t i = 0; i < count; i++) {
         crc ^= bytes[i];
         for (int j = 0; j < 8; j++) {
             uint32_t mask = -(int32_t)(crc & 1u);
@@ -41,11 +39,11 @@ void save_writer_init(SaveWriter* w) {
     memset(w, 0, sizeof(*w));
 }
 
-static bool writer_reserve(SaveWriter* w, size_t n) {
+static bool writer_reserve(SaveWriter* w, size_t count) {
     if (w->overflow)
         return false;
-    if ((size_t)w->pos + n > SAVE_BUFFER_BYTES) {
-        log_err("save writer overflow at pos=%u need=%zu", w->pos, n);
+    if ((size_t)w->pos + count > SAVE_BUFFER_BYTES) {
+        log_err("save writer overflow at pos=%u need=%zu", w->pos, count);
         w->overflow = true;
         return false;
     }
@@ -89,11 +87,11 @@ bool save_write_bool(SaveWriter* w, bool v) {
     return save_write_u8(w, v ? 1u : 0u);
 }
 
-bool save_write_bytes(SaveWriter* w, const void* data, size_t n) {
-    if (!writer_reserve(w, n))
+bool save_write_bytes(SaveWriter* w, const void* data, size_t count) {
+    if (!writer_reserve(w, count))
         return false;
-    memcpy(&w->buf[w->pos], data, n);
-    w->pos += (uint32_t)n;
+    memcpy(&w->buf[w->pos], data, count);
+    w->pos += (uint32_t)count;
     return true;
 }
 
@@ -175,13 +173,13 @@ bool save_writer_flush(const SaveWriter* w, const char* path) {
                               READER
 \*--------------------------------------------------------------------------*/
 
-static uint32_t read_u32_le(const uint8_t* p) {
-    return ((uint32_t)p[0]) | ((uint32_t)p[1] << 8)
-           | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+static uint32_t read_u32_le(const uint8_t* position) {
+    return ((uint32_t)position[0]) | ((uint32_t)position[1] << 8)
+           | ((uint32_t)position[2] << 16) | ((uint32_t)position[3] << 24);
 }
 
-static uint16_t read_u16_le(const uint8_t* p) {
-    return (uint16_t)(((uint16_t)p[0]) | ((uint16_t)p[1] << 8));
+static uint16_t read_u16_le(const uint8_t* position) {
+    return (uint16_t)(((uint16_t)position[0]) | ((uint16_t)position[1] << 8));
 }
 
 bool save_reader_open(SaveReader* r, const char* path) {
@@ -233,8 +231,8 @@ bool save_reader_open(SaveReader* r, const char* path) {
     return true;
 }
 
-static bool reader_have(const SaveReader* r, size_t n) {
-    return (size_t)r->pos + n + 4u <= (size_t)r->total;
+static bool reader_have(const SaveReader* r, size_t count) {
+    return (size_t)r->pos + count + 4u <= (size_t)r->total;
 }
 
 bool save_read_u8(SaveReader* r, uint8_t* out) {
@@ -276,11 +274,11 @@ bool save_read_bool(SaveReader* r, bool* out) {
     return true;
 }
 
-bool save_read_bytes(SaveReader* r, void* data, size_t n) {
-    if (!reader_have(r, n))
+bool save_read_bytes(SaveReader* r, void* data, size_t count) {
+    if (!reader_have(r, count))
         return false;
-    memcpy(data, &r->buf[r->pos], n);
-    r->pos += (uint32_t)n;
+    memcpy(data, &r->buf[r->pos], count);
+    r->pos += (uint32_t)count;
     return true;
 }
 
@@ -298,10 +296,10 @@ bool save_read_chunk_header(
     return true;
 }
 
-bool save_skip(SaveReader* r, uint32_t n) {
-    if (!reader_have(r, n))
+bool save_skip(SaveReader* r, uint32_t count) {
+    if (!reader_have(r, count))
         return false;
-    r->pos += n;
+    r->pos += count;
     return true;
 }
 

@@ -1,15 +1,12 @@
 //! screen_settings.c
 //!
-//! Settings screen — placeholder. Phase 5 wires volume / fullscreen
-//! / reset-profile controls. Phase 1 only renders a clear colour
-//! and label.
+//! Settings screen. Exposes volume, fullscreen, and reset-profile
+//! controls.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "app.h"
-#include "screens.h"
-#include "ui.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               HOOKS

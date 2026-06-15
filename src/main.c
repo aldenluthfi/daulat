@@ -21,13 +21,13 @@
                               PRINT HELPERS
 \*--------------------------------------------------------------------------*/
 
-static void print_board(const BattleState* bs) {
-    log_info("  Board %dx%d:", bs->board.width, bs->board.height);
-    for (int y = bs->board.height - 1; y >= 0; y--) {
+static void print_board(const BattleState* battle) {
+    log_info("  Board %delta_x%d:", battle->board.width, battle->board.height);
+    for (int y = battle->board.height - 1; y >= 0; y--) {
         printf("  %2d ", y);
-        for (int x = 0; x < bs->board.width; x++) {
+        for (int x = 0; x < battle->board.width; x++) {
             Position    p  = {x, y};
-            PieceState* pc = board_at(&bs->board, p);
+            PieceState* pc = board_at(&battle->board, p);
             if (pc == NULL) {
                 printf(". ");
             } else {
@@ -38,20 +38,20 @@ static void print_board(const BattleState* bs) {
         printf("\n");
     }
     printf("    ");
-    for (int x = 0; x < bs->board.width; x++)
+    for (int x = 0; x < battle->board.width; x++)
         printf("%d ", x);
     printf("\n");
 }
 
-static void print_pieces(const BattleState* bs) {
+static void print_pieces(const BattleState* battle) {
     log_info("  Pieces:");
-    for (uint16_t i = 0; i < bs->piece_count; i++) {
-        const PieceState* piece = &bs->pieces[i];
+    for (uint16_t i = 0; i < battle->piece_count; i++) {
+        const PieceState* piece = &battle->pieces[i];
         const char* side = (piece->owner == SIDE_PLAYER) ? "PLAYER" : "ENEMY ";
         log_info(
             "    [%u] %s (%s) at (%d,%d) val=%d",
             piece->id,
-            piece->tmpl->name,
+            piece->template->name,
             side,
             piece->pos.x,
             piece->pos.y,
@@ -60,33 +60,33 @@ static void print_pieces(const BattleState* bs) {
     }
 }
 
-static void print_state(const BattleState* bs) {
+static void print_state(const BattleState* battle) {
     log_info(
         "Turn %u | Active: %s | CP: P=%d E=%d | "
         "Meter: P=%d/%d E=%d/%d",
-        bs->turn_no,
-        bs->active_side == SIDE_PLAYER ? "PLAYER" : "ENEMY ",
-        bs->cp[SIDE_PLAYER],
-        bs->cp[SIDE_ENEMY],
-        bs->meter[SIDE_PLAYER],
-        bs->meter_cap[SIDE_PLAYER],
-        bs->meter[SIDE_ENEMY],
-        bs->meter_cap[SIDE_ENEMY]
+        battle->turn_no,
+        battle->active_side == SIDE_PLAYER ? "PLAYER" : "ENEMY ",
+        battle->cp[SIDE_PLAYER],
+        battle->cp[SIDE_ENEMY],
+        battle->meter[SIDE_PLAYER],
+        battle->meter_cap[SIDE_PLAYER],
+        battle->meter[SIDE_ENEMY],
+        battle->meter_cap[SIDE_ENEMY]
     );
 }
 
-static void print_hand(const BattleState* bs, Side side) {
+static void print_hand(const BattleState* battle, Side side) {
     const char* side_str = (side == SIDE_PLAYER) ? "PLAYER" : "ENEMY ";
-    uint8_t     count    = bs->hand_count[side];
+    uint8_t     count    = battle->hand_count[side];
     log_info("  %s hand (%d cards):", side_str, count);
     for (uint8_t i = 0; i < count; i++) {
-        const CardTemplate* tmpl = bs->hand[side][i].tmpl;
+        const CardTemplate* template = battle->hand[side][i].template;
         log_info(
             "    [%u] %s cost=%d sell=%d",
             i,
-            tmpl->name,
-            tmpl->play_cost,
-            tmpl->sell_value
+            template->name,
+            template->play_cost,
+            template->sell_value
         );
     }
 }
@@ -98,7 +98,7 @@ static void print_hand(const BattleState* bs, Side side) {
 int main(void) {
     log_info("=== Regnum Battle Boilerplate Demo ===");
 
-    BattleConfig cfg = {
+    BattleConfig config = {
         .width          = 12,
         .height         = 12,
         .max_turns      = 10,
@@ -112,63 +112,63 @@ int main(void) {
         .run            = NULL,
     };
 
-    BattleState bs;
-    battle_init(&bs, &cfg);
+    BattleState battle;
+    battle_init(&battle, &config);
 
     Position pk = {5, 0};
     Position ek = {5, 11};
-    piece_spawn(&bs, PIECE_KING, pk, SIDE_PLAYER);
-    piece_spawn(&bs, PIECE_KING, ek, SIDE_ENEMY);
+    piece_spawn(&battle, PIECE_KING, pk, SIDE_PLAYER);
+    piece_spawn(&battle, PIECE_KING, ek, SIDE_ENEMY);
 
     Position pp = {3, 1};
     Position ep = {3, 10};
-    piece_spawn(&bs, PIECE_PAWN, pp, SIDE_PLAYER);
-    piece_spawn(&bs, PIECE_KNIGHT, ep, SIDE_ENEMY);
+    piece_spawn(&battle, PIECE_PAWN, pp, SIDE_PLAYER);
+    piece_spawn(&battle, PIECE_KNIGHT, ep, SIDE_ENEMY);
 
     log_info("--- Initial State ---");
-    print_board(&bs);
-    print_pieces(&bs);
+    print_board(&battle);
+    print_pieces(&battle);
 
     log_info("");
     log_info("--- TURN 1: PLAYER ---");
-    battle_turn_start(&bs);
-    print_state(&bs);
-    print_hand(&bs, SIDE_PLAYER);
+    battle_turn_start(&battle);
+    print_state(&battle);
+    print_hand(&battle, SIDE_PLAYER);
 
     Position pawn_to = {3, 2};
-    if (battle_can_move(&bs, bs.pieces[1].id, pawn_to)) {
-        battle_action_move(&bs, bs.pieces[1].id, pawn_to);
+    if (battle_can_move(&battle, battle.pieces[1].id, pawn_to)) {
+        battle_action_move(&battle, battle.pieces[1].id, pawn_to);
         log_info("  Moved pawn to (%d,%d)", pawn_to.x, pawn_to.y);
     }
 
-    if (bs.hand_count[SIDE_PLAYER] > 0) {
-        battle_sell_card(&bs, 0);
+    if (battle.hand_count[SIDE_PLAYER] > 0) {
+        battle_sell_card(&battle, 0);
         log_info("  Sold card 0");
     }
 
-    print_state(&bs);
-    print_board(&bs);
+    print_state(&battle);
+    print_board(&battle);
 
-    battle_turn_end(&bs);
+    battle_turn_end(&battle);
 
     log_info("");
     log_info("--- TURN 1: ENEMY ---");
-    battle_turn_start(&bs);
-    print_state(&bs);
-    ai_play_turn(&bs);
-    battle_turn_end(&bs);
+    battle_turn_start(&battle);
+    print_state(&battle);
+    ai_play_turn(&battle);
+    battle_turn_end(&battle);
 
     log_info("");
     log_info("--- TURN 2: PLAYER ---");
-    battle_turn_start(&bs);
-    print_state(&bs);
-    print_hand(&bs, SIDE_PLAYER);
+    battle_turn_start(&battle);
+    print_state(&battle);
+    print_hand(&battle, SIDE_PLAYER);
 
-    if (bs.piece_count > 0) {
+    if (battle.piece_count > 0) {
         MoveList ml = {0};
-        battle_legal_moves(&bs, bs.pieces[0].id, &ml);
+        battle_legal_moves(&battle, battle.pieces[0].id, &ml);
         if (ml.count > 0) {
-            battle_action_move(&bs, bs.pieces[0].id, ml.squares[0]);
+            battle_action_move(&battle, battle.pieces[0].id, ml.squares[0]);
             log_info(
                 "  Moved piece 0 to (%d,%d)",
                 ml.squares[0].x,
@@ -177,19 +177,19 @@ int main(void) {
         }
     }
 
-    print_state(&bs);
-    battle_turn_end(&bs);
+    print_state(&battle);
+    battle_turn_end(&battle);
 
     log_info("");
     log_info("--- TURN 2: ENEMY ---");
-    battle_turn_start(&bs);
-    print_state(&bs);
-    ai_play_turn(&bs);
-    battle_turn_end(&bs);
+    battle_turn_start(&battle);
+    print_state(&battle);
+    ai_play_turn(&battle);
+    battle_turn_end(&battle);
 
     log_info("");
     log_info("--- Final State ---");
-    BattleResult res        = battle_check_end(&bs);
+    BattleResult res        = battle_check_end(&battle);
     const char*  result_str = "UNKNOWN";
     if (res == BATTLE_PLAYER_WON)
         result_str = "PLAYER WON";
@@ -198,11 +198,11 @@ int main(void) {
     else if (res == BATTLE_DRAW)
         result_str = "DRAW";
     log_info("Battle result: %s", result_str);
-    print_state(&bs);
-    print_board(&bs);
-    print_pieces(&bs);
+    print_state(&battle);
+    print_board(&battle);
+    print_pieces(&battle);
 
-    battle_destroy(&bs);
+    battle_destroy(&battle);
     log_info("");
     log_info("=== Demo complete ===");
     return 0;

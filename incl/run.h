@@ -115,17 +115,17 @@ void run_remove_relic(RunState* run, RelicId id);
 
 /// run_relic_at
 ///
-/// Resolve the held relic template at slot `idx` via the registry.
+/// Resolve the held relic template at slot `index` via the registry.
 /// Returns NULL on out-of-range.
 ///
 /// Params:
 /// - const RunState* run -> run to query
-/// - uint8_t          idx -> slot index
+/// - uint8_t          index -> slot index
 ///
 /// Return:
 /// const RelicTemplate* -> template pointer or NULL
 ///
-const struct RelicTemplate* run_relic_at(const RunState* run, uint8_t idx);
+const struct RelicTemplate* run_relic_at(const RunState* run, uint8_t index);
 
 /// run_kingdom_cleared
 ///

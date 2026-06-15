@@ -19,16 +19,16 @@
 /// Append an event to the ring buffer.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
+/// - BattleState* battle -> battle state to modify
 /// - EventKind kind -> event type to push
 ///
-static void push_event(BattleState* bs, EventKind kind) {
-    if (bs->event_count >= MAX_EVENTS)
+static void push_event(BattleState* battle, EventKind kind) {
+    if (battle->event_count >= MAX_EVENTS)
         return;
-    uint16_t idx            = (bs->event_head + bs->event_count) % MAX_EVENTS;
-    bs->events[idx].kind    = kind;
-    bs->events[idx].turn_no = bs->turn_no;
-    bs->event_count++;
+    uint16_t index            = (battle->event_head + battle->event_count) % MAX_EVENTS;
+    battle->events[index].kind    = kind;
+    battle->events[index].turn_no = battle->turn_no;
+    battle->event_count++;
 }
 
 /// find_king
@@ -36,17 +36,17 @@ static void push_event(BattleState* bs, EventKind kind) {
 /// Locate the king piece for a given side.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to search
+/// - const BattleState* battle -> battle state to search
 /// - Side owner -> side to find king for
 ///
 /// Return:
 /// const PieceState* -> king piece or NULL if not found
 ///
-static const PieceState* find_king(const BattleState* bs, Side owner) {
-    for (uint16_t i = 0; i < bs->piece_count; i++) {
-        if (bs->pieces[i].owner == owner &&
-            bs->pieces[i].tmpl->id == PIECE_KING) {
-            return &bs->pieces[i];
+static const PieceState* find_king(const BattleState* battle, Side owner) {
+    for (uint16_t i = 0; i < battle->piece_count; i++) {
+        if (battle->pieces[i].owner == owner &&
+            battle->pieces[i].template->id == PIECE_KING) {
+            return &battle->pieces[i];
         }
     }
     return NULL;
@@ -61,50 +61,50 @@ static const PieceState* find_king(const BattleState* bs, Side owner) {
 /// Initialize a battle from configuration. Seeds RNG, inits board and bus.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to initialize
-/// - const BattleConfig* cfg -> battle configuration
+/// - BattleState* battle -> battle state to initialize
+/// - const BattleConfig* config -> battle configuration
 ///
-void battle_init(BattleState* bs, const BattleConfig* cfg) {
-    memset(bs, 0, sizeof(*bs));
-    bs->config          = *cfg;
-    bs->active_side     = cfg->player_side;
-    bs->turn_no         = 1;
-    bs->max_turns       = cfg->max_turns;
-    bs->cp[SIDE_PLAYER] = cfg->starting_cp;
-    bs->cp[SIDE_ENEMY]  = cfg->starting_cp;
-    board_init(&bs->board, cfg->width, cfg->height);
-    bus_init(&bs->bus);
-    rng_init(&bs->rng, cfg->rng_seed);
-    bs->meter_cap[SIDE_PLAYER]          = 20;
-    bs->meter_cap[SIDE_ENEMY]           = 20;
-    bs->meter_overflow_cap[SIDE_PLAYER] = 40;
-    bs->meter_overflow_cap[SIDE_ENEMY]  = 40;
-    bs->meter[SIDE_PLAYER]              = bs->meter_cap[SIDE_PLAYER];
-    bs->meter[SIDE_ENEMY]               = bs->meter_cap[SIDE_ENEMY];
-    for (uint8_t i = 0; i < cfg->modifier_count; i++) {
-        const Modifier* modifier = cfg->modifiers[i];
+void battle_init(BattleState* battle, const BattleConfig* config) {
+    memset(battle, 0, sizeof(*battle));
+    battle->config          = *config;
+    battle->active_side     = config->player_side;
+    battle->turn_no         = 1;
+    battle->max_turns       = config->max_turns;
+    battle->cp[SIDE_PLAYER] = config->starting_cp;
+    battle->cp[SIDE_ENEMY]  = config->starting_cp;
+    board_init(&battle->board, config->width, config->height);
+    bus_init(&battle->bus);
+    rng_init(&battle->rng, config->rng_seed);
+    battle->meter_cap[SIDE_PLAYER]          = 20;
+    battle->meter_cap[SIDE_ENEMY]           = 20;
+    battle->meter_overflow_cap[SIDE_PLAYER] = 40;
+    battle->meter_overflow_cap[SIDE_ENEMY]  = 40;
+    battle->meter[SIDE_PLAYER]              = battle->meter_cap[SIDE_PLAYER];
+    battle->meter[SIDE_ENEMY]               = battle->meter_cap[SIDE_ENEMY];
+    for (uint8_t i = 0; i < config->modifier_count; i++) {
+        const Modifier* modifier = config->modifiers[i];
         for (uint8_t j = 0; j < modifier->effect_count; j++) {
             Effect effect         = modifier->effects[j];
             effect.owner          = SIDE_PLAYER;
             effect.duration_turns = -1;
-            bus_register(&bs->bus, &effect);
+            bus_register(&battle->bus, &effect);
         }
     }
-    for (uint8_t i = 0; i < cfg->trait_count; i++) {
-        const BoardTrait* trait = cfg->traits[i];
+    for (uint8_t i = 0; i < config->trait_count; i++) {
+        const BoardTrait* trait = config->traits[i];
         for (uint8_t j = 0; j < trait->effect_count; j++) {
             Effect effect         = trait->effects[j];
             effect.owner          = SIDE_PLAYER;
             effect.duration_turns = -1;
-            bus_register(&bs->bus, &effect);
+            bus_register(&battle->bus, &effect);
         }
     }
-    if (cfg->run != NULL)
-        meta_apply_relics(bs, cfg->run);
-    bs->actions_left = 3;
-    push_event(bs, EVT_BATTLE_ENDED);
-    struct EffectCtx ctx = {0};
-    bus_emit(&bs->bus, bs, TRIGGER_BATTLE_START, &ctx);
+    if (config->run != NULL)
+        meta_apply_relics(battle, config->run);
+    battle->actions_left = 3;
+    push_event(battle, EVT_BATTLE_ENDED);
+    struct EffectCtx context = {0};
+    bus_emit(&battle->bus, battle, TRIGGER_BATTLE_START, &context);
 }
 
 /// battle_destroy
@@ -112,10 +112,10 @@ void battle_init(BattleState* bs, const BattleConfig* cfg) {
 /// Tear down a battle. Currently a no-op.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to destroy
+/// - BattleState* battle -> battle state to destroy
 ///
-void battle_destroy(BattleState* bs) {
-    (void)bs;
+void battle_destroy(BattleState* battle) {
+    (void)battle;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -127,24 +127,24 @@ void battle_destroy(BattleState* bs) {
 /// Begin a turn: tick bus, emit income/draw triggers, set actions_left.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
+/// - BattleState* battle -> battle state to modify
 ///
-void battle_turn_start(BattleState* bs) {
-    bus_tick_turn_start(&bs->bus);
-    struct EffectCtx ctx = {0};
-    bus_emit(&bs->bus, bs, TRIGGER_TURN_START, &ctx);
+void battle_turn_start(BattleState* battle) {
+    bus_tick_turn_start(&battle->bus);
+    struct EffectCtx context = {0};
+    bus_emit(&battle->bus, battle, TRIGGER_TURN_START, &context);
     int income              = 5;
-    ctx.as.query.income_out = &income;
-    bus_emit(&bs->bus, bs, TRIGGER_QUERY_TURN_INCOME, &ctx);
-    bs->cp[bs->active_side] += income;
+    context.as.query.income_out = &income;
+    bus_emit(&battle->bus, battle, TRIGGER_QUERY_TURN_INCOME, &context);
+    battle->cp[battle->active_side] += income;
     int draw_count        = 1;
-    ctx.as.card.count_out = &draw_count;
-    bus_emit(&bs->bus, bs, TRIGGER_QUERY_DRAW_COUNT, &ctx);
+    context.as.card.count_out = &draw_count;
+    bus_emit(&battle->bus, battle, TRIGGER_QUERY_DRAW_COUNT, &context);
     for (int i = 0; i < draw_count; i++) {
-        card_draw(bs, bs->active_side);
+        card_draw(battle, battle->active_side);
     }
-    bs->actions_left = 3;
-    push_event(bs, EVT_TURN_STARTED);
+    battle->actions_left = 3;
+    push_event(battle, EVT_TURN_STARTED);
 }
 
 /*--------------------------------------------------------------------------*\
@@ -156,47 +156,47 @@ void battle_turn_start(BattleState* bs) {
 /// Apply damage to a side, triggering flips when meter empties.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
+/// - BattleState* battle -> battle state to modify
 /// - Side defender -> side taking damage
 /// - int damage -> total damage to apply
 ///
 static void
-apply_damage_with_cascading_flips(BattleState* bs, Side defender, int damage) {
+apply_damage_with_cascading_flips(BattleState* battle, Side defender, int damage) {
     while (damage > 0) {
-        int meter_value = bs->meter[defender];
+        int meter_value = battle->meter[defender];
         if (meter_value <= damage) {
             damage -= meter_value;
-            bs->meter[defender] = 0;
+            battle->meter[defender] = 0;
             uint16_t candidates[MAX_PIECES];
             uint16_t count = 0;
-            for (uint16_t i = 0; i < bs->piece_count; i++) {
-                if (bs->pieces[i].owner != defender)
+            for (uint16_t i = 0; i < battle->piece_count; i++) {
+                if (battle->pieces[i].owner != defender)
                     continue;
-                if (bs->pieces[i].tmpl->id == PIECE_KING)
+                if (battle->pieces[i].template->id == PIECE_KING)
                     continue;
                 candidates[count++] = i;
             }
             if (count > 0) {
-                uint16_t pick = candidates[rng_range(&bs->rng, count)];
-                uint32_t id   = bs->pieces[pick].id;
+                uint16_t pick = candidates[rng_range(&battle->rng, count)];
+                uint32_t id   = battle->pieces[pick].id;
                 uint16_t event_index =
-                    (bs->event_head + bs->event_count) % MAX_EVENTS;
-                if (bs->event_count < MAX_EVENTS) {
-                    bs->events[event_index].kind    = EVT_PIECE_FLIPPED;
-                    bs->events[event_index].turn_no = bs->turn_no;
-                    bs->events[event_index].as.flipped.piece_id = id;
-                    bs->event_count++;
+                    (battle->event_head + battle->event_count) % MAX_EVENTS;
+                if (battle->event_count < MAX_EVENTS) {
+                    battle->events[event_index].kind    = EVT_PIECE_FLIPPED;
+                    battle->events[event_index].turn_no = battle->turn_no;
+                    battle->events[event_index].as.flipped.piece_id = id;
+                    battle->event_count++;
                 }
-                piece_flip(bs, id);
+                piece_flip(battle, id);
             }
-            bs->meter[defender] = bs->meter_cap[defender];
+            battle->meter[defender] = battle->meter_cap[defender];
         } else {
-            bs->meter[defender] -= damage;
+            battle->meter[defender] -= damage;
             damage = 0;
         }
-        if (battle_check_end(bs) != BATTLE_IN_PROGRESS) {
-            bs->battle_ended = true;
-            push_event(bs, EVT_BATTLE_ENDED);
+        if (battle_check_end(battle) != BATTLE_IN_PROGRESS) {
+            battle->battle_ended = true;
+            push_event(battle, EVT_BATTLE_ENDED);
             return;
         }
     }
@@ -211,48 +211,48 @@ apply_damage_with_cascading_flips(BattleState* bs, Side defender, int damage) {
 /// Resolve phase: emit defense/attack triggers, deal damage, cascade flips.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to resolve
+/// - BattleState* battle -> battle state to resolve
 ///
-void battle_resolve(BattleState* bs) {
-    Side             active  = bs->active_side;
+void battle_resolve(BattleState* battle) {
+    Side             active  = battle->active_side;
     Side             passive = side_opposite(active);
-    struct EffectCtx ctx     = {0};
-    ctx.as.resolve.attacker  = NULL;
-    ctx.as.resolve.target    = NULL;
-    bus_emit(&bs->bus, bs, TRIGGER_RESOLVE_DEFENSE, &ctx);
-    bus_emit(&bs->bus, bs, TRIGGER_RESOLVE_ATTACK, &ctx);
+    struct EffectCtx context     = {0};
+    context.as.resolve.attacker  = NULL;
+    context.as.resolve.target    = NULL;
+    bus_emit(&battle->bus, battle, TRIGGER_RESOLVE_DEFENSE, &context);
+    bus_emit(&battle->bus, battle, TRIGGER_RESOLVE_ATTACK, &context);
     int total_damage = 0;
-    for (uint16_t i = 0; i < bs->piece_count; i++) {
-        PieceState* piece = &bs->pieces[i];
+    for (uint16_t i = 0; i < battle->piece_count; i++) {
+        PieceState* piece = &battle->pieces[i];
         if (piece->owner != active)
             continue;
         MoveList move_list = {0};
-        mg_generate_threat(piece, bs, &move_list);
+        mg_generate_threat(piece, battle, &move_list);
         for (uint8_t j = 0; j < move_list.count; j++) {
             const PieceState* threat_target =
-                board_at(&bs->board, move_list.squares[j]);
+                board_at(&battle->board, move_list.squares[j]);
             if (threat_target == NULL)
                 continue;
             if (threat_target->owner == passive) {
                 int piece_damage = piece_value(piece);
                 total_damage += piece_damage;
                 uint16_t event_index =
-                    (bs->event_head + bs->event_count) % MAX_EVENTS;
-                if (bs->event_count < MAX_EVENTS) {
-                    bs->events[event_index].kind    = EVT_PIECE_DEALT_DAMAGE;
-                    bs->events[event_index].turn_no = bs->turn_no;
-                    bs->events[event_index].as.dealt_damage.attacker =
+                    (battle->event_head + battle->event_count) % MAX_EVENTS;
+                if (battle->event_count < MAX_EVENTS) {
+                    battle->events[event_index].kind    = EVT_PIECE_DEALT_DAMAGE;
+                    battle->events[event_index].turn_no = battle->turn_no;
+                    battle->events[event_index].as.dealt_damage.attacker =
                         piece->id;
-                    bs->events[event_index].as.dealt_damage.victim_side =
+                    battle->events[event_index].as.dealt_damage.victim_side =
                         passive;
-                    bs->events[event_index].as.dealt_damage.dmg = piece_damage;
-                    bs->event_count++;
+                    battle->events[event_index].as.dealt_damage.dmg = piece_damage;
+                    battle->event_count++;
                 }
             }
         }
     }
     if (total_damage > 0) {
-        apply_damage_with_cascading_flips(bs, passive, total_damage);
+        apply_damage_with_cascading_flips(battle, passive, total_damage);
     }
 }
 
@@ -265,24 +265,24 @@ void battle_resolve(BattleState* bs) {
 /// End a turn: sell hand, resolve, tick bus, switch active side.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
+/// - BattleState* battle -> battle state to modify
 ///
-void battle_turn_end(BattleState* bs) {
-    while (bs->hand_count[bs->active_side] > 0) {
-        battle_sell_card(bs, 0);
+void battle_turn_end(BattleState* battle) {
+    while (battle->hand_count[battle->active_side] > 0) {
+        battle_sell_card(battle, 0);
     }
-    push_event(bs, EVT_RESOLVE_BEGAN);
-    battle_resolve(bs);
-    push_event(bs, EVT_RESOLVE_ENDED);
-    struct EffectCtx ctx = {0};
-    bus_emit(&bs->bus, bs, TRIGGER_TURN_END, &ctx);
-    bus_tick_turn_end(&bs->bus);
-    push_event(bs, EVT_TURN_ENDED);
-    bs->active_side = side_opposite(bs->active_side);
-    if (bs->active_side == bs->config.player_side) {
-        bs->turn_no++;
+    push_event(battle, EVT_RESOLVE_BEGAN);
+    battle_resolve(battle);
+    push_event(battle, EVT_RESOLVE_ENDED);
+    struct EffectCtx context = {0};
+    bus_emit(&battle->bus, battle, TRIGGER_TURN_END, &context);
+    bus_tick_turn_end(&battle->bus);
+    push_event(battle, EVT_TURN_ENDED);
+    battle->active_side = side_opposite(battle->active_side);
+    if (battle->active_side == battle->config.player_side) {
+        battle->turn_no++;
     }
-    bs->battle_ended = (battle_check_end(bs) != BATTLE_IN_PROGRESS);
+    battle->battle_ended = (battle_check_end(battle) != BATTLE_IN_PROGRESS);
 }
 
 /// battle_check_end
@@ -290,20 +290,20 @@ void battle_turn_end(BattleState* bs) {
 /// Check whether the battle has reached a terminal state.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to check
+/// - const BattleState* battle -> battle state to check
 ///
 /// Return:
 /// BattleResult -> BATTLE_IN_PROGRESS, PLAYER_WON, ENEMY_WON, or DRAW
 ///
-BattleResult battle_check_end(const BattleState* bs) {
-    const PieceState* player_king = find_king(bs, bs->config.player_side);
+BattleResult battle_check_end(const BattleState* battle) {
+    const PieceState* player_king = find_king(battle, battle->config.player_side);
     const PieceState* enemy_king =
-        find_king(bs, side_opposite(bs->config.player_side));
+        find_king(battle, side_opposite(battle->config.player_side));
     if (player_king == NULL)
         return BATTLE_ENEMY_WON;
     if (enemy_king == NULL)
         return BATTLE_PLAYER_WON;
-    if (bs->turn_no >= bs->max_turns)
+    if (battle->turn_no >= battle->max_turns)
         return BATTLE_DRAW;
     return BATTLE_IN_PROGRESS;
 }
@@ -317,21 +317,21 @@ BattleResult battle_check_end(const BattleState* bs) {
 /// Check whether a piece can legally move to a destination.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to check
+/// - const BattleState* battle -> battle state to check
 /// - uint32_t piece_id -> piece to move
 /// - Position to -> destination square
 ///
 /// Return:
 /// bool -> true if the move is legal
 ///
-bool battle_can_move(const BattleState* bs, uint32_t piece_id, Position to) {
-    const PieceState* piece = piece_by_id((BattleState*)bs, piece_id);
+bool battle_can_move(const BattleState* battle, uint32_t piece_id, Position to) {
+    const PieceState* piece = piece_by_id((BattleState*)battle, piece_id);
     if (piece == NULL)
         return false;
-    if (piece->owner != bs->active_side)
+    if (piece->owner != battle->active_side)
         return false;
     MoveList move_list = {0};
-    mg_generate(piece, bs, &move_list);
+    mg_generate(piece, battle, &move_list);
     for (uint8_t i = 0; i < move_list.count; i++) {
         if (pos_equal(move_list.squares[i], to))
             return true;
@@ -344,38 +344,38 @@ bool battle_can_move(const BattleState* bs, uint32_t piece_id, Position to) {
 /// Execute a move action.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
+/// - BattleState* battle -> battle state to modify
 /// - uint32_t piece_id -> piece to move
 /// - Position to -> destination square
 ///
 /// Return:
 /// bool -> true if the move was executed
 ///
-bool battle_action_move(BattleState* bs, uint32_t piece_id, Position to) {
-    if (!battle_can_move(bs, piece_id, to))
+bool battle_action_move(BattleState* battle, uint32_t piece_id, Position to) {
+    if (!battle_can_move(battle, piece_id, to))
         return false;
-    PieceState* piece = piece_by_id(bs, piece_id);
+    PieceState* piece = piece_by_id(battle, piece_id);
     Position    from  = piece->pos;
-    board_remove(&bs->board, from);
-    board_place(&bs->board, piece, to);
+    board_remove(&battle->board, from);
+    board_place(&battle->board, piece, to);
     piece->moves_used++;
     piece->flags |= PSF_HAS_MOVED;
-    bs->actions_left--;
-    uint16_t event_index = (bs->event_head + bs->event_count) % MAX_EVENTS;
-    if (bs->event_count < MAX_EVENTS) {
-        bs->events[event_index].kind              = EVT_PIECE_MOVED;
-        bs->events[event_index].turn_no           = bs->turn_no;
-        bs->events[event_index].as.moved.piece_id = piece_id;
-        bs->events[event_index].as.moved.from     = from;
-        bs->events[event_index].as.moved.to       = to;
-        bs->event_count++;
+    battle->actions_left--;
+    uint16_t event_index = (battle->event_head + battle->event_count) % MAX_EVENTS;
+    if (battle->event_count < MAX_EVENTS) {
+        battle->events[event_index].kind              = EVT_PIECE_MOVED;
+        battle->events[event_index].turn_no           = battle->turn_no;
+        battle->events[event_index].as.moved.piece_id = piece_id;
+        battle->events[event_index].as.moved.from     = from;
+        battle->events[event_index].as.moved.to       = to;
+        battle->event_count++;
     }
-    struct EffectCtx ctx = {0};
-    ctx.as.piece.piece   = piece;
-    bus_emit(&bs->bus, bs, TRIGGER_PIECE_MOVED, &ctx);
+    struct EffectCtx context = {0};
+    context.as.piece.piece   = piece;
+    bus_emit(&battle->bus, battle, TRIGGER_PIECE_MOVED, &context);
     Side enemy = side_opposite(piece->owner);
-    if (board_at(&bs->board, piece->pos)->owner == enemy) {
-        bus_emit(&bs->bus, bs, TRIGGER_PIECE_ENTERED_ENEMY_TERR, &ctx);
+    if (board_at(&battle->board, piece->pos)->owner == enemy) {
+        bus_emit(&battle->bus, battle, TRIGGER_PIECE_ENTERED_ENEMY_TERR, &context);
     }
     return true;
 }
@@ -385,22 +385,22 @@ bool battle_action_move(BattleState* bs, uint32_t piece_id, Position to) {
 /// Check whether a piece can be bought at a position.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to check
-/// - uint16_t tmpl_id -> template id to buy
+/// - const BattleState* battle -> battle state to check
+/// - uint16_t template_id -> template id to buy
 /// - Position at -> purchase position
 ///
 /// Return:
 /// bool -> true if the purchase is legal
 ///
-bool battle_can_buy(const BattleState* bs, uint16_t tmpl_id, Position at) {
-    const PieceTemplate* tmpl = piece_template(tmpl_id);
-    if (tmpl == NULL)
+bool battle_can_buy(const BattleState* battle, uint16_t template_id, Position at) {
+    const PieceTemplate* template = piece_template(template_id);
+    if (template == NULL)
         return false;
-    if (bs->cp[bs->active_side] < tmpl->base_value)
+    if (battle->cp[battle->active_side] < template->base_value)
         return false;
-    if (!pos_in_bounds(at, bs->board.width, bs->board.height))
+    if (!pos_in_bounds(at, battle->board.width, battle->board.height))
         return false;
-    if (board_at(&bs->board, at) != NULL)
+    if (board_at(&battle->board, at) != NULL)
         return false;
     return true;
 }
@@ -410,22 +410,22 @@ bool battle_can_buy(const BattleState* bs, uint16_t tmpl_id, Position at) {
 /// Execute a buy action.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
-/// - uint16_t tmpl_id -> template id to buy
+/// - BattleState* battle -> battle state to modify
+/// - uint16_t template_id -> template id to buy
 /// - Position at -> purchase position
 ///
 /// Return:
 /// bool -> true if the purchase was executed
 ///
-bool battle_action_buy(BattleState* bs, uint16_t tmpl_id, Position at) {
-    if (!battle_can_buy(bs, tmpl_id, at))
+bool battle_action_buy(BattleState* battle, uint16_t template_id, Position at) {
+    if (!battle_can_buy(battle, template_id, at))
         return false;
-    const PieceTemplate* tmpl = piece_template(tmpl_id);
-    bs->cp[bs->active_side] -= tmpl->base_value;
-    uint32_t id = piece_spawn(bs, tmpl_id, at, bs->active_side);
+    const PieceTemplate* template = piece_template(template_id);
+    battle->cp[battle->active_side] -= template->base_value;
+    uint32_t id = piece_spawn(battle, template_id, at, battle->active_side);
     if (id == 0)
         return false;
-    bs->actions_left--;
+    battle->actions_left--;
     return true;
 }
 
@@ -434,15 +434,15 @@ bool battle_action_buy(BattleState* bs, uint16_t tmpl_id, Position at) {
 /// Check whether two pieces can be combined. Always returns false.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state (unused)
+/// - const BattleState* battle -> battle state (unused)
 /// - uint32_t a -> first piece id (unused)
 /// - uint32_t b -> second piece id (unused)
 ///
 /// Return:
 /// bool -> always false
 ///
-bool battle_can_combine(const BattleState* bs, uint32_t a, uint32_t b) {
-    (void)bs;
+bool battle_can_combine(const BattleState* battle, uint32_t a, uint32_t b) {
+    (void)battle;
     (void)a;
     (void)b;
     return false;
@@ -453,15 +453,15 @@ bool battle_can_combine(const BattleState* bs, uint32_t a, uint32_t b) {
 /// Execute a combine action. Currently a no-op stub.
 ///
 /// Params:
-/// - BattleState* bs -> battle state (unused)
+/// - BattleState* battle -> battle state (unused)
 /// - uint32_t a -> first piece id (unused)
 /// - uint32_t b -> second piece id (unused)
 ///
 /// Return:
 /// bool -> always false
 ///
-bool battle_action_combine(BattleState* bs, uint32_t a, uint32_t b) {
-    (void)bs;
+bool battle_action_combine(BattleState* battle, uint32_t a, uint32_t b) {
+    (void)battle;
     (void)a;
     (void)b;
     return false;
@@ -472,24 +472,24 @@ bool battle_action_combine(BattleState* bs, uint32_t a, uint32_t b) {
 /// Check whether a card can be played.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to check
-/// - uint8_t idx -> hand index of card
-/// - const TargetSpec* tgt -> target specification
+/// - const BattleState* battle -> battle state to check
+/// - uint8_t index -> hand index of card
+/// - const TargetSpec* target -> target specification
 ///
 /// Return:
 /// bool -> true if the card can be played
 ///
 bool battle_can_play_card(
-    const BattleState* bs,
-    uint8_t            idx,
-    const TargetSpec*  tgt
+    const BattleState* battle,
+    uint8_t            index,
+    const TargetSpec*  target
 ) {
-    if (idx >= bs->hand_count[bs->active_side])
+    if (index >= battle->hand_count[battle->active_side])
         return false;
-    const CardTemplate* tmpl = bs->hand[bs->active_side][idx].tmpl;
-    if (tmpl->play_cost >= 0 && bs->cp[bs->active_side] < tmpl->play_cost)
+    const CardTemplate* template = battle->hand[battle->active_side][index].template;
+    if (template->play_cost >= 0 && battle->cp[battle->active_side] < template->play_cost)
         return false;
-    (void)tgt;
+    (void)target;
     return true;
 }
 
@@ -498,26 +498,26 @@ bool battle_can_play_card(
 /// Execute a card play action.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
-/// - uint8_t idx -> hand index of card to play
-/// - const TargetSpec* tgt -> target specification
+/// - BattleState* battle -> battle state to modify
+/// - uint8_t index -> hand index of card to play
+/// - const TargetSpec* target -> target specification
 ///
 /// Return:
 /// bool -> true if the card was played
 ///
-bool battle_play_card(BattleState* bs, uint8_t idx, const TargetSpec* tgt) {
-    if (!battle_can_play_card(bs, idx, tgt))
+bool battle_play_card(BattleState* battle, uint8_t index, const TargetSpec* target) {
+    if (!battle_can_play_card(battle, index, target))
         return false;
-    const CardTemplate* tmpl = bs->hand[bs->active_side][idx].tmpl;
-    bs->cp[bs->active_side] -= tmpl->play_cost;
-    for (uint8_t i = 0; i < tmpl->play_effect_count; i++) {
-        Effect effect    = tmpl->on_play[i];
-        effect.owner     = bs->active_side;
-        effect.source_id = (uint32_t)tmpl->id;
-        bus_register(&bs->bus, &effect);
+    const CardTemplate* template = battle->hand[battle->active_side][index].template;
+    battle->cp[battle->active_side] -= template->play_cost;
+    for (uint8_t i = 0; i < template->play_effect_count; i++) {
+        Effect effect    = template->on_play[i];
+        effect.owner     = battle->active_side;
+        effect.source_id = (uint32_t)template->id;
+        bus_register(&battle->bus, &effect);
     }
-    card_remove_from_hand(bs, bs->active_side, idx);
-    bs->actions_left--;
+    card_remove_from_hand(battle, battle->active_side, index);
+    battle->actions_left--;
     return true;
 }
 
@@ -526,14 +526,14 @@ bool battle_play_card(BattleState* bs, uint8_t idx, const TargetSpec* tgt) {
 /// Check whether a card can be sold.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to check
-/// - uint8_t idx -> hand index of card
+/// - const BattleState* battle -> battle state to check
+/// - uint8_t index -> hand index of card
 ///
 /// Return:
 /// bool -> true if the card can be sold
 ///
-bool battle_can_sell_card(const BattleState* bs, uint8_t idx) {
-    return idx < bs->hand_count[bs->active_side];
+bool battle_can_sell_card(const BattleState* battle, uint8_t index) {
+    return index < battle->hand_count[battle->active_side];
 }
 
 /// battle_sell_card
@@ -541,25 +541,25 @@ bool battle_can_sell_card(const BattleState* bs, uint8_t idx) {
 /// Execute a card sell action.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
-/// - uint8_t idx -> hand index of card to sell
+/// - BattleState* battle -> battle state to modify
+/// - uint8_t index -> hand index of card to sell
 ///
 /// Return:
 /// bool -> true if the card was sold
 ///
-bool battle_sell_card(BattleState* bs, uint8_t idx) {
-    if (!battle_can_sell_card(bs, idx))
+bool battle_sell_card(BattleState* battle, uint8_t index) {
+    if (!battle_can_sell_card(battle, index))
         return false;
-    const CardTemplate* tmpl = bs->hand[bs->active_side][idx].tmpl;
-    bs->cp[bs->active_side] += tmpl->sell_value;
-    for (uint8_t i = 0; i < tmpl->sell_effect_count; i++) {
-        Effect effect    = tmpl->on_sell[i];
-        effect.owner     = bs->active_side;
-        effect.source_id = (uint32_t)tmpl->id;
-        bus_register(&bs->bus, &effect);
+    const CardTemplate* template = battle->hand[battle->active_side][index].template;
+    battle->cp[battle->active_side] += template->sell_value;
+    for (uint8_t i = 0; i < template->sell_effect_count; i++) {
+        Effect effect    = template->on_sell[i];
+        effect.owner     = battle->active_side;
+        effect.source_id = (uint32_t)template->id;
+        bus_register(&battle->bus, &effect);
     }
-    card_remove_from_hand(bs, bs->active_side, idx);
-    bs->actions_left--;
+    card_remove_from_hand(battle, battle->active_side, index);
+    battle->actions_left--;
     return true;
 }
 
@@ -568,10 +568,10 @@ bool battle_sell_card(BattleState* bs, uint8_t idx) {
 /// Signal end of player turn. Currently a no-op.
 ///
 /// Params:
-/// - BattleState* bs -> battle state (unused)
+/// - BattleState* battle -> battle state (unused)
 ///
-void battle_end_player_turn(BattleState* bs) {
-    (void)bs;
+void battle_end_player_turn(BattleState* battle) {
+    (void)battle;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -583,14 +583,14 @@ void battle_end_player_turn(BattleState* bs) {
 /// Get the piece at a board position.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to query
-/// - Position p -> board position
+/// - const BattleState* battle -> battle state to query
+/// - Position position -> board position
 ///
 /// Return:
 /// const PieceState* -> piece at position or NULL
 ///
-const PieceState* battle_piece_at(const BattleState* bs, Position p) {
-    return board_at(&bs->board, p);
+const PieceState* battle_piece_at(const BattleState* battle, Position position) {
+    return board_at(&battle->board, position);
 }
 
 /// battle_piece_by_id
@@ -598,14 +598,14 @@ const PieceState* battle_piece_at(const BattleState* bs, Position p) {
 /// Get a piece by its runtime id.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to search
+/// - const BattleState* battle -> battle state to search
 /// - uint32_t id -> runtime piece id
 ///
 /// Return:
 /// const PieceState* -> piece or NULL if not found
 ///
-const PieceState* battle_piece_by_id(const BattleState* bs, uint32_t id) {
-    return piece_by_id((BattleState*)bs, id);
+const PieceState* battle_piece_by_id(const BattleState* battle, uint32_t id) {
+    return piece_by_id((BattleState*)battle, id);
 }
 
 /// battle_pieces
@@ -613,24 +613,24 @@ const PieceState* battle_piece_by_id(const BattleState* bs, uint32_t id) {
 /// Collect all pieces belonging to a side.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to query
+/// - const BattleState* battle -> battle state to query
 /// - Side side -> side to collect
 /// - const PieceState** out -> output array
-/// - size_t cap -> output array capacity
+/// - size_t capacity -> output array capacity
 ///
 /// Return:
 /// size_t -> number of pieces written
 ///
 size_t battle_pieces(
-    const BattleState* bs,
+    const BattleState* battle,
     Side               side,
     const PieceState** out,
-    size_t             cap
+    size_t             capacity
 ) {
     size_t count = 0;
-    for (uint16_t i = 0; i < bs->piece_count && count < cap; i++) {
-        if (bs->pieces[i].owner == side)
-            out[count++] = &bs->pieces[i];
+    for (uint16_t i = 0; i < battle->piece_count && count < capacity; i++) {
+        if (battle->pieces[i].owner == side)
+            out[count++] = &battle->pieces[i];
     }
     return count;
 }
@@ -640,14 +640,14 @@ size_t battle_pieces(
 /// Get the territory owner at a position.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to query
-/// - Position p -> board position
+/// - const BattleState* battle -> battle state to query
+/// - Position position -> board position
 ///
 /// Return:
 /// Side -> SIDE_PLAYER, SIDE_ENEMY, or SIDE_NEUTRAL
 ///
-Side battle_territory(const BattleState* bs, Position p) {
-    const PieceState* p2 = board_at(&bs->board, p);
+Side battle_territory(const BattleState* battle, Position position) {
+    const PieceState* p2 = board_at(&battle->board, position);
     if (p2 != NULL)
         return p2->owner;
     return SIDE_NEUTRAL;
@@ -658,23 +658,23 @@ Side battle_territory(const BattleState* bs, Position p) {
 /// Count how many pieces of a side threaten a position.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to query
-/// - Position p -> board position
+/// - const BattleState* battle -> battle state to query
+/// - Position position -> board position
 /// - Side attacker -> attacking side
 ///
 /// Return:
 /// int -> number of threatening pieces
 ///
-int battle_threat_count(const BattleState* bs, Position p, Side attacker) {
+int battle_threat_count(const BattleState* battle, Position position, Side attacker) {
     int count = 0;
-    for (uint16_t i = 0; i < bs->piece_count; i++) {
-        const PieceState* piece = &bs->pieces[i];
+    for (uint16_t i = 0; i < battle->piece_count; i++) {
+        const PieceState* piece = &battle->pieces[i];
         if (piece->owner != attacker)
             continue;
         MoveList move_list = {0};
-        mg_generate_threat(piece, bs, &move_list);
+        mg_generate_threat(piece, battle, &move_list);
         for (uint8_t j = 0; j < move_list.count; j++) {
-            if (pos_equal(move_list.squares[j], p))
+            if (pos_equal(move_list.squares[j], position))
                 count++;
         }
     }
@@ -686,25 +686,25 @@ int battle_threat_count(const BattleState* bs, Position p, Side attacker) {
 /// Collect all cards in a side's hand.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to query
+/// - const BattleState* battle -> battle state to query
 /// - Side side -> side to collect
 /// - const CardInstance** out -> output array
-/// - size_t cap -> output array capacity
+/// - size_t capacity -> output array capacity
 ///
 /// Return:
 /// size_t -> number of cards written
 ///
 size_t battle_hand(
-    const BattleState*   bs,
+    const BattleState*   battle,
     Side                 side,
     const CardInstance** out,
-    size_t               cap
+    size_t               capacity
 ) {
-    size_t count = bs->hand_count[side];
-    if (count > cap)
-        count = cap;
+    size_t count = battle->hand_count[side];
+    if (count > capacity)
+        count = capacity;
     for (size_t i = 0; i < count; i++)
-        out[i] = &bs->hand[side][i];
+        out[i] = &battle->hand[side][i];
     return count;
 }
 
@@ -745,7 +745,7 @@ const PieceTemplate* battle_piece_tmpl(uint16_t id) {
 /// Enumerate all legal moves for a piece.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state to query
+/// - const BattleState* battle -> battle state to query
 /// - uint32_t piece_id -> piece to query
 /// - MoveList* out -> output buffer
 ///
@@ -753,13 +753,13 @@ const PieceTemplate* battle_piece_tmpl(uint16_t id) {
 /// size_t -> number of legal moves
 ///
 size_t
-battle_legal_moves(const BattleState* bs, uint32_t piece_id, MoveList* out) {
-    const PieceState* piece = piece_by_id((BattleState*)bs, piece_id);
+battle_legal_moves(const BattleState* battle, uint32_t piece_id, MoveList* out) {
+    const PieceState* piece = piece_by_id((BattleState*)battle, piece_id);
     if (piece == NULL) {
         out->count = 0;
         return 0;
     }
-    mg_generate(piece, bs, out);
+    mg_generate(piece, battle, out);
     return out->count;
 }
 
@@ -768,27 +768,27 @@ battle_legal_moves(const BattleState* bs, uint32_t piece_id, MoveList* out) {
 /// Enumerate valid purchase squares. Currently returns 0.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state (unused)
+/// - const BattleState* battle -> battle state (unused)
 /// - Side side -> side (unused)
-/// - uint16_t tmpl_id -> template id (unused)
+/// - uint16_t template_id -> template id (unused)
 /// - Position* out -> output buffer (unused)
-/// - size_t cap -> output capacity (unused)
+/// - size_t capacity -> output capacity (unused)
 ///
 /// Return:
 /// size_t -> always 0
 ///
 size_t battle_valid_buy_squares(
-    const BattleState* bs,
+    const BattleState* battle,
     Side               side,
-    uint16_t           tmpl_id,
+    uint16_t           template_id,
     Position*          out,
-    size_t             cap
+    size_t             capacity
 ) {
-    (void)bs;
+    (void)battle;
     (void)side;
-    (void)tmpl_id;
+    (void)template_id;
     (void)out;
-    (void)cap;
+    (void)capacity;
     return 0;
 }
 
@@ -797,24 +797,24 @@ size_t battle_valid_buy_squares(
 /// Enumerate valid piece combinations. Currently returns 0.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state (unused)
+/// - const BattleState* battle -> battle state (unused)
 /// - Side side -> side (unused)
 /// - uint32_t (*out_pairs)[2] -> output buffer (unused)
-/// - size_t cap -> output capacity (unused)
+/// - size_t capacity -> output capacity (unused)
 ///
 /// Return:
 /// size_t -> always 0
 ///
 size_t battle_valid_combinations(
-    const BattleState* bs,
+    const BattleState* battle,
     Side               side,
     uint32_t (*out_pairs)[2],
-    size_t cap
+    size_t capacity
 ) {
-    (void)bs;
+    (void)battle;
     (void)side;
     (void)out_pairs;
-    (void)cap;
+    (void)capacity;
     return 0;
 }
 
@@ -823,27 +823,27 @@ size_t battle_valid_combinations(
 /// Enumerate valid targets for a card. Currently returns 0.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state (unused)
+/// - const BattleState* battle -> battle state (unused)
 /// - Side side -> side (unused)
-/// - uint8_t hand_idx -> hand index (unused)
+/// - uint8_t hand_index -> hand index (unused)
 /// - TargetSpec* out -> output buffer (unused)
-/// - size_t cap -> output capacity (unused)
+/// - size_t capacity -> output capacity (unused)
 ///
 /// Return:
 /// size_t -> always 0
 ///
 size_t battle_card_targets(
-    const BattleState* bs,
+    const BattleState* battle,
     Side               side,
-    uint8_t            hand_idx,
+    uint8_t            hand_index,
     TargetSpec*        out,
-    size_t             cap
+    size_t             capacity
 ) {
-    (void)bs;
+    (void)battle;
     (void)side;
-    (void)hand_idx;
+    (void)hand_index;
     (void)out;
-    (void)cap;
+    (void)capacity;
     return 0;
 }
 
@@ -871,20 +871,20 @@ const Recipe* battle_recipe_preview(uint16_t a, uint16_t b) {
 /// Query the base cost of a piece template.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state (unused)
+/// - const BattleState* battle -> battle state (unused)
 /// - Side side -> side (unused)
-/// - uint16_t tmpl_id -> template id to query
+/// - uint16_t template_id -> template id to query
 ///
 /// Return:
 /// int -> base value of template, or 0 if not found
 ///
-int battle_query_cost(const BattleState* bs, Side side, uint16_t tmpl_id) {
-    (void)bs;
+int battle_query_cost(const BattleState* battle, Side side, uint16_t template_id) {
+    (void)battle;
     (void)side;
-    const PieceTemplate* tmpl = piece_template(tmpl_id);
-    if (tmpl == NULL)
+    const PieceTemplate* template = piece_template(template_id);
+    if (template == NULL)
         return 0;
-    return tmpl->base_value;
+    return template->base_value;
 }
 
 /// battle_query_sell_value
@@ -892,7 +892,7 @@ int battle_query_cost(const BattleState* bs, Side side, uint16_t tmpl_id) {
 /// Query the sell value of a card.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state (unused)
+/// - const BattleState* battle -> battle state (unused)
 /// - Side side -> side (unused)
 /// - const CardInstance* card -> card to query
 ///
@@ -900,15 +900,15 @@ int battle_query_cost(const BattleState* bs, Side side, uint16_t tmpl_id) {
 /// int -> sell value of card, or 0 if card is NULL
 ///
 int battle_query_sell_value(
-    const BattleState*  bs,
+    const BattleState*  battle,
     Side                side,
     const CardInstance* card
 ) {
-    (void)bs;
+    (void)battle;
     (void)side;
     if (card == NULL)
         return 0;
-    return card->tmpl->sell_value;
+    return card->template->sell_value;
 }
 
 /// battle_query_draw_count
@@ -916,14 +916,14 @@ int battle_query_sell_value(
 /// Query the number of cards drawn per turn.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state (unused)
+/// - const BattleState* battle -> battle state (unused)
 /// - Side side -> side (unused)
 ///
 /// Return:
 /// int -> always 1
 ///
-int battle_query_draw_count(const BattleState* bs, Side side) {
-    (void)bs;
+int battle_query_draw_count(const BattleState* battle, Side side) {
+    (void)battle;
     (void)side;
     return 1;
 }
@@ -933,14 +933,14 @@ int battle_query_draw_count(const BattleState* bs, Side side) {
 /// Query the command point income per turn.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state (unused)
+/// - const BattleState* battle -> battle state (unused)
 /// - Side side -> side (unused)
 ///
 /// Return:
 /// int -> always 5
 ///
-int battle_query_turn_income(const BattleState* bs, Side side) {
-    (void)bs;
+int battle_query_turn_income(const BattleState* battle, Side side) {
+    (void)battle;
     (void)side;
     return 5;
 }
@@ -950,14 +950,14 @@ int battle_query_turn_income(const BattleState* bs, Side side) {
 /// Query projected damage output. Currently returns 0.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state (unused)
+/// - const BattleState* battle -> battle state (unused)
 /// - Side attacker -> attacking side (unused)
 ///
 /// Return:
 /// int -> always 0
 ///
-int battle_projected_damage(const BattleState* bs, Side attacker) {
-    (void)bs;
+int battle_projected_damage(const BattleState* battle, Side attacker) {
+    (void)battle;
     (void)attacker;
     return 0;
 }
@@ -967,14 +967,14 @@ int battle_projected_damage(const BattleState* bs, Side attacker) {
 /// Query projected flip count. Currently returns 0.
 ///
 /// Params:
-/// - const BattleState* bs -> battle state (unused)
+/// - const BattleState* battle -> battle state (unused)
 /// - Side attacker -> attacking side (unused)
 ///
 /// Return:
 /// int -> always 0
 ///
-int battle_projected_flips(const BattleState* bs, Side attacker) {
-    (void)bs;
+int battle_projected_flips(const BattleState* battle, Side attacker) {
+    (void)battle;
     (void)attacker;
     return 0;
 }
@@ -988,21 +988,21 @@ int battle_projected_flips(const BattleState* bs, Side attacker) {
 /// Drain events from the ring buffer into the caller's buffer.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to drain
+/// - BattleState* battle -> battle state to drain
 /// - Event* out -> output buffer
-/// - size_t cap -> output buffer capacity
+/// - size_t capacity -> output buffer capacity
 ///
 /// Return:
 /// size_t -> number of events drained
 ///
-size_t battle_drain_events(BattleState* bs, Event* out, size_t cap) {
-    size_t count = (bs->event_count < cap) ? bs->event_count : cap;
+size_t battle_drain_events(BattleState* battle, Event* out, size_t capacity) {
+    size_t count = (battle->event_count < capacity) ? battle->event_count : capacity;
     for (size_t i = 0; i < count; i++) {
-        uint16_t event_index = (bs->event_head + i) % MAX_EVENTS;
-        out[i]               = bs->events[event_index];
+        uint16_t event_index = (battle->event_head + i) % MAX_EVENTS;
+        out[i]               = battle->events[event_index];
     }
-    bs->event_head = (bs->event_head + count) % MAX_EVENTS;
-    bs->event_count -= count;
+    battle->event_head = (battle->event_head + count) % MAX_EVENTS;
+    battle->event_count -= count;
     return count;
 }
 
@@ -1011,9 +1011,9 @@ size_t battle_drain_events(BattleState* bs, Event* out, size_t cap) {
 /// Clear all events from the ring buffer.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
+/// - BattleState* battle -> battle state to modify
 ///
-void battle_clear_events(BattleState* bs) {
-    bs->event_head  = 0;
-    bs->event_count = 0;
+void battle_clear_events(BattleState* battle) {
+    battle->event_head  = 0;
+    battle->event_count = 0;
 }

@@ -4,7 +4,7 @@
 //! powers. All five powers are simultaneously active for every run
 //! because the figureheads are allied against Vorath.
 //!
-//! Phase 3 wires each effect to its kingdom-specific body — Mingzhu
+//! Each effect maps to its kingdom-specific body. Mingzhu
 //! and Isabella fire at battle start, the other three configure
 //! run-wide overrides on run start.
 //!

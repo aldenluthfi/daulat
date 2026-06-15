@@ -26,20 +26,20 @@
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> destination list
 ///
 void mg_zq_ziraafa(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)params;
-    (void)n;
+    (void)count;
     static const int8_t DIAG[4][2] = {
         {1, 1},
         {1, -1},
@@ -54,20 +54,20 @@ void mg_zq_ziraafa(
     };
     for (int d = 0; d < 4; d++) {
         Position diag = {piece->pos.x + DIAG[d][0], piece->pos.y + DIAG[d][1]};
-        if (!pos_in_bounds(diag, bs->board.width, bs->board.height)) {
+        if (!pos_in_bounds(diag, battle->board.width, battle->board.height)) {
             continue;
         }
-        if (board_at(&bs->board, diag) != NULL)
+        if (board_at(&battle->board, diag) != NULL)
             continue;
         for (int dist = 3; dist < 20; dist++) {
             Position to = {
                 diag.x + ORTHO[d][0] * dist,
                 diag.y + ORTHO[d][1] * dist
             };
-            if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+            if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                 break;
             }
-            const PieceState* at = board_at(&bs->board, to);
+            const PieceState* at = board_at(&battle->board, to);
             if (at == NULL) {
                 ml_push(out, to);
                 continue;
@@ -91,27 +91,27 @@ void mg_zq_ziraafa(
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece (the Shahzadeh)
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> destination list
 ///
 void mg_zq_swap_with_king(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)params;
-    (void)n;
+    (void)count;
     Side enemy = side_opposite(piece->owner);
-    for (uint16_t i = 0; i < bs->piece_count; i++) {
-        const PieceState* p = &bs->pieces[i];
-        if (p->owner != enemy)
+    for (uint16_t i = 0; i < battle->piece_count; i++) {
+        const PieceState* position = &battle->pieces[i];
+        if (position->owner != enemy)
             continue;
-        if (p->tmpl->id == PIECE_KING) {
-            ml_push(out, p->pos);
+        if (position->template->id == PIECE_KING) {
+            ml_push(out, position->pos);
             return;
         }
     }
@@ -129,20 +129,20 @@ void mg_zq_swap_with_king(
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> destination list
 ///
 void mg_zq_war_elephant(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)params;
-    (void)n;
+    (void)count;
     static const int8_t ADJ[8][2] = {
         {1, 0},
         {1, 1},
@@ -155,10 +155,10 @@ void mg_zq_war_elephant(
     };
     for (int i = 0; i < 8; i++) {
         Position to = {piece->pos.x + ADJ[i][0], piece->pos.y + ADJ[i][1]};
-        if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+        if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
             continue;
         }
-        if (is_enemy(piece, board_at(&bs->board, to))) {
+        if (is_enemy(piece, board_at(&battle->board, to))) {
             ml_push(out, to);
         }
     }

@@ -14,98 +14,98 @@
                               SYNERGIES
 \*--------------------------------------------------------------------------*/
 
-static bool in_battle_kingdom(const struct BattleState* bs, Kingdom k) {
-    if (bs == NULL || bs->config.run == NULL)
+static bool in_battle_kingdom(const struct BattleState* battle, Kingdom k) {
+    if (battle == NULL || battle->config.run == NULL)
         return false;
-    return bs->config.run->current_kingdom == k;
+    return battle->config.run->current_kingdom == k;
 }
 
 void eff_syn_longwei(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (!in_battle_kingdom(ctx->bs, KINGDOM_HARUSHIMA))
+    (void)count;
+    if (!in_battle_kingdom(context->battle, KINGDOM_HARUSHIMA))
         return;
-    PieceState* attacker = ctx->as.resolve.attacker;
-    if (attacker == NULL || attacker->tmpl == NULL)
+    PieceState* attacker = context->as.resolve.attacker;
+    if (attacker == NULL || attacker->template == NULL)
         return;
-    if (attacker->tmpl->id != PIECE_PAO)
+    if (attacker->template->id != PIECE_PAO)
         return;
-    if (ctx->as.resolve.damage_out != NULL)
-        *ctx->as.resolve.damage_out += 10;
+    if (context->as.resolve.damage_out != NULL)
+        *context->as.resolve.damage_out += 10;
 }
 
 void eff_syn_harushima(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (!in_battle_kingdom(ctx->bs, KINGDOM_CAELAN))
+    (void)count;
+    if (!in_battle_kingdom(context->battle, KINGDOM_CAELAN))
         return;
-    if (ctx->as.card.card == NULL || ctx->as.card.card->tmpl == NULL)
+    if (context->as.card.card == NULL || context->as.card.card->template == NULL)
         return;
-    if (ctx->as.card.card->tmpl->kingdom != KINGDOM_CAELAN)
+    if (context->as.card.card->template->kingdom != KINGDOM_CAELAN)
         return;
-    card_draw(ctx->bs, SIDE_PLAYER);
+    card_draw(context->battle, SIDE_PLAYER);
 }
 
 void eff_syn_kewarani(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (!in_battle_kingdom(ctx->bs, KINGDOM_ZARQAN))
+    (void)count;
+    if (!in_battle_kingdom(context->battle, KINGDOM_ZARQAN))
         return;
-    if (ctx->as.query.cost_out == NULL)
+    if (context->as.query.cost_out == NULL)
         return;
-    uint16_t tmpl_id = ctx->as.query.tmpl_id;
-    const PieceTemplate* tmpl = piece_template(tmpl_id);
-    if (tmpl == NULL || tmpl->kingdom != KINGDOM_KEWARANI)
+    uint16_t template_id = context->as.query.template_id;
+    const PieceTemplate* template = piece_template(template_id);
+    if (template == NULL || template->kingdom != KINGDOM_KEWARANI)
         return;
-    *ctx->as.query.cost_out -= 10;
-    if (*ctx->as.query.cost_out < 0)
-        *ctx->as.query.cost_out = 0;
+    *context->as.query.cost_out -= 10;
+    if (*context->as.query.cost_out < 0)
+        *context->as.query.cost_out = 0;
 }
 
 void eff_syn_zarqan(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    struct BattleState* bs = ctx->bs;
-    if (!in_battle_kingdom(bs, KINGDOM_LONGWEI))
+    (void)count;
+    struct BattleState* battle = context->battle;
+    if (!in_battle_kingdom(battle, KINGDOM_LONGWEI))
         return;
-    for (uint16_t i = 0; i < bs->piece_count; i++) {
-        PieceState* piece = &bs->pieces[i];
-        if (piece->owner != SIDE_PLAYER || piece->tmpl == NULL)
+    for (uint16_t i = 0; i < battle->piece_count; i++) {
+        PieceState* piece = &battle->pieces[i];
+        if (piece->owner != SIDE_PLAYER || piece->template == NULL)
             continue;
-        if (piece->tmpl->id == PIECE_ZIRAAFA
-            || piece->tmpl->id == PIECE_TALLIYA)
+        if (piece->template->id == PIECE_ZIRAAFA
+            || piece->template->id == PIECE_TALLIYA)
             piece->value_mod += 5;
     }
 }
 
 void eff_syn_caelan(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (!in_battle_kingdom(ctx->bs, KINGDOM_KEWARANI))
+    (void)count;
+    if (!in_battle_kingdom(context->battle, KINGDOM_KEWARANI))
         return;
-    if (ctx->as.card.card == NULL || ctx->as.card.card->tmpl == NULL)
+    if (context->as.card.card == NULL || context->as.card.card->template == NULL)
         return;
-    if (ctx->as.card.card->tmpl->id != CARD_SULTANS_GOLD)
+    if (context->as.card.card->template->id != CARD_SULTANS_GOLD)
         return;
-    ctx->bs->cp[SIDE_PLAYER] += 10;
+    context->battle->cp[SIDE_PLAYER] += 10;
 }

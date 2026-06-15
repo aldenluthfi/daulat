@@ -19,13 +19,13 @@
 ///
 /// Params:
 /// - const Board* board -> board with dimensions
-/// - Position p -> board coordinates
+/// - Position position -> board coordinates
 ///
 /// Return:
 /// int -> index into board->squares
 ///
-static int board_index(const Board* board, Position p) {
-    return p.y * board->width + p.x;
+static int board_index(const Board* board, Position position) {
+    return position.y * board->width + position.x;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -68,10 +68,10 @@ void board_init(Board* board, int width, int height) {
 bool board_place(Board* board, PieceState* piece, Position pos) {
     if (!pos_in_bounds(pos, board->width, board->height))
         return false;
-    int idx = board_index(board, pos);
-    if (board->squares[idx] != NULL)
+    int index = board_index(board, pos);
+    if (board->squares[index] != NULL)
         return false;
-    board->squares[idx] = piece;
+    board->squares[index] = piece;
     piece->pos          = pos;
     return true;
 }
@@ -90,9 +90,9 @@ bool board_place(Board* board, PieceState* piece, Position pos) {
 PieceState* board_remove(Board* board, Position pos) {
     if (!pos_in_bounds(pos, board->width, board->height))
         return NULL;
-    int         idx     = board_index(board, pos);
-    PieceState* piece   = board->squares[idx];
-    board->squares[idx] = NULL;
+    int         index     = board_index(board, pos);
+    PieceState* piece   = board->squares[index];
+    board->squares[index] = NULL;
     return piece;
 }
 
@@ -138,8 +138,8 @@ void board_compute_territory(const Board* board, Side territory[]) {
             Position    pos   = {x, y};
             PieceState* piece = board_at(board, pos);
             if (piece != NULL) {
-                int idx        = board_index(board, pos);
-                territory[idx] = piece->owner;
+                int index        = board_index(board, pos);
+                territory[index] = piece->owner;
             }
         }
     }
@@ -200,8 +200,8 @@ void board_threat_map(const Board* board, int threats[]) {
                         board->width,
                         board->height
                     )) {
-                    int idx = board_index(board, move_list.squares[j]);
-                    threats[idx]++;
+                    int index = board_index(board, move_list.squares[j]);
+                    threats[index]++;
                 }
             }
         }
@@ -225,15 +225,15 @@ void board_threat_map(const Board* board, int threats[]) {
 /// bool -> true if the path is clear
 ///
 bool board_has_line_of_sight(const Board* board, Position from, Position to) {
-    int dx  = to.x - from.x;
-    int dy  = to.y - from.y;
-    int adx = (dx > 0) ? dx : -dx;
-    int ady = (dy > 0) ? dy : -dy;
-    if (adx != 0 && ady != 0 && adx != ady)
+    int delta_x  = to.x - from.x;
+    int delta_y  = to.y - from.y;
+    int abs_delta_x = (delta_x > 0) ? delta_x : -delta_x;
+    int abs_delta_y = (delta_y > 0) ? delta_y : -delta_y;
+    if (abs_delta_x != 0 && abs_delta_y != 0 && abs_delta_x != abs_delta_y)
         return false;
-    int      step_x = (adx == 0) ? 0 : ((dx > 0) ? 1 : -1);
-    int      step_y = (ady == 0) ? 0 : ((dy > 0) ? 1 : -1);
-    int      steps  = (adx > ady) ? adx : ady;
+    int      step_x = (abs_delta_x == 0) ? 0 : ((delta_x > 0) ? 1 : -1);
+    int      step_y = (abs_delta_y == 0) ? 0 : ((delta_y > 0) ? 1 : -1);
+    int      steps  = (abs_delta_x > abs_delta_y) ? abs_delta_x : abs_delta_y;
     Position cur    = from;
     for (int s = 1; s < steps; s++) {
         cur.x += step_x;

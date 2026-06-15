@@ -8,15 +8,10 @@
 //! Created: 2026-06-13
 //! Author : Alden Luthfi
 
-#include "run.h"
-
 #include <SDL3/SDL.h>
 #include <string.h>
 
-#include "log.h"
-#include "profile.h"
-#include "registry.h"
-#include "save.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               IN-MEMORY HELPERS
@@ -48,10 +43,10 @@ void run_remove_relic(RunState* run, RelicId id) {
     }
 }
 
-const struct RelicTemplate* run_relic_at(const RunState* run, uint8_t idx) {
-    if (idx >= run->relic_count)
+const struct RelicTemplate* run_relic_at(const RunState* run, uint8_t index) {
+    if (index >= run->relic_count)
         return NULL;
-    return relic_template(run->relic_ids[idx]);
+    return relic_template(run->relic_ids[index]);
 }
 
 bool run_kingdom_cleared(const RunState* run, Kingdom k) {

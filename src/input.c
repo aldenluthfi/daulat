@@ -7,9 +7,9 @@
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "input.h"
-
 #include <string.h>
+
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               LIFECYCLE

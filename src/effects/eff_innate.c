@@ -17,20 +17,20 @@
 \*--------------------------------------------------------------------------*/
 
 static bool has_friendly_neighbour(
-    const struct BattleState* bs,
+    const struct BattleState* battle,
     const PieceState*         piece
 ) {
     static const Position OFFSETS[4] = {
         {1, 0}, {-1, 0}, {0, 1}, {0, -1}
     };
     for (int i = 0; i < 4; i++) {
-        Position p = {
+        Position position = {
             (int8_t)(piece->pos.x + OFFSETS[i].x),
             (int8_t)(piece->pos.y + OFFSETS[i].y),
         };
-        if (!pos_in_bounds(p, bs->board.width, bs->board.height))
+        if (!pos_in_bounds(position, battle->board.width, battle->board.height))
             continue;
-        const PieceState* neighbour = board_at(&bs->board, p);
+        const PieceState* neighbour = board_at(&battle->board, position);
         if (neighbour != NULL && neighbour->owner == piece->owner)
             return true;
     }
@@ -42,75 +42,75 @@ static bool has_friendly_neighbour(
 \*--------------------------------------------------------------------------*/
 
 void eff_innate_bulwark(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    struct BattleState* bs    = ctx->bs;
-    PieceState*         target = ctx->as.resolve.target;
-    if (bs == NULL || target == NULL || target->tmpl == NULL)
+    (void)count;
+    struct BattleState* battle    = context->battle;
+    PieceState*         target = context->as.resolve.target;
+    if (battle == NULL || target == NULL || target->template == NULL)
         return;
-    if (target->tmpl->kingdom != KINGDOM_LONGWEI)
+    if (target->template->kingdom != KINGDOM_LONGWEI)
         return;
-    if (!has_friendly_neighbour(bs, target))
+    if (!has_friendly_neighbour(battle, target))
         return;
-    if (ctx->as.resolve.reduction_out != NULL)
-        *ctx->as.resolve.reduction_out += 50;
+    if (context->as.resolve.reduction_out != NULL)
+        *context->as.resolve.reduction_out += 50;
 }
 
 void eff_innate_reclaim(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
-    (void)ctx;
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
     /* Reclaim exposes battle_action_reclaim via run->reclaim_cost_
      * override; no per-trigger body needed. */
 }
 
 void eff_innate_double_time(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    PieceState* piece = ctx->as.movement.piece;
-    if (piece == NULL || piece->tmpl == NULL)
+    (void)count;
+    PieceState* piece = context->as.movement.piece;
+    if (piece == NULL || piece->template == NULL)
         return;
-    if (piece->tmpl->kingdom != KINGDOM_KEWARANI)
+    if (piece->template->kingdom != KINGDOM_KEWARANI)
         return;
-    if (ctx->as.query.moves_out != NULL)
-        *ctx->as.query.moves_out += 1;
+    if (context->as.query.moves_out != NULL)
+        *context->as.query.moves_out += 1;
 }
 
 void eff_innate_royal_sub(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
-    (void)ctx;
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
     /* Royal Substitution exposes battle_action_substitute; the
      * latch counter lives on RunState.royal_sub_per_battle. */
 }
 
 void eff_innate_conquerors_reward(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    PieceState* attacker = ctx->as.resolve.attacker;
-    if (attacker == NULL || attacker->tmpl == NULL)
+    (void)count;
+    PieceState* attacker = context->as.resolve.attacker;
+    if (attacker == NULL || attacker->template == NULL)
         return;
-    if (attacker->tmpl->kingdom != KINGDOM_CAELAN)
+    if (attacker->template->kingdom != KINGDOM_CAELAN)
         return;
     attacker->value_mod += piece_value(attacker) / 2;
 }

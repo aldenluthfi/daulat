@@ -85,8 +85,8 @@ typedef enum {
 ///
 /// Stable identifier for every concrete `EffectFunc` body. Used on
 /// disk in place of the live pointer; reseated to `apply` on load
-/// via `eff_lookup`. Phase 3 grows this enum as meta-layer bodies
-/// land; until then only EFFECT_FUNC_TODO is populated.
+/// via `eff_lookup`. Each meta-layer effect with a real body
+/// owns one enumerator here.
 ///
 typedef enum {
     EFFECT_FUNC_TODO = 0,
@@ -182,14 +182,14 @@ typedef enum {
 
 /// EffectFunc
 ///
-/// Function pointer signature for every effect handler. The `ctx`
+/// Function pointer signature for every effect handler. The `context`
 /// argument carries per-trigger evidence; `args` is the typed
 /// argument list the data file recorded for this effect entry.
 ///
 typedef void (*EffectFunc)(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 );
 
 /// Effect
@@ -247,7 +247,7 @@ typedef struct {
 ///
 struct EffectCtx {
     EffectTrigger       trigger;
-    struct BattleState* bs;
+    struct BattleState* battle;
     union {
         struct {
             struct PieceState* attacker;
@@ -271,7 +271,7 @@ struct EffectCtx {
             int*     cost_out;
             int*     moves_out;
             int*     meter_cap_out;
-            uint16_t tmpl_id;
+            uint16_t template_id;
             Side     side;
             Tier     tier;
         } query;
@@ -331,20 +331,20 @@ void bus_register(EffectBus* bus, const Effect* e);
 /// bus_emit
 ///
 /// Invoke every active handler whose trigger matches. Handlers run
-/// in registration order; the caller fills `ctx->as` with the union
+/// in registration order; the caller fills `context->as` with the union
 /// arm matching the trigger before calling.
 ///
 /// Params:
 /// - EffectBus         *bus     -> bus to scan
-/// - struct BattleState *bs     -> battle state for handler use
+/// - struct BattleState *battle     -> battle state for handler use
 /// - EffectTrigger      trigger -> trigger key to dispatch
-/// - struct EffectCtx  *ctx     -> evidence (mutated with trigger)
+/// - struct EffectCtx  *context     -> evidence (mutated with trigger)
 ///
 void bus_emit(
     EffectBus*          bus,
-    struct BattleState* bs,
+    struct BattleState* battle,
     EffectTrigger       trigger,
-    struct EffectCtx*   ctx
+    struct EffectCtx*   context
 );
 
 /// bus_tick_turn_end
@@ -380,7 +380,7 @@ void bus_tick_turn_start(EffectBus* bus);
 /// Return:
 /// size_t -> number of active matching slots
 ///
-size_t bus_query_count(const EffectBus* bus, EffectTrigger t);
+size_t bus_query_count(const EffectBus* bus, EffectTrigger trigger);
 
 /// bus_evict_by_source
 ///
@@ -419,20 +419,20 @@ EffectFunc eff_lookup(EffectFuncId id);
 
 /// eff_todo
 ///
-/// Universal placeholder used as the `.apply` field for any effect
+/// Universal stand-in used as the `.apply` field for any effect
 /// whose behaviour is not yet implemented. Discards every argument
 /// and returns without mutating state.
 ///
 /// Params:
-/// - struct EffectCtx *ctx -> ignored
+/// - struct EffectCtx *context -> ignored
 /// - const EffectArg  *args -> ignored
-/// - size_t            n   -> ignored
+/// - size_t            count   -> ignored
 ///
 /// Notes:
 /// Defined exactly once in src/effects/eff_run.c. Never reintroduce
-/// per-file static duplicates — the placeholder must remain a single
+/// per-file static duplicates — the stand-in must remain a single
 /// symbol so counting unimplemented effects stays trivial.
 ///
-void eff_todo(struct EffectCtx* ctx, const EffectArg* args, size_t n);
+void eff_todo(struct EffectCtx* context, const EffectArg* args, size_t count);
 
 #endif /* EFFECT_H */

@@ -91,7 +91,7 @@ typedef struct {
         float    f;
         uint32_t piece_id;
         uint32_t card_id;
-        uint16_t tmpl_id;
+        uint16_t template_id;
         Kingdom  kingdom;
         Tier     tier;
         Position pos;

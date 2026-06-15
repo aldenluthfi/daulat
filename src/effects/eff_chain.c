@@ -17,40 +17,40 @@
 \*--------------------------------------------------------------------------*/
 
 void eff_chain_bronze(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->bs == NULL)
+    (void)count;
+    if (context->battle == NULL)
         return;
-    ctx->bs->cp[SIDE_PLAYER] -= 15;
-    if (ctx->bs->cp[SIDE_PLAYER] < 0)
-        ctx->bs->cp[SIDE_PLAYER] = 0;
+    context->battle->cp[SIDE_PLAYER] -= 15;
+    if (context->battle->cp[SIDE_PLAYER] < 0)
+        context->battle->cp[SIDE_PLAYER] = 0;
 }
 
 void eff_chain_silver(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->bs == NULL || ctx->bs->config.run == NULL)
+    (void)count;
+    if (context->battle == NULL || context->battle->config.run == NULL)
         return;
-    Kingdom k = ctx->bs->config.run->current_kingdom;
+    Kingdom k = context->battle->config.run->current_kingdom;
     if ((unsigned)k < KINGDOM_COUNT)
-        ctx->bs->silver_chain_pending[k] += 1;
+        context->battle->silver_chain_pending[k] += 1;
 }
 
 void eff_chain_gold(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
-    (void)ctx;
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
     /* Gold chain only acts at the campaign layer; see map.c. */
 }

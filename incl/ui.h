@@ -1,8 +1,8 @@
 //! ui.h
 //!
 //! Immediate-mode UI helpers (button, panel, text) used by every
-//! screen. Bodies are stubs in Phase 1: signatures land so screen
-//! code compiles cleanly. Pixel rendering arrives in a later round.
+//! screen. Provides `ui_text` for debug labels and `ui_button`
+//! for input-driven click regions.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
@@ -22,7 +22,6 @@ struct App;
 /// ui_panel
 ///
 /// Draw a flat rectangle at the given screen rect with a solid fill.
-/// In Phase 1, this is a no-op.
 ///
 /// Params:
 /// - SDL_Renderer* renderer -> active renderer
@@ -34,7 +33,7 @@ void ui_panel(SDL_Renderer* renderer, SDL_FRect rect, SDL_Color color);
 /// ui_text
 ///
 /// Draw a debug-text label at the given position. Wraps SDL3's
-/// `SDL_RenderDebugText`. In Phase 1, calls the SDL helper directly.
+/// `SDL_RenderDebugText`.
 ///
 /// Params:
 /// - SDL_Renderer* renderer -> active renderer
@@ -48,7 +47,7 @@ void ui_text(SDL_Renderer* renderer, float x, float y, const char* text);
 ///
 /// Draw a rectangular button with a label and return whether the
 /// player just activated it via keyboard / mouse this frame. In
-/// Phase 1, always returns false.
+/// Returns true exactly once on the frame the button is released.
 ///
 /// Params:
 /// - struct App*   app      -> app holding input + renderer

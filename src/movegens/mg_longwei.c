@@ -26,20 +26,20 @@
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_ma(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)params;
-    (void)n;
+    (void)count;
     static const int8_t DELTAS[8][2] = {
         {1, 2},
         {-1, 2},
@@ -69,12 +69,12 @@ void mg_lw_ma(
             piece->pos.x + ELBOW[i][0],
             piece->pos.y + ELBOW[i][1]
         };
-        if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+        if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
             continue;
         }
-        if (board_at(&bs->board, elbow) != NULL)
+        if (board_at(&battle->board, elbow) != NULL)
             continue;
-        const PieceState* at = board_at(&bs->board, to);
+        const PieceState* at = board_at(&battle->board, to);
         if (is_enemy(piece, at))
             ml_push(out, to);
     }
@@ -92,20 +92,20 @@ void mg_lw_ma(
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_xiang(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)params;
-    (void)n;
+    (void)count;
     static const int8_t DIRS[4][2] = {
         {1, 1},
         {1, -1},
@@ -118,12 +118,12 @@ void mg_lw_xiang(
             piece->pos.x + DIRS[d][0] * 2,
             piece->pos.y + DIRS[d][1] * 2
         };
-        if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+        if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
             continue;
         }
-        if (board_at(&bs->board, mid) != NULL)
+        if (board_at(&battle->board, mid) != NULL)
             continue;
-        const PieceState* at = board_at(&bs->board, to);
+        const PieceState* at = board_at(&battle->board, to);
         if (at == NULL || is_enemy(piece, at))
             ml_push(out, to);
     }
@@ -141,20 +141,20 @@ void mg_lw_xiang(
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_pao(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)params;
-    (void)n;
+    (void)count;
     static const int8_t DIRS[4][2] = {
         {1, 0},
         {-1, 0},
@@ -169,10 +169,10 @@ void mg_lw_pao(
                 piece->pos.x + DIRS[d][0] * step,
                 piece->pos.y + DIRS[d][1] * step
             };
-            if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+            if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                 break;
             }
-            const PieceState* at = board_at(&bs->board, to);
+            const PieceState* at = board_at(&battle->board, to);
             if (at == NULL) {
                 if (!found_first)
                     ml_push(out, to);
@@ -203,20 +203,20 @@ void mg_lw_pao(
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_hwacha(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)params;
-    (void)n;
+    (void)count;
     static const int8_t DIRS[8][2] = {
         {1, 0},
         {-1, 0},
@@ -234,10 +234,10 @@ void mg_lw_hwacha(
                 piece->pos.x + DIRS[d][0] * step,
                 piece->pos.y + DIRS[d][1] * step
             };
-            if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+            if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                 break;
             }
-            const PieceState* at = board_at(&bs->board, to);
+            const PieceState* at = board_at(&battle->board, to);
             if (at == NULL) {
                 if (!found_first)
                     ml_push(out, to);
@@ -264,20 +264,20 @@ void mg_lw_hwacha(
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_sang(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)params;
-    (void)n;
+    (void)count;
     static const int8_t ORTHO[4][2] = {
         {1, 0},
         {-1, 0},
@@ -295,20 +295,20 @@ void mg_lw_sang(
             piece->pos.x + ORTHO[o][0],
             piece->pos.y + ORTHO[o][1]
         };
-        if (!pos_in_bounds(mid1, bs->board.width, bs->board.height)) {
+        if (!pos_in_bounds(mid1, battle->board.width, battle->board.height)) {
             continue;
         }
-        if (board_at(&bs->board, mid1) != NULL)
+        if (board_at(&battle->board, mid1) != NULL)
             continue;
         for (int d = 0; d < 4; d++) {
             Position mid2 = {mid1.x + DIAG[d][0], mid1.y + DIAG[d][1]};
             Position to   = {mid1.x + DIAG[d][0] * 2, mid1.y + DIAG[d][1] * 2};
-            if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+            if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                 continue;
             }
-            if (board_at(&bs->board, mid2) != NULL)
+            if (board_at(&battle->board, mid2) != NULL)
                 continue;
-            const PieceState* at = board_at(&bs->board, to);
+            const PieceState* at = board_at(&battle->board, to);
             if (at == NULL || is_enemy(piece, at))
                 ml_push(out, to);
         }
@@ -327,22 +327,22 @@ void mg_lw_sang(
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> destination list
 ///
 void mg_lw_liubo(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)params;
-    (void)n;
+    (void)count;
     MoveList threats = {0};
-    mg_generate_threat(piece, bs, &threats);
+    mg_generate_threat(piece, battle, &threats);
     for (uint8_t i = 0; i < threats.count; i++) {
         ml_push(out, threats.squares[i]);
     }

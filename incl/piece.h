@@ -37,7 +37,7 @@ typedef struct PieceTemplate {
 /// Runtime instance of a piece on the board.
 typedef struct PieceState {
     uint32_t             id;
-    const PieceTemplate* tmpl;
+    const PieceTemplate* template;
     MoveGen              move_override;
     MoveGen              threat_override;
     Side                 owner;
@@ -56,16 +56,16 @@ typedef struct PieceState {
 
 /// Spawn a piece from a template at position. Registers passives to bus.
 uint32_t
-piece_spawn(struct BattleState* bs, uint16_t tmpl_id, Position pos, Side owner);
+piece_spawn(struct BattleState* battle, uint16_t template_id, Position pos, Side owner);
 
 /// Remove a piece from the board and evict its passives from the bus.
-void piece_remove(struct BattleState* bs, uint32_t piece_id);
+void piece_remove(struct BattleState* battle, uint32_t piece_id);
 
 /// Flip a piece to the opposite side. Emits TRIGGER_PIECE_FLIPPED first.
-void piece_flip(struct BattleState* bs, uint32_t piece_id);
+void piece_flip(struct BattleState* battle, uint32_t piece_id);
 
 /// Find a piece by its runtime id. Returns NULL if not found.
-PieceState* piece_by_id(struct BattleState* bs, uint32_t piece_id);
+PieceState* piece_by_id(struct BattleState* battle, uint32_t piece_id);
 
 /// Compute the current value of a piece (base + modifiers).
 int piece_value(const PieceState* piece);

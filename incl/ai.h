@@ -40,18 +40,18 @@ typedef struct {
             Position to;
         } move;
         struct {
-            uint16_t tmpl_id;
+            uint16_t template_id;
             Position at;
         } buy;
         struct {
             uint32_t a, b;
         } combine;
         struct {
-            uint8_t    hand_idx;
+            uint8_t    hand_index;
             TargetSpec target;
         } play_card;
         struct {
-            uint8_t hand_idx;
+            uint8_t hand_index;
         } sell_card;
     } as;
 } Action;
@@ -76,7 +76,7 @@ typedef struct {
                               AI ARCHETYPE
 \*--------------------------------------------------------------------------*/
 
-typedef Action (*AIPickFunc)(const struct BattleState* bs);
+typedef Action (*AIPickFunc)(const struct BattleState* battle);
 
 typedef struct {
     const char* name;
@@ -96,28 +96,28 @@ typedef struct {
 /// Run the full AI half-turn.
 ///
 /// Params:
-/// - struct BattleState* bs -> battle state to operate on
+/// - struct BattleState* battle -> battle state to operate on
 ///
-void ai_play_turn(struct BattleState* bs);
+void ai_play_turn(struct BattleState* battle);
 
 /// ai_pick_one
 ///
 /// Pick a single action for the current state.
 ///
 /// Params:
-/// - struct BattleState* bs -> battle state to evaluate
+/// - struct BattleState* battle -> battle state to evaluate
 ///
 /// Return:
 /// Action -> chosen action
 ///
-Action ai_pick_one(struct BattleState* bs);
+Action ai_pick_one(struct BattleState* battle);
 
 /// ai_score_move
 ///
 /// Score a move action.
 ///
 /// Params:
-/// - const struct BattleState* bs -> battle state to evaluate
+/// - const struct BattleState* battle -> battle state to evaluate
 /// - const Action* action -> action to score
 /// - const AIWeights* w -> scoring weights
 ///
@@ -125,7 +125,7 @@ Action ai_pick_one(struct BattleState* bs);
 /// int -> action score
 ///
 int ai_score_move(
-    const struct BattleState* bs,
+    const struct BattleState* battle,
     const Action*             action,
     const AIWeights*          w
 );
@@ -135,7 +135,7 @@ int ai_score_move(
 /// Score a buy action.
 ///
 /// Params:
-/// - const struct BattleState* bs -> battle state to evaluate
+/// - const struct BattleState* battle -> battle state to evaluate
 /// - const Action* action -> action to score
 /// - const AIWeights* w -> scoring weights
 ///
@@ -143,7 +143,7 @@ int ai_score_move(
 /// int -> action score
 ///
 int ai_score_buy(
-    const struct BattleState* bs,
+    const struct BattleState* battle,
     const Action*             action,
     const AIWeights*          w
 );

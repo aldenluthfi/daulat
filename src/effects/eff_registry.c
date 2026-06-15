@@ -4,9 +4,6 @@
 //! live function pointer so the save/load codec can serialize an
 //! id on disk and rehydrate the `Effect.apply` pointer on load.
 //!
-//! Phase 3 populated the meta-layer rows; battle-internal rows fill
-//! when their phases land.
-//!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 

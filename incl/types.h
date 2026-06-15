@@ -25,7 +25,7 @@ struct PieceState;
 
 /// A card instance held in a hand — template pointer plus runtime state.
 typedef struct {
-    const struct CardTemplate* tmpl;
+    const struct CardTemplate* template;
     uint8_t                    flags;
 } CardInstance;
 
@@ -81,8 +81,9 @@ static inline bool pos_equal(Position a, Position b) {
 }
 
 /// Return true if a position is within the board bounds.
-static inline bool pos_in_bounds(Position p, int width, int height) {
-    return p.x >= 0 && p.x < width && p.y >= 0 && p.y < height;
+static inline bool pos_in_bounds(Position position, int width, int height) {
+    return position.x >= 0 && position.x < width
+        && position.y >= 0 && position.y < height;
 }
 
 #endif /* TYPES_H */

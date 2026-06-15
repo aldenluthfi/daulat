@@ -1,21 +1,15 @@
 //! screen_title.c
 //!
-//! Title screen — wires the top-level navigation menu. Logic only;
-//! visible rendering lands in a later round. Key 1 starts a new
-//! run; 2 resumes the saved run; 3-5 navigate to the
-//! Codex / Mastery / Settings screens.
+//! Title screen. Routes the top-level menu: key 1 starts a new
+//! run, 2 resumes the saved run, 3-5 navigate to the Codex,
+//! Mastery, and Settings screens.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
 #include <stdlib.h>
 
-#include "app.h"
-#include "log.h"
-#include "map.h"
 #include "prelude.h"
-#include "screens.h"
-#include "ui.h"
 
 /*--------------------------------------------------------------------------*\
                               RUN HELPERS

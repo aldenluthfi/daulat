@@ -1,15 +1,13 @@
 //! screen_codex.c
 //!
-//! Codex browser — placeholder. Phase 5 wires recipe discovery
-//! display from `Profile.codex_bits`. Phase 1 only renders a clear
-//! colour and label.
+//! Codex browser. Lists discovered recipes from
+//! `Profile.codex_bits` and lets the player page through pieces,
+//! cards, relics and combinations.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "app.h"
-#include "screens.h"
-#include "ui.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               HOOKS

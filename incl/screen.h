@@ -72,8 +72,8 @@ const Screen* screen_get(ScreenId id);
 
 /// screen_goto
 ///
-/// Request a transition to a new screen. The transition is deferred
-/// until the next frame so the current screen's tick / render can
+/// Request a transition to a new screen. The transition lands at
+/// the next frame boundary so the current screen's tick and render
 /// finish without surprise re-entry.
 ///
 /// Params:

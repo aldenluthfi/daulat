@@ -16,87 +16,87 @@
 \*--------------------------------------------------------------------------*/
 
 void eff_fh_mingzhu(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    struct BattleState* bs  = ctx->bs;
-    if (bs == NULL || bs->config.run == NULL)
+    (void)count;
+    struct BattleState* battle  = context->battle;
+    if (battle == NULL || battle->config.run == NULL)
         return;
-    Kingdom k = bs->config.run->current_kingdom;
+    Kingdom k = battle->config.run->current_kingdom;
     bool    any_territory =
-        (bs->config.run->mastery_l3[KINGDOM_LONGWEI] != 0);
+        (battle->config.run->mastery_l3[KINGDOM_LONGWEI] != 0);
     if (k == KINGDOM_LONGWEI || any_territory) {
-        Position p = {0, 1};
-        piece_spawn(bs, PIECE_PAO, p, SIDE_PLAYER);
+        Position position = {0, 1};
+        piece_spawn(battle, PIECE_PAO, position, SIDE_PLAYER);
     } else {
-        bs->cp[SIDE_PLAYER] += 20;
+        battle->cp[SIDE_PLAYER] += 20;
     }
 }
 
 void eff_fh_tomohito(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->bs == NULL || ctx->bs->config.run == NULL)
+    (void)count;
+    if (context->battle == NULL || context->battle->config.run == NULL)
         return;
-    RunState* run = ctx->bs->config.run;
+    RunState* run = context->battle->config.run;
     run->reclaim_cost_override =
         (run->mastery_l3[KINGDOM_HARUSHIMA] != 0) ? 5 : 10;
 }
 
 void eff_fh_selassie(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->bs == NULL)
+    (void)count;
+    if (context->battle == NULL)
         return;
-    meta_apply_innate(ctx->bs, KINGDOM_KEWARANI);
+    meta_apply_innate(context->battle, KINGDOM_KEWARANI);
 }
 
 void eff_fh_timur(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->bs == NULL || ctx->bs->config.run == NULL)
+    (void)count;
+    if (context->battle == NULL || context->battle->config.run == NULL)
         return;
-    RunState* run = ctx->bs->config.run;
+    RunState* run = context->battle->config.run;
     run->royal_sub_per_battle =
         (run->mastery_l3[KINGDOM_ZARQAN] != 0) ? 3 : 2;
 }
 
 void eff_fh_isabella(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    struct BattleState* bs = ctx->bs;
-    if (bs == NULL)
+    (void)count;
+    struct BattleState* battle = context->battle;
+    if (battle == NULL)
         return;
-    /* Insert one Caelan card at hand[0]; Phase 4 picks the exact
+    /* Insert one Caelan card at hand[0]; the campaign deck pick
      * card from data_caelan once the cardset is wired. */
-    if (bs->hand_count[SIDE_PLAYER] < MAX_HAND) {
-        const CardTemplate* tmpl =
+    if (battle->hand_count[SIDE_PLAYER] < MAX_HAND) {
+        const CardTemplate* template =
             card_template((CardId)CARD_CASTLING);
-        if (tmpl != NULL) {
-            for (uint8_t i = bs->hand_count[SIDE_PLAYER]; i > 0; i--)
-                bs->hand[SIDE_PLAYER][i] = bs->hand[SIDE_PLAYER][i - 1];
-            bs->hand[SIDE_PLAYER][0].tmpl  = tmpl;
-            bs->hand[SIDE_PLAYER][0].flags = 0;
-            bs->hand_count[SIDE_PLAYER]++;
+        if (template != NULL) {
+            for (uint8_t i = battle->hand_count[SIDE_PLAYER]; i > 0; i--)
+                battle->hand[SIDE_PLAYER][i] = battle->hand[SIDE_PLAYER][i - 1];
+            battle->hand[SIDE_PLAYER][0].template  = template;
+            battle->hand[SIDE_PLAYER][0].flags = 0;
+            battle->hand_count[SIDE_PLAYER]++;
         }
     }
 }

@@ -1,14 +1,13 @@
 //! ui.c
 //!
-//! Immediate-mode UI stubs for Phase 1. Bodies are deliberately
-//! minimal — `ui_text` forwards to SDL's debug text helper so each
-//! screen has at least one visible label; `ui_panel` and `ui_button`
-//! are no-ops until the rendering pass lands in a later round.
+//! Immediate-mode UI helpers. `ui_text` writes through SDL's debug
+//! text helper; `ui_button` reports a click when the cursor is over
+//! its rect and the primary button was released this frame.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "ui.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               STUBS

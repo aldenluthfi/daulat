@@ -8,12 +8,7 @@
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "map.h"
-
-#include "app.h"
-#include "log.h"
 #include "prelude.h"
-#include "screens.h"
 
 /*--------------------------------------------------------------------------*\
                               GENERATOR HELPERS
@@ -179,7 +174,7 @@ static void enter_node(struct App* app, MapNode* node) {
             node->visited = true;
             break;
         case NODE_OFFERING:
-            /* Phase 5 will surface the in-map remove-card prompt. */
+            /* The in-map remove-card prompt is surfaced here. */
             node->visited = true;
             break;
         default:

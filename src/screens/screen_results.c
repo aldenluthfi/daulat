@@ -1,19 +1,15 @@
 //! screen_results.c
 //!
-//! End-of-run summary screen. On entry, runs the mastery /
-//! prestige / win-loss bookkeeping via run_finalize and detaches
-//! the run from App. Logic only — visible summary rendering lands
-//! in a later round.
+//! End-of-run summary screen. On entry runs the mastery,
+//! prestige, and win-loss bookkeeping via `run_finalize` and
+//! detaches the run from `App`.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
 #include <stdlib.h>
 
-#include "app.h"
 #include "prelude.h"
-#include "screens.h"
-#include "ui.h"
 
 /*--------------------------------------------------------------------------*\
                               END-OF-RUN PASS

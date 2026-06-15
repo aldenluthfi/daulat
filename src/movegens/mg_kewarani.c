@@ -21,25 +21,25 @@
 ///
 /// Berolina-pawn movement: diagonal one-step relocate (empty squares
 /// only) plus a one-step forward attack that captures enemies only.
-/// params[0] is the forward dy so the same pattern serves both
-/// directions (Kewarani plays from the top of the board, dy=-1).
+/// params[0] is the forward delta_y so the same pattern serves both
+/// directions (Kewarani plays from the top of the board, delta_y=-1).
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
-/// - const EffectArg   *params -> [0]=forward dy
-/// - size_t             n      -> parameter count
+/// - const BattleState *battle     -> battle context
+/// - const EffectArg   *params -> [0]=forward delta_y
+/// - size_t             count      -> parameter count
 /// - MoveList          *out    -> destination list
 ///
 void mg_kw_berolina(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     int fwd_dy = -1;
-    if (n >= 1)
+    if (count >= 1)
         fwd_dy = (int)params[0].v.i;
     static const int8_t DIAG[4][2] = {
         {1, 1},
@@ -49,15 +49,15 @@ void mg_kw_berolina(
     };
     for (int i = 0; i < 4; i++) {
         Position to = {piece->pos.x + DIAG[i][0], piece->pos.y + DIAG[i][1]};
-        if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+        if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
             continue;
         }
-        if (board_at(&bs->board, to) == NULL)
+        if (board_at(&battle->board, to) == NULL)
             ml_push(out, to);
     }
     Position atk = {piece->pos.x, piece->pos.y + fwd_dy};
-    if (pos_in_bounds(atk, bs->board.width, bs->board.height) &&
-        is_enemy(piece, board_at(&bs->board, atk))) {
+    if (pos_in_bounds(atk, battle->board.width, battle->board.height) &&
+        is_enemy(piece, board_at(&battle->board, atk))) {
         ml_push(out, atk);
     }
 }
@@ -74,20 +74,20 @@ void mg_kw_berolina(
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> destination list
 ///
 void mg_kw_negus_guard(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)params;
-    (void)n;
+    (void)count;
     static const int8_t KING[8][2] = {
         {1, 0},
         {1, 1},
@@ -100,17 +100,17 @@ void mg_kw_negus_guard(
     };
     for (int i = 0; i < 8; i++) {
         Position mid = {piece->pos.x + KING[i][0], piece->pos.y + KING[i][1]};
-        if (!pos_in_bounds(mid, bs->board.width, bs->board.height)) {
+        if (!pos_in_bounds(mid, battle->board.width, battle->board.height)) {
             continue;
         }
-        if (board_at(&bs->board, mid) != NULL)
+        if (board_at(&battle->board, mid) != NULL)
             continue;
         for (int j = 0; j < 8; j++) {
             Position to = {mid.x + KING[j][0], mid.y + KING[j][1]};
-            if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+            if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                 continue;
             }
-            const PieceState* at = board_at(&bs->board, to);
+            const PieceState* at = board_at(&battle->board, to);
             if (at == NULL || is_enemy(piece, at))
                 ml_push(out, to);
         }

@@ -2,17 +2,13 @@
 //!
 //! Screen registry and transition driver. Maps `ScreenId` to the
 //! concrete `Screen` v-tables declared in `screens.h`. Transitions
-//! are deferred to frame boundaries so a screen's tick or render
+//! land at frame boundaries so a screen's tick or render
 //! never runs against a half-swapped state.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "screen.h"
-
-#include "app.h"
-#include "log.h"
-#include "screens.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               REGISTRY

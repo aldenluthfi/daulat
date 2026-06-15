@@ -3,7 +3,7 @@
 //! Persistent player profile: codex unlocks, per-kingdom mastery
 //! levels, prestige tier, Vorath Memory tally, lifetime statistics.
 //! Lives at `SDL_GetPrefPath / profile.regsav` and is loaded once
-//! at app start. Phase 5 will extend the struct with an embedded
+//! at app start. The struct may be extended with an embedded
 //! `Settings` and use it from the title flow.
 //!
 //! Created: 2026-06-14

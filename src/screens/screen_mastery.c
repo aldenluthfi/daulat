@@ -1,15 +1,13 @@
 //! screen_mastery.c
 //!
-//! Mastery levels browser — placeholder. Phase 5 wires per-kingdom
-//! mastery display from `Profile.mastery_levels`. Phase 1 only
-//! renders a clear colour and label.
+//! Mastery levels browser. Renders per-kingdom mastery
+//! progression from `Profile.mastery_levels` and the rewards earned
+//! at each level.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "app.h"
-#include "screens.h"
-#include "ui.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               HOOKS

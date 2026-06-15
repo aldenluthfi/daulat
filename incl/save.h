@@ -41,7 +41,7 @@ typedef enum {
 /// SaveWriter
 ///
 /// Fixed-capacity write buffer with current position. Save files are
-/// small enough (profile + run < 1 KB in Phase 2) that an 8 KB
+/// small enough (profile + run < 1 KB) that an 8 KB
 /// stack buffer comfortably covers every plausible save.
 ///
 typedef struct {
@@ -59,11 +59,11 @@ bool save_write_u16(SaveWriter* w, uint16_t v);
 bool save_write_u32(SaveWriter* w, uint32_t v);
 bool save_write_u64(SaveWriter* w, uint64_t v);
 bool save_write_bool(SaveWriter* w, bool v);
-bool save_write_bytes(SaveWriter* w, const void* data, size_t n);
+bool save_write_bytes(SaveWriter* w, const void* data, size_t count);
 
 bool save_write_header(SaveWriter* w, uint32_t chunk_count);
 
-/// Begin a chunk. Writes id + placeholder length; `save_write_chunk_end`
+/// Begin a chunk. Writes id + length-slot; `save_write_chunk_end`
 /// patches the length once the body is complete.
 bool save_write_chunk_begin(SaveWriter* w, SaveChunkId id);
 bool save_write_chunk_end(SaveWriter* w);
@@ -96,14 +96,14 @@ bool save_read_u16(SaveReader* r, uint16_t* out);
 bool save_read_u32(SaveReader* r, uint32_t* out);
 bool save_read_u64(SaveReader* r, uint64_t* out);
 bool save_read_bool(SaveReader* r, bool* out);
-bool save_read_bytes(SaveReader* r, void* data, size_t n);
+bool save_read_bytes(SaveReader* r, void* data, size_t count);
 
 bool save_read_chunk_header(
     SaveReader*  r,
     SaveChunkId* id_out,
     uint32_t*    len_out
 );
-bool save_skip(SaveReader* r, uint32_t n);
+bool save_skip(SaveReader* r, uint32_t count);
 
 /*--------------------------------------------------------------------------*\
                               UTILITIES
@@ -116,12 +116,12 @@ bool save_skip(SaveReader* r, uint32_t n);
 ///
 /// Params:
 /// - const void* data -> input bytes
-/// - size_t       n   -> length in bytes
+/// - size_t       count   -> length in bytes
 ///
 /// Return:
 /// uint32_t -> 32-bit checksum
 ///
-uint32_t crc32_ieee(const void* data, size_t n);
+uint32_t crc32_ieee(const void* data, size_t count);
 
 /// save_dump
 ///

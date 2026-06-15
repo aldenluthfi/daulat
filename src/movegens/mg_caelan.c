@@ -25,20 +25,20 @@
 ///
 /// Params:
 /// - const PieceState  *piece  -> moving piece
-/// - const BattleState *bs     -> battle context
+/// - const BattleState *battle     -> battle context
 /// - const EffectArg   *params -> unused
-/// - size_t             n      -> unused
+/// - size_t             count      -> unused
 /// - MoveList          *out    -> destination list
 ///
 void mg_ca_gryphon(
     const PieceState*  piece,
-    const BattleState* bs,
+    const BattleState* battle,
     const EffectArg*   params,
-    size_t             n,
+    size_t count,
     MoveList*          out
 ) {
     (void)params;
-    (void)n;
+    (void)count;
     static const int8_t DIAG[4][2] = {
         {1, 1},
         {1, -1},
@@ -53,10 +53,10 @@ void mg_ca_gryphon(
     };
     for (int d = 0; d < 4; d++) {
         Position diag = {piece->pos.x + DIAG[d][0], piece->pos.y + DIAG[d][1]};
-        if (!pos_in_bounds(diag, bs->board.width, bs->board.height)) {
+        if (!pos_in_bounds(diag, battle->board.width, battle->board.height)) {
             continue;
         }
-        if (board_at(&bs->board, diag) != NULL)
+        if (board_at(&battle->board, diag) != NULL)
             continue;
         for (int od = 0; od < 4; od++) {
             for (int dist = 1; dist < 20; dist++) {
@@ -64,10 +64,10 @@ void mg_ca_gryphon(
                     diag.x + ORTHO[od][0] * dist,
                     diag.y + ORTHO[od][1] * dist
                 };
-                if (!pos_in_bounds(to, bs->board.width, bs->board.height)) {
+                if (!pos_in_bounds(to, battle->board.width, battle->board.height)) {
                     break;
                 }
-                const PieceState* at = board_at(&bs->board, to);
+                const PieceState* at = board_at(&battle->board, to);
                 if (at == NULL) {
                     ml_push(out, to);
                     continue;

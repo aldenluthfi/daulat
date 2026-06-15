@@ -7,13 +7,9 @@
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "app.h"
-
 #include <stdlib.h>
 
-#include "defs.h"
-#include "log.h"
-#include "profile.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               GLOBAL KEY BINDINGS

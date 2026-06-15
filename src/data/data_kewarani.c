@@ -5,7 +5,7 @@
 //! roster as immutable arrays consumed by the registry.
 //!
 //! Kewarani follows the Senterej tradition: the player sits at the
-//! top of the board (y=height-1) so forward is dy=-1. Splitter
+//! top of the board (y=height-1) so forward is delta_y=-1. Splitter
 //! pieces use passive effects on TRIGGER_PIECE_FLIPPED rather than
 //! engine branches; movement specialities live in mg_kewarani.c.
 //!
@@ -174,7 +174,7 @@ const size_t PIECES_KEWARANI_COUNT =
 /// CARDS_KEWARANI
 ///
 /// Dense array indexed by CardId for every Kewarani-kingdom card.
-/// Effects are placeholders pending implementation; the registry
+/// Effects share `eff_todo` until their bodies land; the registry
 /// still hands valid templates to the UI so card visuals can be
 /// developed before behaviour exists.
 ///

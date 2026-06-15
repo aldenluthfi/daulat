@@ -7,13 +7,10 @@
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "profile.h"
-
 #include <SDL3/SDL.h>
 #include <string.h>
 
-#include "log.h"
-#include "save.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               PATH

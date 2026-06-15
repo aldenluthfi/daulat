@@ -1,15 +1,12 @@
 //! screen_event.c
 //!
-//! Narrative event screen — placeholder. Phase 4 wires 2-choice
-//! event resolution via `EventTemplate` + `EventOption`. Phase 1
-//! only renders a clear colour and label.
+//! Narrative event screen. Presents an `EventTemplate` and
+//! resolves the player's choice through the matching `EventOption`.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "app.h"
-#include "screens.h"
-#include "ui.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               HOOKS

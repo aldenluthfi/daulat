@@ -18,10 +18,10 @@
 /// Register all effects from the run's relic collection.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
+/// - BattleState* battle -> battle state to modify
 /// - const RunState* run -> run state with relics
 ///
-void meta_apply_relics(BattleState* bs, const RunState* run) {
+void meta_apply_relics(BattleState* battle, const RunState* run) {
     for (uint8_t i = 0; i < run->relic_count; i++) {
         const RelicTemplate* relic = run_relic_at(run, i);
         if (relic == NULL)
@@ -30,7 +30,7 @@ void meta_apply_relics(BattleState* bs, const RunState* run) {
             Effect effect         = relic->effects[j];
             effect.owner          = SIDE_PLAYER;
             effect.duration_turns = -1;
-            bus_register(&bs->bus, &effect);
+            bus_register(&battle->bus, &effect);
         }
     }
 }
@@ -44,10 +44,10 @@ void meta_apply_relics(BattleState* bs, const RunState* run) {
 /// Register the innate ability for a kingdom.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
+/// - BattleState* battle -> battle state to modify
 /// - Kingdom kingdom -> kingdom whose innate to apply
 ///
-void meta_apply_innate(BattleState* bs, Kingdom kingdom) {
+void meta_apply_innate(BattleState* battle, Kingdom kingdom) {
     const InnateTemplate* innate = innate_template(kingdom);
     if (innate == NULL)
         return;
@@ -55,7 +55,7 @@ void meta_apply_innate(BattleState* bs, Kingdom kingdom) {
         Effect effect         = innate->effects[i];
         effect.owner          = SIDE_PLAYER;
         effect.duration_turns = -1;
-        bus_register(&bs->bus, &effect);
+        bus_register(&battle->bus, &effect);
     }
 }
 
@@ -68,11 +68,11 @@ void meta_apply_innate(BattleState* bs, Kingdom kingdom) {
 /// Apply mastery-level hooks. Currently a no-op stub.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
+/// - BattleState* battle -> battle state to modify
 /// - uint8_t level -> mastery level
 ///
-void meta_apply_mastery(BattleState* bs, uint8_t level) {
-    (void)bs;
+void meta_apply_mastery(BattleState* battle, uint8_t level) {
+    (void)battle;
     (void)level;
 }
 
@@ -85,17 +85,17 @@ void meta_apply_mastery(BattleState* bs, uint8_t level) {
 /// Register penalty effects for a chain level.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
+/// - BattleState* battle -> battle state to modify
 /// - uint8_t level -> chain level
 ///
-void meta_apply_chain(BattleState* bs, uint8_t level) {
+void meta_apply_chain(BattleState* battle, uint8_t level) {
     const Chain* chain = chain_template(level);
     if (chain == NULL)
         return;
     for (uint8_t i = 0; i < chain->penalty_count; i++) {
         Effect effect = chain->penalties[i];
         effect.owner  = SIDE_PLAYER;
-        bus_register(&bs->bus, &effect);
+        bus_register(&battle->bus, &effect);
     }
 }
 
@@ -108,15 +108,15 @@ void meta_apply_chain(BattleState* bs, uint8_t level) {
 /// Register the synergy bonus for a cleared kingdom.
 ///
 /// Params:
-/// - BattleState* bs -> battle state to modify
+/// - BattleState* battle -> battle state to modify
 /// - Kingdom cleared -> cleared kingdom
 ///
-void meta_apply_synergy(BattleState* bs, Kingdom cleared) {
+void meta_apply_synergy(BattleState* battle, Kingdom cleared) {
     const Synergy* synergy = synergy_template(cleared);
     if (synergy == NULL)
         return;
     Effect effect         = synergy->bonus;
     effect.owner          = SIDE_PLAYER;
     effect.duration_turns = -1;
-    bus_register(&bs->bus, &effect);
+    bus_register(&battle->bus, &effect);
 }

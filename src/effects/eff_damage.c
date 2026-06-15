@@ -12,33 +12,33 @@
 \*--------------------------------------------------------------------------*/
 
 /// Multiply damage output by a factor (stored as int basis-points).
-void eff_damage_mult(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
-    (void)ctx;
+void eff_damage_mult(struct EffectCtx* context, const EffectArg* args, size_t count) {
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
 }
 
 /// Reduce incoming damage by a flat amount.
-void eff_damage_reduce(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
-    (void)ctx;
+void eff_damage_reduce(struct EffectCtx* context, const EffectArg* args, size_t count) {
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
 }
 
 /// Grant damage immunity to a piece.
 void eff_grant_immunity(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
-    (void)ctx;
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
 }
 
 /// Deal damage directly to a piece (not through resolve).
-void eff_deal_damage(struct EffectCtx* ctx, const EffectArg* args, size_t n) {
-    (void)ctx;
+void eff_deal_damage(struct EffectCtx* context, const EffectArg* args, size_t count) {
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
 }

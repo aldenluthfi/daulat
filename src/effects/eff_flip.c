@@ -13,33 +13,33 @@
 
 /// Spawn a Medeq on flip (Kewarani splitter behavior).
 void eff_splitter_medeq(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
-    (void)ctx;
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
 }
 
 /// Grant immunity to flip this battle.
 void eff_grant_flip_immunity(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
-    (void)ctx;
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
 }
 
 /// Trigger on-flip: destroy an adjacent enemy piece.
 void eff_flip_destroy_adjacent(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
-    (void)ctx;
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
 }

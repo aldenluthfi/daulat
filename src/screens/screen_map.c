@@ -1,15 +1,12 @@
 //! screen_map.c
 //!
-//! Overworld map screen — placeholder. Phase 4 fills this in: node
-//! graph navigation, event launch, battle launch, autosave on
-//! transition. Phase 1 only renders a clear colour and label.
+//! Overworld map screen. Drives node graph navigation, event launch,
+//! battle launch, and autosave on transition.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
 
-#include "app.h"
-#include "screens.h"
-#include "ui.h"
+#include "prelude.h"
 
 /*--------------------------------------------------------------------------*\
                               HOOKS

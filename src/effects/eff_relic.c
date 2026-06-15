@@ -17,81 +17,81 @@
 \*--------------------------------------------------------------------------*/
 
 void eff_merchants_ledger(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->as.card.value_out != NULL)
-        *ctx->as.card.value_out += 5;
+    (void)count;
+    if (context->as.card.value_out != NULL)
+        *context->as.card.value_out += 5;
 }
 
 void eff_minted_coin(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->as.query.income_out != NULL)
-        *ctx->as.query.income_out += 5;
+    (void)count;
+    if (context->as.query.income_out != NULL)
+        *context->as.query.income_out += 5;
 }
 
 void eff_tax_stamp(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->bs == NULL || ctx->as.card.card == NULL)
+    (void)count;
+    if (context->battle == NULL || context->as.card.card == NULL)
         return;
-    const CardTemplate* tmpl = ctx->as.card.card->tmpl;
-    if (tmpl != NULL && tmpl->play_cost > 0)
-        ctx->bs->cp[SIDE_PLAYER] += 10;
+    const CardTemplate* template = context->as.card.card->template;
+    if (template != NULL && template->play_cost > 0)
+        context->battle->cp[SIDE_PLAYER] += 10;
 }
 
 void eff_bulk_discount(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    struct BattleState* bs = ctx->bs;
-    if (bs == NULL || ctx->as.query.cost_out == NULL)
+    (void)count;
+    struct BattleState* battle = context->battle;
+    if (battle == NULL || context->as.query.cost_out == NULL)
         return;
-    if (bs->buys_this_turn[SIDE_PLAYER] < 3)
+    if (battle->buys_this_turn[SIDE_PLAYER] < 3)
         return;
-    uint16_t cheapest = bs->cheapest_buy_cost[SIDE_PLAYER];
-    if ((uint16_t)*ctx->as.query.cost_out <= cheapest)
-        *ctx->as.query.cost_out = 0;
+    uint16_t cheapest = battle->cheapest_buy_cost[SIDE_PLAYER];
+    if ((uint16_t)*context->as.query.cost_out <= cheapest)
+        *context->as.query.cost_out = 0;
 }
 
 void eff_war_chest(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    struct BattleState* bs = ctx->bs;
-    if (bs == NULL)
+    (void)count;
+    struct BattleState* battle = context->battle;
+    if (battle == NULL)
         return;
-    bs->meter[SIDE_PLAYER] += bs->cp[SIDE_PLAYER] / 5;
+    battle->meter[SIDE_PLAYER] += battle->cp[SIDE_PLAYER] / 5;
 }
 
 void eff_trade_routes(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->bs == NULL || ctx->bs->config.run == NULL)
+    (void)count;
+    if (context->battle == NULL || context->battle->config.run == NULL)
         return;
-    ctx->bs->config.run->flags |= RUN_FOREIGN_MARKUP_OFF;
+    context->battle->config.run->flags |= RUN_FOREIGN_MARKUP_OFF;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -99,95 +99,95 @@ void eff_trade_routes(
 \*--------------------------------------------------------------------------*/
 
 void eff_soul_shard(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->bs == NULL)
+    (void)count;
+    if (context->battle == NULL)
         return;
-    ctx->bs->meter[SIDE_PLAYER] += 30;
+    context->battle->meter[SIDE_PLAYER] += 30;
 }
 
 void eff_veterans_bond(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    struct BattleState* bs = ctx->bs;
-    if (bs == NULL || ctx->as.query.meter_cap_out == NULL)
+    (void)count;
+    struct BattleState* battle = context->battle;
+    if (battle == NULL || context->as.query.meter_cap_out == NULL)
         return;
     int veterans = 0;
-    for (uint16_t i = 0; i < bs->piece_count; i++) {
-        const PieceState* piece = &bs->pieces[i];
+    for (uint16_t i = 0; i < battle->piece_count; i++) {
+        const PieceState* piece = &battle->pieces[i];
         if (piece->owner == SIDE_PLAYER && piece_value(piece) >= 50)
             veterans++;
     }
-    *ctx->as.query.meter_cap_out += 20 * veterans;
+    *context->as.query.meter_cap_out += 20 * veterans;
 }
 
 void eff_dead_mans_pact(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    struct BattleState* bs = ctx->bs;
-    if (bs == NULL)
+    (void)count;
+    struct BattleState* battle = context->battle;
+    if (battle == NULL)
         return;
-    if (bs->once_per_battle_flags & LATCH_DEAD_MANS_PACT)
+    if (battle->once_per_battle_flags & LATCH_DEAD_MANS_PACT)
         return;
-    if (bs->meter[SIDE_PLAYER] > 0)
+    if (battle->meter[SIDE_PLAYER] > 0)
         return;
-    bs->meter[SIDE_PLAYER]      = 20;
-    bs->once_per_battle_flags  |= LATCH_DEAD_MANS_PACT;
+    battle->meter[SIDE_PLAYER]      = 20;
+    battle->once_per_battle_flags  |= LATCH_DEAD_MANS_PACT;
 }
 
 void eff_iron_king(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->as.query.meter_cap_out != NULL)
-        *ctx->as.query.meter_cap_out += 10;
+    (void)count;
+    if (context->as.query.meter_cap_out != NULL)
+        *context->as.query.meter_cap_out += 10;
 }
 
 void eff_bloodthirst(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    struct BattleState* bs = ctx->bs;
-    if (bs == NULL)
+    (void)count;
+    struct BattleState* battle = context->battle;
+    if (battle == NULL)
         return;
-    if (bs->meter[SIDE_PLAYER] > bs->meter[SIDE_ENEMY])
-        bs->meter[SIDE_PLAYER] += 5;
+    if (battle->meter[SIDE_PLAYER] > battle->meter[SIDE_ENEMY])
+        battle->meter[SIDE_PLAYER] += 5;
 }
 
 void eff_last_breath(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    struct BattleState* bs    = ctx->bs;
-    struct PieceState*  piece = ctx->as.piece.piece;
-    if (bs == NULL || piece == NULL)
+    (void)count;
+    struct BattleState* battle    = context->battle;
+    struct PieceState*  piece = context->as.piece.piece;
+    if (battle == NULL || piece == NULL)
         return;
     if (piece->owner != SIDE_PLAYER)
         return;
-    bs->meter[SIDE_ENEMY] -= piece_value(piece);
-    if (bs->meter[SIDE_ENEMY] < 0)
-        bs->meter[SIDE_ENEMY] = 0;
+    battle->meter[SIDE_ENEMY] -= piece_value(piece);
+    if (battle->meter[SIDE_ENEMY] < 0)
+        battle->meter[SIDE_ENEMY] = 0;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -195,67 +195,67 @@ void eff_last_breath(
 \*--------------------------------------------------------------------------*/
 
 void eff_tacticians_scroll(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    int* out = ctx->as.card.count_out;
+    (void)count;
+    int* out = context->as.card.count_out;
     if (out != NULL && *out < 4)
         *out = 4;
 }
 
 void eff_librarians_notes(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
-    (void)ctx;
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
     /* Peek-skip action exposed via the UI; turn-start re-arms the
      * one-per-turn latch. The action itself lives in battle.c. */
 }
 
 void eff_country_seal(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->as.card.card == NULL || ctx->as.card.value_out == NULL)
+    (void)count;
+    if (context->as.card.card == NULL || context->as.card.value_out == NULL)
         return;
-    const CardTemplate* tmpl = ctx->as.card.card->tmpl;
-    if (tmpl != NULL && tmpl->tier == TIER_COUNTRY)
-        *ctx->as.card.value_out += 20;
+    const CardTemplate* template = context->as.card.card->template;
+    if (template != NULL && template->tier == TIER_COUNTRY)
+        *context->as.card.value_out += 20;
 }
 
 void eff_deep_hand(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
-    (void)ctx;
+    (void)context;
     (void)args;
-    (void)n;
+    (void)count;
     /* Once-per-battle draw action; consumed via
      * battle_relic_deep_hand_draw, gated by LATCH_DEEP_HAND. */
 }
 
 void eff_gilded_archive(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->as.card.card == NULL || ctx->as.card.value_out == NULL)
+    (void)count;
+    if (context->as.card.card == NULL || context->as.card.value_out == NULL)
         return;
-    const CardTemplate* tmpl = ctx->as.card.card->tmpl;
-    if (tmpl != NULL && tmpl->tier == TIER_DISTRICT)
-        *ctx->as.card.value_out += 10;
+    const CardTemplate* template = context->as.card.card->template;
+    if (template != NULL && template->tier == TIER_DISTRICT)
+        *context->as.card.value_out += 10;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -263,53 +263,53 @@ void eff_gilded_archive(
 \*--------------------------------------------------------------------------*/
 
 void eff_alchemists_kit(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->as.query.cost_out != NULL)
-        *ctx->as.query.cost_out = 0;
+    (void)count;
+    if (context->as.query.cost_out != NULL)
+        *context->as.query.cost_out = 0;
 }
 
 void eff_masters_notes(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->bs == NULL || ctx->bs->config.run == NULL)
+    (void)count;
+    if (context->battle == NULL || context->battle->config.run == NULL)
         return;
-    ctx->bs->config.run->flags |= RUN_DOUBLE_ARCHIVE;
+    context->battle->config.run->flags |= RUN_DOUBLE_ARCHIVE;
 }
 
 void eff_philosophers_stone(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    struct BattleState* bs = ctx->bs;
-    if (bs == NULL || ctx->as.piece.piece == NULL)
+    (void)count;
+    struct BattleState* battle = context->battle;
+    if (battle == NULL || context->as.piece.piece == NULL)
         return;
-    if (bs->once_per_battle_flags & LATCH_PHILOSOPHERS_STONE)
+    if (battle->once_per_battle_flags & LATCH_PHILOSOPHERS_STONE)
         return;
-    ctx->as.piece.piece->value_mod   += 20;
-    bs->once_per_battle_flags        |= LATCH_PHILOSOPHERS_STONE;
+    context->as.piece.piece->value_mod   += 20;
+    battle->once_per_battle_flags        |= LATCH_PHILOSOPHERS_STONE;
 }
 
 void eff_inherited_power(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->as.piece.piece != NULL)
-        ctx->as.piece.piece->value_mod += 5;
+    (void)count;
+    if (context->as.piece.piece != NULL)
+        context->as.piece.piece->value_mod += 5;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -317,60 +317,60 @@ void eff_inherited_power(
 \*--------------------------------------------------------------------------*/
 
 void eff_eagle_eye(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->bs == NULL)
+    (void)count;
+    if (context->battle == NULL)
         return;
-    ctx->bs->vision_flags |= VISION_ENEMY_VALUES;
-    if (ctx->bs->config.run != NULL)
-        ctx->bs->config.run->flags |= RUN_VISION_ENEMY_VALUES;
+    context->battle->vision_flags |= VISION_ENEMY_VALUES;
+    if (context->battle->config.run != NULL)
+        context->battle->config.run->flags |= RUN_VISION_ENEMY_VALUES;
 }
 
 void eff_surveyors_map(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->bs == NULL || ctx->bs->config.run == NULL)
+    (void)count;
+    if (context->battle == NULL || context->battle->config.run == NULL)
         return;
-    ctx->bs->config.run->flags |= RUN_PREREVEAL_MODIFIER;
+    context->battle->config.run->flags |= RUN_PREREVEAL_MODIFIER;
 }
 
 void eff_forward_command(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->as.resolve.damage_out != NULL)
-        *ctx->as.resolve.damage_out += 5;
+    (void)count;
+    if (context->as.resolve.damage_out != NULL)
+        *context->as.resolve.damage_out += 5;
 }
 
 void eff_fortified_line(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->as.resolve.damage_out != NULL)
-        *ctx->as.resolve.damage_out += 5;
+    (void)count;
+    if (context->as.resolve.damage_out != NULL)
+        *context->as.resolve.damage_out += 5;
 }
 
 void eff_warlords_banner(
-    struct EffectCtx* ctx,
+    struct EffectCtx* context,
     const EffectArg*  args,
-    size_t            n
+    size_t            count
 ) {
     (void)args;
-    (void)n;
-    if (ctx->as.resolve.damage_out != NULL)
-        *ctx->as.resolve.damage_out += 5;
+    (void)count;
+    if (context->as.resolve.damage_out != NULL)
+        *context->as.resolve.damage_out += 5;
 }

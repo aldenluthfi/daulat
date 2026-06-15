@@ -1,8 +1,9 @@
 //! prelude.h
 //!
-//! Umbrella include: pulls every public header for the Regnum engine.
-//! Use this in new .c files instead of listing headers individually.
-//! Order matters — headers are listed in dependency order (Layer 0→5).
+//! Umbrella include. Every .c file in the project includes this and
+//! only this; ad-hoc internal includes are forbidden. Order follows
+//! the dependency layering so a clean rebuild from scratch always
+//! succeeds.
 //!
 //! Created: 2026-06-14
 //! Author : Alden Luthfi
@@ -11,6 +12,7 @@
 #define PRELUDE_H
 
 #include "ai.h"
+#include "app.h"
 #include "battle.h"
 #include "board.h"
 #include "card.h"
@@ -19,7 +21,9 @@
 #include "defs.h"
 #include "effect.h"
 #include "effects.h"
+#include "input.h"
 #include "log.h"
+#include "map.h"
 #include "meta.h"
 #include "movegen.h"
 #include "piece.h"
@@ -28,6 +32,10 @@
 #include "registry.h"
 #include "rng.h"
 #include "run.h"
+#include "save.h"
+#include "screen.h"
+#include "screens.h"
 #include "types.h"
+#include "ui.h"
 
 #endif /* PRELUDE_H */
