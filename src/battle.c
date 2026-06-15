@@ -188,7 +188,19 @@ apply_damage_with_cascading_flips(BattleState* battle, Side defender, int damage
                     battle->events[event_index].as.flipped.piece_id = id;
                     battle->event_count++;
                 }
-                piece_flip(battle, id);
+                /* Emit TRIGGER_RESOLVE_FLIP before actual flip for immunity effects */
+                struct EffectCtx flip_ctx = {0};
+                flip_ctx.as.flipped.piece = &battle->pieces[pick];
+                flip_ctx.as.flipped.old_owner = defender;
+                flip_ctx.as.flipped.new_owner = side_opposite(defender);
+                flip_ctx.as.flipped.cause = FLIPPED_METER_CASCADE;
+                bus_emit(&battle->bus, battle, TRIGGER_RESOLVE_FLIP, &flip_ctx);
+                /* Check if piece gained immunity from TRIGGER_RESOLVE_FLIP */
+                if (!(battle->pieces[pick].flags & PSF_IMMUNE_FLIP)) {
+                    piece_flip(battle, id);
+                } else {
+                    battle->pieces[pick].flags &= ~PSF_IMMUNE_FLIP;
+                }
             }
             battle->meter[defender] = battle->meter_cap[defender];
         } else {
