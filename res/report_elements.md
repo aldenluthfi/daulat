@@ -1390,12 +1390,12 @@ Capstone).
 
 #### Librarian's Notes
 
-| Field                 | Value                                                                                   |
-| --------------------- | --------------------------------------------------------------------------------------- |
-| Descriptive Behaviour | One additional card tier is available in Archives. The librarian's expanded collection. |
-| Trigger               | `TRIGGER_MAP_ENTERED`                                                                   |
-| Apply                 | `eff_librarians_notes`, args: none                                                      |
-| Scope                 | run                                                                                     |
+| Field                 | Value                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| Descriptive Behaviour | Once per turn, before drawing, see the top card and choose to skip it. The librarian's peek. |
+| Trigger               | `TRIGGER_QUERY_DRAW_COUNT`                                                                |
+| Apply                 | `eff_librarians_notes`, args: none                                                         |
+| Scope                 | battle                                                                                    |
 
 #### Country Seal
 
