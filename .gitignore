@@ -68,5 +68,4 @@ build/
 res/ai_*.md
 
 # Scratch directories
-old_src/
-old_incl/
+old/

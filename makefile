@@ -17,16 +17,15 @@ ENGINE_SRC := $(shell find $(SRC_DIR) -name '*.c')
 
 ENGINE_OBJ := $(ENGINE_SRC:%=$(BUILD_DIR)/%.o)
 
-ENGINE_BIN := $(BIN_DIR)/regnum_engine
+ENGINE_BIN := $(BIN_DIR)/regnum
 
 INC_FLAGS := -I$(INC_DIR)
 
 # =============================================================================
 # Modes
 # =============================================================================
-COMMON_WARN   := -Wall -Wextra -Werror -std=c11
-DEBUG_FLAGS   := -g -O0 -DDEBUG $(COMMON_WARN)
-RELEASE_FLAGS := -O3 -ffast-math -DNDEBUG -Wall -std=c11
+DEBUG_FLAGS   := -std=c23 -Wall -O0 -DDEBUG -g -Wextra -Werror
+RELEASE_FLAGS := -std=c23 -Wall -O3 -DNDEBUG
 
 debug:   CFLAGS_ENGINE := $(DEBUG_FLAGS) $(INC_FLAGS)
 debug:   all
