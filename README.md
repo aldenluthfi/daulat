@@ -1,6 +1,8 @@
-# Daulat
-
-_Five kingdoms. One tyrant. No mercy._
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="/.github/meta/dark.png">
+  <source media="(prefers-color-scheme: dark)" srcset="/.github/meta/light.png">
+  <img alt="Daulat">
+</picture>
 
 A roguelike that fuses chess variants with deckbuilding. Climb three maps in each of five kingdoms — each rooted in a real chess tradition — to unchain its figurehead, then face Vorath the Unbroken on a grand arena board.
 
