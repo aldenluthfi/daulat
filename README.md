@@ -1,4 +1,4 @@
-# regnum
+# Daulat
 
 _Five kingdoms. One tyrant. No mercy._
 
@@ -39,7 +39,7 @@ make release    # -O3, stripped
 make clean
 ```
 
-Output binary: `bin/regnum`.
+Output binary: `bin/daulat`.
 
 ## Status
 

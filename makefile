@@ -17,7 +17,7 @@ ENGINE_SRC := $(shell find $(SRC_DIR) -name '*.c')
 
 ENGINE_OBJ := $(ENGINE_SRC:%=$(BUILD_DIR)/%.o)
 
-ENGINE_BIN := $(BIN_DIR)/regnum
+ENGINE_BIN := $(BIN_DIR)/daulat
 
 INC_FLAGS := -I$(INC_DIR)
 

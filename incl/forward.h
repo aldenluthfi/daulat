@@ -66,5 +66,7 @@ typedef struct EngineState    EngineState;
                                   PROTOCOL.H
 \*----------------------------------------------------------------------------*/
 
+typedef struct Protocol       Protocol;
+
 typedef enum ScreenID         ScreenID;
 typedef struct Screen         Screen;

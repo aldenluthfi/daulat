@@ -11,18 +11,6 @@
                                  EFFECT.C ENUMS
 \*----------------------------------------------------------------------------*/
 
-/// MAX_EFFECT_ARGS
-///
-/// Maximum number of arguments that can be passed to an effect context.
-///
-#define MAX_EFFECT_ARGS  16
-
-/// MAX_EFFECT_COUNT
-///
-/// Maximum number of effects that can be attached to a single effect item.
-///
-#define MAX_EFFECT_COUNT 8
-
 /// EffectTrigger
 ///
 /// This enum enumerates all the triggers that can activate an effect.
@@ -42,6 +30,7 @@ enum EffectTrigger {
 
     QUERY_PIECE_CAN_FLIP,
     QUERY_PIECE_CAN_MOVE,
+    QUERY_PIECE_CAN_ATTACK,
 
     QUERY_PIECE_DAMAGE_DEALT,
     QUERY_PIECE_DAMAGE_TAKEN,
@@ -552,6 +541,18 @@ enum EventChoice {
                                 EFFECT.C STRUCTS
 \*----------------------------------------------------------------------------*/
 
+/// MAX_EFFECT_ARGS
+///
+/// Maximum number of arguments that can be passed to an effect context.
+///
+#define MAX_EFFECT_ARGS  16
+
+/// MAX_EFFECT_COUNT
+///
+/// Maximum number of effects that can be attached to a single effect item.
+///
+#define MAX_EFFECT_COUNT 8
+
 /// EFFECT_ITEM_BASE
 ///
 /// Base struct macro for items that can have effects attached. Shared by
@@ -598,6 +599,7 @@ struct Effect {
 /// Represents the game board with its traits.
 ///
 struct Board {
+    PieceID     piece_board[MAX_BOARD_SIZE];
     BoardTrait* trait;
 };
 
@@ -715,6 +717,7 @@ struct BoardTrait {
     EFFECT_ITEM_BASE;
 
     BoardTraitID id;
+    Board*       board;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -807,12 +810,13 @@ struct PlayerState {
 /// and both player states.
 ///
 struct BattleState {
-    size_t          turn;
     Board           board;
-    BattleModifier* modifier;
 
     PlayerState     white;
     PlayerState     black;
+
+    BattleModifier* modifier;
+    size_t          turn;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -846,5 +850,7 @@ struct RunState {
 ///
 struct EngineState {
     MasteryLevel masteries[KINGDOM_COUNT];
+
+    Screen*      screen;
     RunState*    run;
 };

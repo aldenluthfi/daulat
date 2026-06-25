@@ -8,7 +8,17 @@
 //! Author : Alden Luthfi
 
 /*----------------------------------------------------------------------------*\
-                                  SCREEN IDS
+                                   PROTOCOL.C
+\*----------------------------------------------------------------------------*/
+
+struct Protocol {
+    EngineState* engine;
+    FILE*        in;
+    FILE*        out;
+};
+
+/*----------------------------------------------------------------------------*\
+                                    SCREEN.C
 \*----------------------------------------------------------------------------*/
 
 /// ScreenID
@@ -29,25 +39,37 @@
 /// to progress the map of. This screen also has access to the codex screen and
 /// the settings screen
 ///
+/// SCREEN_CODEX:
+///
+/// This screen shows all of the cards, piece and relic the player has unlocked
+/// as well as the info that is shown on the screen.
+///
 /// SCREEN_MAP:
 ///
 /// This screen shows the current progress of the tiers of the kingdom selected
 /// by the campaign screen. In this screen the player can select a node and
 /// choose to battle. This screen only has access back to the campaign screen.
 ///
+/// SCREEN_BATTLE:
+///
+/// This screen shows the ongoing battle. This screen has no access to any of
+/// the other screens.
+///
+/// SCREEN_SETTINGS:
+///
+/// This screen shows the settings state of the game. The settings page also
+/// holds the button where the player can reset all progress in the run or game
+/// This screen has a back button that takes the player back to the previous
+/// screen
 enum ScreenID {
     SCREEN_TITLE,
     SCREEN_CAMPAIGN,
+    SCREEN_CODEX,
     SCREEN_MAP,
     SCREEN_BATTLE,
-    SCREEN_CODEX,
     SCREEN_SETTINGS,
     SCREEN_COUNT
 };
-
-/*----------------------------------------------------------------------------*\
-                                 SCREEN STRUCT
-\*----------------------------------------------------------------------------*/
 
 /// Screen
 ///
@@ -56,13 +78,12 @@ enum ScreenID {
 /// screen transitions or trigger game state changes.
 ///
 struct Screen {
-    char* name;
-    void  (*handle)(EngineState* engine, ...);
-};
+    char*   name;
+    Screen* prev;
+    size_t  cursor;
 
-/*----------------------------------------------------------------------------*\
-                                 SCREENS
-\*----------------------------------------------------------------------------*/
+    void    (*handle)(EngineState* engine, ...);
+};
 
 /// SCREEN_REGISTRY
 ///

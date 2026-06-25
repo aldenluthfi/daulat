@@ -1,4 +1,4 @@
-# REGNUM
+# DAULAT
 
 _Five kingdoms. One tyrant. No mercy._
 
@@ -904,14 +904,14 @@ Split 50/50 of battles in their kingdom. Revealed before entering the node.
 | Trait          | Effect                                                                                             |
 | -------------- | -------------------------------------------------------------------------------------------------- |
 | River Crossing | A row bisects the board. Xiang cannot cross it. Bing gains sideways step immediately upon crossing |
-| The Palace     | A 3x3 zone near the king. The king cannot voluntarily leave it.                                    |
+| The Palace     | A 3x3 zone near the king. The king cannot leave it.                                                |
 
 #### Kewarani
 
-| Trait            | Effect                                                                                                                                                                                             |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Trade Route      | A diagonal path crosses the board. Any piece on it gains +1 movement per action.                                                                                                                   |
-| Contested Market | Start of each turn: 1 random Kewarani Town piece appears at a random contested square. It will turn to whatever player's territory cover it at the end of the turn (or disappear when not claimed) |
+| Trait            | Effect                                                                                                                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Trade Route      | A diagonal path crosses the board. Any piece on it gains +1 movement per action.                                                                                                                          |
+| Contested Market | Start of each turn: 1 random Kewarani Town piece appears at a random contested square. It will turn to whatever player's territory cover it at the start of the next turn (or disappear when not claimed) |
 
 #### Zarqan
 
@@ -929,10 +929,10 @@ Split 50/50 of battles in their kingdom. Revealed before entering the node.
 
 #### Caelan
 
-| Trait          | Effect                                                                 |
-| -------------- | ---------------------------------------------------------------------- |
-| Castle Corners | The four 2x2 corner zones grant Bulwark to any piece standing in them. |
-| Siege Trench   | A row of immunity squares at the middle of the board                   |
+| Trait          | Effect                                                                  |
+| -------------- | ----------------------------------------------------------------------- |
+| Castle Corners | The four 2x2 corner zones grant immunity to any piece standing in them. |
+| Siege Trench   | A row of immunity squares at the middle of the board                    |
 
 ---
 
@@ -1025,7 +1025,7 @@ Unlocked after defeating the previous difficulty once.
 
 - Meter UI must show projected damage before resolve. Players should never be surprised by the numbers.
 - AI stores intended moves each turn. Divination card reads this store.
-- Build an irregular-board generator early. Hardcoded boards create a recognizable loop after 10 hours.
+- Build an irregular-board generator early. Hardcoded boards create a recognizable loop.
 - All movement patterns are data-driven, not hardcoded. The combination system mixes patterns at runtime.
 
 ### Known Failure Modes
