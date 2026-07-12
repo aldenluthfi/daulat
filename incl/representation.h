@@ -15,11 +15,60 @@
 ///
 /// This enum enumerates all the triggers that can activate an effect.
 /// Triggers are conditions that cause effects to fire during gameplay.
+/// The void* x passed to every effect function is the value the trigger
+/// is computing: it starts at the base value and mutates in place as it
+/// passes through every matching effect. The concrete type behind x per
+/// trigger:
+///
+/// QUERY_CARD_DRAW_COUNT           x: int*        base 3
+/// QUERY_CARD_PLAY_COST            x: int*        card play_cost
+/// QUERY_CARD_SELL_COST            x: int*        card sell_cost
+/// QUERY_CARD_CAN_DRAW             x: bool*       base true
+/// QUERY_PIECE_ACTION_COST_MOVE    x: int*        base 1
+/// QUERY_PIECE_ACTION_COST_BUY     x: int*        base 1
+/// QUERY_PIECE_ACTION_COST_COMBINE x: int*        base 1
+/// QUERY_PIECE_CP_COST_BUY         x: int*        effective value with
+///                                                home/foreign pre-applied
+/// QUERY_PIECE_CP_COST_RECLAIM     x: int*        base 30
+/// QUERY_PIECE_CAN_FLIP            x: bool*       true; subject candidate
+/// QUERY_PIECE_CAN_MOVE            x: bool*       base true
+/// QUERY_PIECE_CAN_ATTACK          x: bool*       base true
+/// QUERY_PIECE_MOVES               x: Square*     list from mv, edited in
+///                                                place, SQUARE_END ended
+/// QUERY_PIECE_ATTACKS             x: Square*     list from at, same rule
+/// QUERY_PIECE_DAMAGE_DEALT        x: int*        subject piece value;
+///                                                victim nullptr means
+///                                                effective-value query
+/// QUERY_PIECE_DAMAGE_TAKEN        x: int*        post-offense damage;
+///                                                subject is the victim
+/// QUERY_METER_DAMAGE_TAKEN        x: int*        total resolve damage;
+///                                                side is the receiver
+/// QUERY_METER_REFILL              x: int*        battle_meter_max result
+/// QUERY_CP_INCOME                 x: int*        base 10
+/// ON_PIECE_FLIP_PRE               x: PieceInfo** pre-toggle; mutate *x
+///                                                to redirect the flip or
+///                                                set nullptr to consume
+/// ON_PIECE_FLIP                   x: PieceInfo*  right after the side
+///                                                toggle; damagers live
+/// ON_PIECE_FLIP_POST              x: PieceInfo*  after the cascade step
+///                                                settles (refill and
+///                                                consume spawns done)
+/// ON_PIECE_BUY                    x: PieceInfo*  piece just bought
+/// ON_PIECE_MOVE                   x: PieceInfo*  moved piece; origin via
+///                                                battle_move_from()
+/// ON_PIECE_COMBINE                x: PieceInfo*  combination result
+/// ON_CARD_PLAY                    x: Card*       card just played
+/// ON_CARD_SELL                    x: Card*       card just sold
+/// ON_TURN_START                   x: uintptr_t   current turn number
+/// ON_TURN_END                     x: uintptr_t   current turn number
+/// ON_BATTLE_START                 x: MapNode*    battle location node
+/// ON_BATTLE_END                   x: uintptr_t   winning Side
 ///
 enum EffectTrigger {
     QUERY_CARD_DRAW_COUNT,
     QUERY_CARD_PLAY_COST,
     QUERY_CARD_SELL_COST,
+    QUERY_CARD_CAN_DRAW,
 
     QUERY_PIECE_ACTION_COST_MOVE,
     QUERY_PIECE_ACTION_COST_BUY,
@@ -32,14 +81,20 @@ enum EffectTrigger {
     QUERY_PIECE_CAN_MOVE,
     QUERY_PIECE_CAN_ATTACK,
 
+    QUERY_PIECE_MOVES,
+    QUERY_PIECE_ATTACKS,
+
     QUERY_PIECE_DAMAGE_DEALT,
     QUERY_PIECE_DAMAGE_TAKEN,
 
     QUERY_METER_DAMAGE_TAKEN,
+    QUERY_METER_REFILL,
 
     QUERY_CP_INCOME,
 
+    ON_PIECE_FLIP_PRE,
     ON_PIECE_FLIP,
+    ON_PIECE_FLIP_POST,
     ON_PIECE_BUY,
     ON_PIECE_MOVE,
     ON_PIECE_COMBINE,
@@ -144,7 +199,30 @@ enum PieceID {
     PIECE_SOVEREIGN_BANNER,
 
     PIECE_COUNT,
-    PIECE_SENTINEL,
+    PIECE_NONE,
+};
+
+/// Side
+///
+/// This enum enumerates the sides a piece or player can belong to during
+/// battle. Neutral pieces belong to neither player and never resolve.
+///
+enum Side {
+    SIDE_WHITE,
+    SIDE_BLACK,
+    SIDE_NEUTRAL,
+};
+
+/// MoveClass
+///
+/// This enum classifies pieces by their movement pattern. Effects that
+/// alter movement, such as auras and board traits, filter their subjects
+/// by class.
+///
+enum MoveClass {
+    MOVE_LEAPER,
+    MOVE_SLIDER,
+    MOVE_SPECIAL,
 };
 
 /*----------------------------------------------------------------------------*\
@@ -216,14 +294,17 @@ enum CardID {
     CARD_SELASSIES_MARCH,
     CARD_TIMURS_CONQUEST,
     CARD_ISABELLAS_CORONATION,
+
+    CARD_COUNT
 };
 
-/// CardTier
+/// UnlockTier
 ///
-/// This enum enumerates all card tiers. Tiers determine card availability
-/// based on map progression and affect sell values.
+/// This enum enumerates the progression tiers that gate when pieces and
+/// cards become available, following the map ladder from district to
+/// country plus the mastery reward pool.
 ///
-enum CardTier {
+enum UnlockTier {
     TIER_DISTRICT,
     TIER_TOWN,
     TIER_PROVINCE,
@@ -241,6 +322,8 @@ enum CardTier {
 /// when completing a run without chains and defeating Vorath.
 ///
 enum MasteryLevel {
+    MASTERY_NONE,
+
     MASTERY_LEVEL_1,
     MASTERY_LEVEL_2,
     MASTERY_LEVEL_3,
@@ -263,6 +346,7 @@ enum KingdomID {
     KINGDOM_CAELAN,
 
     KINGDOM_COUNT,
+    KINGDOM_NONE,
 };
 
 /*----------------------------------------------------------------------------*\
@@ -346,6 +430,8 @@ enum BattleModifierID {
     MODIFIER_DENSE_TERRAIN,
     MODIFIER_EXTENDED_FRONT,
     MODIFIER_COMPRESSED,
+
+    MODIFIER_COUNT,
 };
 
 /*----------------------------------------------------------------------------*\
@@ -371,6 +457,8 @@ enum BoardTraitID {
 
     BOARD_TRAIT_CASTLE_CORNERS,
     BOARD_TRAIT_SIEGE_TRENCH,
+
+    BOARD_TRAIT_COUNT,
 };
 
 /*----------------------------------------------------------------------------*\
@@ -387,6 +475,8 @@ enum MapNodeID {
     MAP_NODE_ARCHIVE,
     MAP_NODE_OFFERING,
     MAP_NODE_EVENT,
+    MAP_NODE_OVERSEER,
+    MAP_NODE_LIBERATION,
 };
 
 /// MapTypeID
@@ -413,6 +503,8 @@ enum AIArchetypeID {
     AI_TRICKSTER,
     AI_RECLAIMER,
     AI_THE_HAMMER,
+
+    AI_ARCHETYPE_COUNT,
 };
 
 /*----------------------------------------------------------------------------*\
@@ -423,12 +515,15 @@ enum AIArchetypeID {
 ///
 /// This enum enumerates all difficulty levels. Higher difficulties add
 /// penalties and are unlocked after defeating the previous level once.
+/// DIFFICULTY_NONE marks a profile that has beaten nothing yet.
 ///
 enum Difficulty {
     DIFFICULTY_FREE,
     DIFFICULTY_BOUND,
     DIFFICULTY_SHACKLED,
     DIFFICULTY_ENSLAVED,
+
+    DIFFICULTY_NONE,
 };
 
 /*----------------------------------------------------------------------------*\
@@ -437,7 +532,8 @@ enum Difficulty {
 
 /// ChallengeRunID
 ///
-/// This enum enumerates all challenge run modifiers.
+/// This enum enumerates all challenge run modifiers. CHALLENGE_NONE
+/// marks runs started without a challenge.
 ///
 enum ChallengeRunID {
     CHALLENGE_DAILY_CONQUEST,
@@ -446,6 +542,9 @@ enum ChallengeRunID {
     CHALLENGE_BLIND_DRAFT,
     CHALLENGE_THE_TRAITORS_GAMBIT,
     CHALLENGE_CLOCKWORK,
+
+    CHALLENGE_COUNT,
+    CHALLENGE_NONE,
 };
 
 /*----------------------------------------------------------------------------*\
@@ -461,6 +560,8 @@ enum ChainPenaltyID {
     CHAIN_BRONZE,
     CHAIN_SILVER,
     CHAIN_GOLD,
+
+    CHAIN_PENALTY_COUNT,
 };
 
 /*----------------------------------------------------------------------------*\
@@ -477,6 +578,8 @@ enum OverseerTypeID {
     OVERSEER_MANY_FACED_KING,
     OVERSEER_ETERNAL_RECURSION,
     OVERSEER_CROWNED_HERETIC,
+
+    OVERSEER_COUNT,
 };
 
 /*----------------------------------------------------------------------------*\
@@ -525,6 +628,8 @@ enum EventID {
     EVENT_VORATHS_DECREE,
     EVENT_DESERTER,
     EVENT_ARCHIVE,
+
+    EVENT_COUNT,
 };
 
 /// EventChoice
@@ -575,9 +680,14 @@ struct EffectContext {
 /// Effect
 ///
 /// Represents a single effect that can be attached to various game items.
+/// func returns whether the effect actually applied: self-filtered
+/// invocations return false. The name identifies the effect in the
+/// protocol's effect-fire log lines, emitted only for applied fires;
+/// templates set it and attach copies it.
 ///
 struct Effect {
-    void           (*func)(EffectContext* context, void* x);
+    bool           (*func)(EffectContext* context, void* x);
+    char*          name;
 
     EffectTrigger  trigger;
     EffectDuration lasts_for;
@@ -592,15 +702,21 @@ struct Effect {
 ///
 /// Maximum board size in squares (20x20 Vorath board).
 ///
-#define MAX_BOARD_SIZE 20 * 20
+#define MAX_BOARD_SIZE (20 * 20)
 
 /// Board
 ///
-/// Represents the game board with its traits.
+/// Represents the game board with its cells and trait. Cells are indexed
+/// y * 20 + x regardless of the active width. A cell holds the live piece
+/// occupying it, nullptr when empty, or &VOID_CELL when the square does
+/// not exist on this board.
 ///
 struct Board {
-    PieceID     piece_board[MAX_BOARD_SIZE];
+    PieceInfo*  piece_board[MAX_BOARD_SIZE];
     BoardTrait* trait;
+
+    int8_t      width;
+    int8_t      height;
 };
 
 /// Square
@@ -612,6 +728,15 @@ struct Square {
     int8_t y;
 };
 
+/// SQUARE_END
+///
+/// Terminator value for Square lists produced by movement generation.
+/// Offset and direction arrays fed to mg_leap and mg_slide terminate
+/// with the zero vector instead, since up-left { -1, -1 } is itself a
+/// legitimate offset while no piece ever has a zero offset.
+///
+#define SQUARE_END ((Square) { -1, -1 })
+
 /*----------------------------------------------------------------------------*\
                                 PIECE.C STRUCTS
 \*----------------------------------------------------------------------------*/
@@ -619,27 +744,34 @@ struct Square {
 /// Piece
 ///
 /// Represents a piece definition with its movement and attack functions.
+/// Registry entries are const templates; battle_spawn heap-copies the
+/// template so per-instance fields such as value may mutate during battle.
 ///
 struct Piece {
-    Square* (*at)(BattleState* battle_state);
-    Square* (*mv)(BattleState* battle_state);
+    Square* (*at)(BattleState* battle_state, PieceInfo* self);
+    Square* (*mv)(BattleState* battle_state, PieceInfo* self);
 
-    PieceID id;
-    char*   name;
-    char*   desc;
+    EFFECT_ITEM_BASE;
+
+    PieceID    id;
+    KingdomID  kingdom;
+    UnlockTier tier;
+    MoveClass  class;
+
+    int        value;
 };
 
 /// PieceInfo
 ///
-/// Runtime information about a piece on the board including its position
-/// and current state flags.
+/// Runtime information about a live piece on the board including its
+/// owned heap copy of the piece template, position, and side. Allocated
+/// on the heap per live piece so its pointer is a stable identity;
+/// flipping a piece toggles side in place.
 ///
 struct PieceInfo {
     Piece* piece;
-
     Square square;
-    bool   immune;
-    bool   flipped;
+    Side   side;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -648,13 +780,18 @@ struct PieceInfo {
 
 /// Card
 ///
-/// A card that can be drawn and played during battle.
+/// A card that can be drawn and played during battle. A play_cost of
+/// zero means the card is free to play.
 ///
 struct Card {
     EFFECT_ITEM_BASE;
 
-    CardID   id;
-    CardTier tier;
+    CardID     id;
+    UnlockTier tier;
+    KingdomID  kingdom;
+
+    int        play_cost;
+    int        sell_cost;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -665,12 +802,15 @@ struct Card {
 ///
 /// Tracks the state of a kingdom including its mastery level, chain penalties,
 ///
-/// and maps for each tier.
+/// and maps for each tier. ever_chained records whether this kingdom was
+/// chained at any point during the current run, since mastery requires a
+/// chainless run even after the chain pointer clears on a win.
 ///
 struct KingdomState {
     KingdomID     id;
     MasteryLevel  mastery;
     ChainPenalty* chain;
+    bool          ever_chained;
 
     MapState*     town_map;
     MapState*     province_map;
@@ -799,7 +939,7 @@ struct PlayerState {
     int        meter;
     int        actions;
 
-    Card       hand[MAX_DRAWN_CARDS];
+    Card*      hand[MAX_DRAWN_CARDS];
     LinkedList effects;
 };
 
@@ -807,7 +947,9 @@ struct PlayerState {
 ///
 /// The complete state of a battle including turn count, board, modifier,
 ///
-/// and both player states.
+/// and both player states. node points at the campaign map node the
+/// battle takes place on, giving access to kingdom pricing, board trait,
+/// and node type.
 ///
 struct BattleState {
     Board           board;
@@ -816,6 +958,7 @@ struct BattleState {
     PlayerState     black;
 
     BattleModifier* modifier;
+    MapNode*        node;
     size_t          turn;
 };
 
@@ -826,17 +969,26 @@ struct BattleState {
 /// RunState
 ///
 /// Tracks the state of a complete run including unlocked relics, pieces,
-/// synergies, kingdom progress, difficulty, and Vorath counter.
+/// synergies, kingdom progress, difficulty, and Vorath counter. Each
+/// liberation_at entry locks that kingdom's liberation battle until
+/// battles_fought reaches it after a failed attempt.
 ///
 struct RunState {
-    bool         relics[RELIC_COUNT];
-    bool         pieces[PIECE_COUNT];
-    bool         synergies[KINGDOM_COUNT];
+    bool           relics[RELIC_COUNT];
+    bool           pieces[PIECE_COUNT];
+    bool           cards[CARD_COUNT];
+    bool           synergies[KINGDOM_COUNT];
 
-    KingdomState kingdoms[KINGDOM_COUNT];
+    KingdomState   kingdoms[KINGDOM_COUNT];
+    EventState     events[EVENT_COUNT];
 
-    Difficulty   difficulty;
-    size_t       vorath_counter;
+    Difficulty     difficulty;
+    ChallengeRunID challenge;
+
+    size_t         seed;
+    size_t         vorath_counter;
+    size_t         battles_fought;
+    size_t         liberation_at[KINGDOM_COUNT];
 };
 
 /*----------------------------------------------------------------------------*\
@@ -845,12 +997,265 @@ struct RunState {
 
 /// EngineState
 ///
-/// The master game state containing all masteries and a pointer to the
-/// current run.
+/// The master game state containing all masteries, the highest cleared
+/// difficulty, the active screen, and pointers to the current run and
+/// battle. battle is nullptr outside of battle.
 ///
 struct EngineState {
     MasteryLevel masteries[KINGDOM_COUNT];
+    Difficulty   cleared;
 
     Screen*      screen;
     RunState*    run;
+    BattleState* battle;
 };
+
+/*----------------------------------------------------------------------------*\
+                                    EFFECT.C
+\*----------------------------------------------------------------------------*/
+
+Effect* effect_attach(LinkedList* list, const Effect* effect);
+void    effect_fire(BattleState* battle, Side side,
+                    EffectTrigger trigger, void* x);
+void    effect_tick(LinkedList* list);
+void    effect_clear(LinkedList* list);
+bool    eff_noop(EffectContext* context, void* x);
+Effect* effect_find_mark(LinkedList* list, uintptr_t tag, void* subject);
+
+/*----------------------------------------------------------------------------*\
+                                    BATTLE.C
+\*----------------------------------------------------------------------------*/
+
+/// VOID_CELL
+///
+/// Sentinel piece info marking squares that do not exist on the current
+/// board. Board cells point at this constant; live pieces never do.
+///
+extern const PieceInfo VOID_CELL;
+
+void       battle_begin(EngineState* engine, MapNode* node);
+void       battle_free(BattleState* battle);
+
+bool       battle_move(BattleState* battle, Square from, Square to);
+bool       battle_buy(BattleState* battle, PieceID id, Square at);
+bool       battle_combine(BattleState* battle, Square a, Square b);
+bool       battle_play(BattleState* battle, size_t hand, long a, long b);
+bool       battle_sell(BattleState* battle, size_t hand);
+bool       battle_reclaim(BattleState* battle, Square at);
+void       battle_end_turn(BattleState* battle);
+
+Square*    battle_moves(BattleState* battle, PieceInfo* piece);
+Square*    battle_attacks(BattleState* battle, PieceInfo* piece);
+int        battle_value(BattleState* battle, PieceInfo* piece,
+                        PieceInfo* victim);
+int        battle_meter_max(BattleState* battle, Side side);
+Side       battle_territory(BattleState* battle, Square square);
+PieceInfo* battle_at(BattleState* battle, Square square);
+bool       battle_in_bounds(BattleState* battle, Square square);
+PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at,
+                        Side side);
+void       battle_flip(BattleState* battle, PieceInfo* piece);
+void       battle_remove(BattleState* battle, PieceInfo* piece);
+
+/// Subject registers
+///
+/// Hidden per-fire state set only by the battle.c emission points so
+/// effects can self-filter without payload slots. battle_victim is
+/// nullptr outside damage queries, battle_damagers is a null-terminated
+/// list live only during resolve, and battle_move_from is valid only
+/// during ON_PIECE_MOVE.
+///
+BattleState* battle_current(void);
+PieceInfo*   battle_subject(void);
+PieceInfo*   battle_victim(void);
+Card*        battle_subject_card(void);
+Square       battle_move_from(void);
+PieceInfo**  battle_damagers(void);
+
+/// Generic direction sets
+///
+/// Shared zero-vector terminated unit direction arrays. They serve both
+/// as slide directions and as single-step leap offsets. Piece-specific
+/// patterns are never named globals: they live inline as compound
+/// literals at the piece's generator function.
+///
+extern const Square ORTHOGONAL_DIRECTIONS[];
+extern const Square DIAGONAL_DIRECTIONS[];
+extern const Square ALL_DIRECTIONS[];
+
+/// Movegen kit
+///
+/// mg_begin resets the shared static scratch buffer, mg_push appends one
+/// square, and mg_end terminates the list with SQUARE_END and returns the
+/// buffer. The sentinel is overwritten by the next push, so sequential
+/// generator calls concatenate. The buffer stays valid only until the
+/// next battle_moves or battle_attacks call and must never be filled
+/// reentrantly: bespoke functions that need another piece's list copy it
+/// out to a local buffer first, then mg_begin and mg_push the result.
+/// Offset and direction arrays are written from the white perspective
+/// (forward = -y) and terminate with the zero vector { 0, 0 };
+/// mg_compound parts are PIECE_NONE terminated and generate from
+/// self's square and side.
+/// threat selects at (coverage) semantics over mv (movement) semantics.
+///
+void    mg_begin(void);
+void    mg_push(Square square);
+Square* mg_end(void);
+void    mg_leap(BattleState* battle, PieceInfo* self,
+                const Square* offsets, bool threat);
+void    mg_slide(BattleState* battle, PieceInfo* self,
+                 const Square* directions, int8_t min, int8_t max,
+                 bool threat);
+void    mg_compound(BattleState* battle, PieceInfo* self,
+                    const PieceID* parts, bool threat);
+
+/*----------------------------------------------------------------------------*\
+                                      AI.C
+\*----------------------------------------------------------------------------*/
+
+void ai_take_turn(BattleState* battle);
+void ai_plan(BattleState* battle);
+
+/*----------------------------------------------------------------------------*\
+                                     RUN.C
+\*----------------------------------------------------------------------------*/
+
+size_t rng_mix(size_t seed, size_t salt);
+void   run_new(EngineState* engine, size_t seed, Difficulty difficulty,
+               ChallengeRunID challenge);
+void   run_free(RunState* run);
+void   run_enter_map(EngineState* engine, KingdomID kingdom);
+bool   run_select_node(EngineState* engine, size_t index);
+void   run_battle_result(EngineState* engine, bool won);
+void   run_event_choose(EngineState* engine, EventChoice choice);
+void   run_offering(EngineState* engine, CardID card);
+void   run_relic_pick(EngineState* engine, RelicID relic);
+size_t run_pressure(RunState* run, KingdomID kingdom);
+
+/*----------------------------------------------------------------------------*\
+                                   ENGINE.C
+\*----------------------------------------------------------------------------*/
+
+void engine_init(EngineState* engine);
+void engine_free(EngineState* engine);
+bool engine_save(EngineState* engine, const char* path);
+bool engine_load(EngineState* engine, const char* path);
+void engine_finalize_run(EngineState* engine, bool vorath_won);
+
+/*----------------------------------------------------------------------------*\
+                                    RELIC.C
+\*----------------------------------------------------------------------------*/
+
+/// RELIC_REGISTRY
+///
+/// Global array of all relic definitions indexed by RelicID.
+///
+extern const Relic RELIC_REGISTRY[RELIC_COUNT];
+
+/*----------------------------------------------------------------------------*\
+                              KINGDOM/UNIVERSAL.C
+\*----------------------------------------------------------------------------*/
+
+/// Universal data
+///
+/// UNIVERSAL_PIECES holds pieces belonging to no kingdom (the King) and
+/// UNIVERSAL_CARDS the universal and mastery card pools. The registries
+/// are pointer tables indexed by id aggregating every kingdom's arrays.
+/// KINGDOM_ADJACENT maps each kingdom to its synergy neighbor and the
+/// EVENT_* tables hold narrative strings indexed by EventID.
+///
+extern const Piece          UNIVERSAL_PIECES[];
+extern const Card           UNIVERSAL_CARDS[];
+
+extern const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT];
+extern const ChainPenalty   CHAIN_REGISTRY[CHAIN_PENALTY_COUNT];
+
+extern const Piece* const      PIECE_REGISTRY[PIECE_COUNT];
+extern const Card* const       CARD_REGISTRY[CARD_COUNT];
+extern const BoardTrait* const TRAIT_REGISTRY[BOARD_TRAIT_COUNT];
+
+extern const KingdomID KINGDOM_ADJACENT[KINGDOM_COUNT];
+
+extern const char* const EVENT_NAME[EVENT_COUNT];
+extern const char* const EVENT_TEXT[EVENT_COUNT];
+extern const char* const EVENT_OPTION_A[EVENT_COUNT];
+extern const char* const EVENT_OPTION_B[EVENT_COUNT];
+
+void vorath_setup(BattleState* battle);
+
+/// Kingdom dispatch tables
+///
+/// Function pointer tables indexed by KingdomID aggregating each
+/// kingdom's innate, climax, overseer setup, and event handler.
+///
+extern void (*const KINGDOM_INNATE[KINGDOM_COUNT])(BattleState*, Side,
+                                                   MasteryLevel);
+extern void (*const KINGDOM_CLIMAX[KINGDOM_COUNT])(BattleState*, Side);
+extern void (*const KINGDOM_OVERSEER[KINGDOM_COUNT])(BattleState*);
+extern void (*const KINGDOM_EVENT[KINGDOM_COUNT])(EngineState*, EventID,
+                                                  EventChoice);
+
+/*----------------------------------------------------------------------------*\
+                               KINGDOM/LONGWEI.C
+\*----------------------------------------------------------------------------*/
+
+extern const Piece      LONGWEI_PIECES[];
+extern const Card       LONGWEI_CARDS[];
+extern const BoardTrait LONGWEI_TRAITS[];
+
+void longwei_innate(BattleState* battle, Side side, MasteryLevel level);
+void longwei_climax(BattleState* battle, Side side);
+void longwei_overseer(BattleState* battle);
+void longwei_event(EngineState* engine, EventID id, EventChoice choice);
+
+/*----------------------------------------------------------------------------*\
+                              KINGDOM/KEWARANI.C
+\*----------------------------------------------------------------------------*/
+
+extern const Piece      KEWARANI_PIECES[];
+extern const Card       KEWARANI_CARDS[];
+extern const BoardTrait KEWARANI_TRAITS[];
+
+void kewarani_innate(BattleState* battle, Side side, MasteryLevel level);
+void kewarani_climax(BattleState* battle, Side side);
+void kewarani_overseer(BattleState* battle);
+void kewarani_event(EngineState* engine, EventID id, EventChoice choice);
+
+/*----------------------------------------------------------------------------*\
+                               KINGDOM/ZARQAN.C
+\*----------------------------------------------------------------------------*/
+
+extern const Piece      ZARQAN_PIECES[];
+extern const Card       ZARQAN_CARDS[];
+extern const BoardTrait ZARQAN_TRAITS[];
+
+void zarqan_innate(BattleState* battle, Side side, MasteryLevel level);
+void zarqan_climax(BattleState* battle, Side side);
+void zarqan_overseer(BattleState* battle);
+void zarqan_event(EngineState* engine, EventID id, EventChoice choice);
+
+/*----------------------------------------------------------------------------*\
+                             KINGDOM/HARUSHIMA.C
+\*----------------------------------------------------------------------------*/
+
+extern const Piece      HARUSHIMA_PIECES[];
+extern const Card       HARUSHIMA_CARDS[];
+extern const BoardTrait HARUSHIMA_TRAITS[];
+
+void harushima_innate(BattleState* battle, Side side, MasteryLevel level);
+void harushima_climax(BattleState* battle, Side side);
+void harushima_overseer(BattleState* battle);
+void harushima_event(EngineState* engine, EventID id, EventChoice choice);
+
+/*----------------------------------------------------------------------------*\
+                               KINGDOM/CAELAN.C
+\*----------------------------------------------------------------------------*/
+
+extern const Piece      CAELAN_PIECES[];
+extern const Card       CAELAN_CARDS[];
+extern const BoardTrait CAELAN_TRAITS[];
+
+void caelan_innate(BattleState* battle, Side side, MasteryLevel level);
+void caelan_climax(BattleState* battle, Side side);
+void caelan_overseer(BattleState* battle);
+void caelan_event(EngineState* engine, EventID id, EventChoice choice);

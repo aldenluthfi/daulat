@@ -11,11 +11,32 @@
                                    PROTOCOL.C
 \*----------------------------------------------------------------------------*/
 
+/// PROTOCOL_LINE_MAX
+///
+/// Maximum length in bytes of a single protocol input line including the
+/// trailing newline and terminating NUL.
+///
+#define PROTOCOL_LINE_MAX 256
+
+/// PROTOCOL_MAX_ARGS
+///
+/// Maximum number of whitespace-separated tokens in one protocol command.
+///
+#define PROTOCOL_MAX_ARGS 16
+
 struct Protocol {
     EngineState* engine;
     FILE*        in;
     FILE*        out;
 };
+
+void        protocol_bind(Protocol* protocol);
+void        protocol_run(Protocol* protocol);
+void        protocol_emit(const char* format, ...);
+
+const char* arg_value(int argc, char** argv, const char* key);
+long        arg_long(int argc, char** argv, const char* key,
+                     long fallback);
 
 /*----------------------------------------------------------------------------*\
                                     SCREEN.C
@@ -75,7 +96,9 @@ enum ScreenID {
 ///
 /// Represents a game screen with a name and a variadic handler function.
 /// The handler processes commands specific to this screen and may emit
-/// screen transitions or trigger game state changes.
+/// screen transitions or trigger game state changes. Handlers are always
+/// invoked as handle(engine, (int) argc, (char**) argv) and must va_arg
+/// exactly that pair.
 ///
 struct Screen {
     char*   name;
@@ -88,6 +111,9 @@ struct Screen {
 /// SCREEN_REGISTRY
 ///
 /// Global array containing all screen definitions indexed by ScreenID.
-/// Each entry provides the screen name and handler function.
+/// Each entry provides the screen name and handler function. Mutable at
+/// runtime because prev and cursor track back-navigation state.
 ///
-extern const Screen SCREEN_REGISTRY[SCREEN_COUNT];
+extern Screen SCREEN_REGISTRY[SCREEN_COUNT];
+
+void screen_goto(EngineState* engine, ScreenID id);

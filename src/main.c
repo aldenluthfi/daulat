@@ -14,9 +14,25 @@
 ///
 /// Entry point for the application. Accepts standard argc/argv arguments
 /// for future command-line options such as --seed for deterministic runs
-/// or --log-level for debugging.
+/// or --save for a custom save path.
+///
+/// Params:
+/// - argc -> number of command-line arguments
+/// - argv -> command-line argument array
+///
+/// Return: process exit status
 ///
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
+
+    EngineState engine;
+    engine_init(&engine);
+
+    Protocol protocol = { &engine, stdin, stdout };
+    protocol_run(&protocol);
+
+    engine_free(&engine);
+
+    return EXIT_SUCCESS;
 }
