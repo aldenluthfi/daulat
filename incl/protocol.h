@@ -35,8 +35,7 @@ void        protocol_run(Protocol* protocol);
 void        protocol_emit(const char* format, ...);
 
 const char* arg_value(int argc, char** argv, const char* key);
-long        arg_long(int argc, char** argv, const char* key,
-                     long fallback);
+long        arg_long(int argc, char** argv, const char* key, long fallback);
 
 /*----------------------------------------------------------------------------*\
                                     SCREEN.C
@@ -116,4 +115,4 @@ struct Screen {
 ///
 extern Screen SCREEN_REGISTRY[SCREEN_COUNT];
 
-void screen_goto(EngineState* engine, ScreenID id);
+void          screen_goto(EngineState* engine, ScreenID id);

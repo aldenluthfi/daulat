@@ -22,7 +22,7 @@ static Protocol* BOUND_PROTOCOL;
 /// Params:
 /// - protocol -> protocol to bind
 ///
-void protocol_bind(Protocol* protocol) {
+void             protocol_bind(Protocol* protocol) {
     BOUND_PROTOCOL = protocol;
 }
 
@@ -66,8 +66,7 @@ const char* arg_value(int argc, char** argv, const char* key) {
     size_t length = strlen(key);
 
     for (int i = 1; i < argc; i++) {
-        if (strncmp(argv[i], key, length) == 0
-            && argv[i][length] == '=') {
+        if (strncmp(argv[i], key, length) == 0 && argv[i][length] == '=') {
             return argv[i] + length + 1;
         }
     }
@@ -88,8 +87,7 @@ const char* arg_value(int argc, char** argv, const char* key) {
 ///
 /// Return: parsed value or the fallback
 ///
-long arg_long(int argc, char** argv, const char* key,
-              long fallback) {
+long arg_long(int argc, char** argv, const char* key, long fallback) {
     const char* value = arg_value(argc, argv, key);
 
     if (!value) {

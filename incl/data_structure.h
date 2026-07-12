@@ -72,6 +72,5 @@ struct DirectedGraph {
 };
 
 DirectedGraph dag_init(void);
-void          dag_rand(DirectedGraph* graph, size_t vertices, size_t edges,
-                       size_t seed);
-void          dag_free(DirectedGraph* graph);
+void dag_rand(DirectedGraph* graph, size_t vertices, size_t edges, size_t seed);
+void dag_free(DirectedGraph* graph);

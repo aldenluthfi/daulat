@@ -14,21 +14,21 @@
                                SUBJECT REGISTERS
 \*----------------------------------------------------------------------------*/
 
-const PieceInfo VOID_CELL = {};
+const PieceInfo      VOID_CELL = {};
 
-static BattleState* CURRENT_BATTLE;
-static PieceInfo*   SUBJECT;
-static PieceInfo*   VICTIM;
-static Card*        SUBJECT_CARD;
-static Square       MOVE_FROM = { -1, -1 };
-static PieceInfo**  DAMAGERS;
+static BattleState*  CURRENT_BATTLE;
+static PieceInfo*    SUBJECT;
+static PieceInfo*    VICTIM;
+static Card*         SUBJECT_CARD;
+static Square        MOVE_FROM = {-1, -1};
+static PieceInfo**   DAMAGERS;
 
-static EngineState* BATTLE_ENGINE;
-static Side         HUMAN_SIDE;
-static Side         ACTING_SIDE;
-static unsigned int BATTLE_RNG;
-static PieceInfo*   FLIPPED_PIECE;
-static PieceInfo*   DAMAGER_LIST[MAX_BOARD_SIZE + 1];
+static EngineState*  BATTLE_ENGINE;
+static Side          HUMAN_SIDE;
+static Side          ACTING_SIDE;
+static unsigned int  BATTLE_RNG;
+static PieceInfo*    FLIPPED_PIECE;
+static PieceInfo*    DAMAGER_LIST[MAX_BOARD_SIZE + 1];
 
 static const PieceID COMBO_RESULTS[] = {
     PIECE_SANG,
@@ -47,6 +47,8 @@ static const PieceID COMBO_RESULTS[] = {
     PIECE_SOVEREIGN_BANNER,
     PIECE_NONE,
 };
+
+static int   KINGDOM_PLAYS[KINGDOM_COUNT];
 
 /// battle_current
 ///
@@ -118,20 +120,31 @@ PieceInfo** battle_damagers(void) {
 \*----------------------------------------------------------------------------*/
 
 const Square ORTHOGONAL_DIRECTIONS[] = {
-    { 0, -1 }, { -1, 0 }, { 1, 0 }, { 0, 1 },
-    { 0,  0 },
+    {0, -1},
+    {-1, 0},
+    {1, 0},
+    {0, 1},
+    {0, 0},
 };
 
 const Square DIAGONAL_DIRECTIONS[] = {
-    { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 },
-    {  0,  0 },
+    {-1, -1},
+    {1, -1},
+    {-1, 1},
+    {1, 1},
+    {0, 0},
 };
 
 const Square ALL_DIRECTIONS[] = {
-    { -1, -1 }, { 0, -1 }, { 1, -1 },
-    { -1,  0 },            { 1,  0 },
-    { -1,  1 }, { 0,  1 }, { 1,  1 },
-    {  0,  0 },
+    {-1, -1},
+    {0, -1},
+    {1, -1},
+    {-1, 0},
+    {1, 0},
+    {-1, 1},
+    {0, 1},
+    {1, 1},
+    {0, 0},
 };
 
 static Square SCRATCH[MAX_BOARD_SIZE + 1];
@@ -201,8 +214,8 @@ Square* mg_end(void) {
 /// - dest   -> candidate destination
 /// - threat -> true for at (coverage), false for mv (movement)
 ///
-static void mg_emit(BattleState* battle, PieceInfo* self, Square dest,
-                    bool threat) {
+static void
+mg_emit(BattleState* battle, PieceInfo* self, Square dest, bool threat) {
     PieceInfo* occupant = battle_at(battle, dest);
 
     if (!occupant || (threat && occupant->side != self->side)) {
@@ -222,12 +235,15 @@ static void mg_emit(BattleState* battle, PieceInfo* self, Square dest,
 /// - offsets -> zero vector terminated offset array, white perspective
 /// - threat  -> true for at (coverage), false for mv (movement)
 ///
-void mg_leap(BattleState* battle, PieceInfo* self,
-             const Square* offsets, bool threat) {
+void mg_leap(
+    BattleState*  battle,
+    PieceInfo*    self,
+    const Square* offsets,
+    bool          threat
+) {
     for (size_t i = 0; offsets[i].x != 0 || offsets[i].y != 0; i++) {
-        int8_t dy = self->side == SIDE_BLACK
-                  ? (int8_t) -offsets[i].y
-                  : offsets[i].y;
+        int8_t dy =
+            self->side == SIDE_BLACK ? (int8_t) -offsets[i].y : offsets[i].y;
 
         Square dest = {
             (int8_t) (self->square.x + offsets[i].x),
@@ -255,15 +271,18 @@ void mg_leap(BattleState* battle, PieceInfo* self,
 /// - max        -> maximum step distance, 127 for unbounded
 /// - threat     -> true for at (coverage), false for mv (movement)
 ///
-void mg_slide(BattleState* battle, PieceInfo* self,
-              const Square* directions, int8_t min, int8_t max,
-              bool threat) {
-    for (size_t i = 0; directions[i].x != 0 || directions[i].y != 0;
-         i++) {
+void mg_slide(
+    BattleState*  battle,
+    PieceInfo*    self,
+    const Square* directions,
+    int8_t        min,
+    int8_t        max,
+    bool          threat
+) {
+    for (size_t i = 0; directions[i].x != 0 || directions[i].y != 0; i++) {
         int8_t dx = directions[i].x;
-        int8_t dy = self->side == SIDE_BLACK
-                  ? (int8_t) -directions[i].y
-                  : directions[i].y;
+        int8_t dy = self->side == SIDE_BLACK ? (int8_t) -directions[i].y
+                                             : directions[i].y;
 
         for (int step = 1; step <= max; step++) {
             Square dest = {
@@ -278,8 +297,7 @@ void mg_slide(BattleState* battle, PieceInfo* self,
             PieceInfo* occupant = battle_at(battle, dest);
 
             if (occupant) {
-                if (threat && step >= min
-                    && occupant->side != self->side) {
+                if (threat && step >= min && occupant->side != self->side) {
                     mg_push(dest);
                 }
 
@@ -305,8 +323,12 @@ void mg_slide(BattleState* battle, PieceInfo* self,
 /// - parts  -> PIECE_NONE terminated array of pieces to copy
 /// - threat -> true for at (coverage), false for mv (movement)
 ///
-void mg_compound(BattleState* battle, PieceInfo* self,
-                 const PieceID* parts, bool threat) {
+void mg_compound(
+    BattleState*   battle,
+    PieceInfo*     self,
+    const PieceID* parts,
+    bool           threat
+) {
     for (size_t i = 0; parts[i] != PIECE_NONE; i++) {
         const Piece* part = PIECE_REGISTRY[parts[i]];
 
@@ -354,8 +376,8 @@ static PieceInfo* battle_find_king(BattleState* battle, Side side) {
     for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
         PieceInfo* cell = battle->board.piece_board[index];
 
-        if (cell && cell != &VOID_CELL && cell->side == side
-            && cell->piece->id == PIECE_KING) {
+        if (cell && cell != &VOID_CELL && cell->side == side &&
+            cell->piece->id == PIECE_KING) {
             return cell;
         }
     }
@@ -363,11 +385,73 @@ static PieceInfo* battle_find_king(BattleState* battle, Side side) {
     return nullptr;
 }
 
+/// battle_draw
+///
+/// Draws cards into the side's hand from the run's unlocked, registered,
+/// drawable card set. Only the human holds a hand; the AI plays no cards
+/// in this build. Cards are sampled with replacement from the eligible
+/// pool, each gated by QUERY_CARD_CAN_DRAW.
+///
+/// Params:
+/// - battle -> battle whose hand is filled
+/// - side   -> side drawing cards
+/// - count  -> number of cards to draw
+///
+static void battle_draw(BattleState* battle, Side side, size_t count) {
+    if (side != HUMAN_SIDE) {
+        return;
+    }
+
+    BattleState* saved_battle = CURRENT_BATTLE;
+    Card*        saved_card   = SUBJECT_CARD;
+    PlayerState* player       = battle_player(battle, side);
+
+    CURRENT_BATTLE            = battle;
+
+    CardID pool[CARD_COUNT];
+    size_t pool_size = 0;
+
+    for (CardID id = 0; id < CARD_COUNT; id++) {
+        if (!BATTLE_ENGINE->run->cards[id] || !CARD_REGISTRY[id]) {
+            continue;
+        }
+
+        bool can     = true;
+
+        SUBJECT_CARD = (Card*) CARD_REGISTRY[id];
+        effect_fire(battle, side, QUERY_CARD_CAN_DRAW, &can);
+
+        if (can) {
+            pool[pool_size] = id;
+            pool_size++;
+        }
+    }
+
+    for (size_t drawn = 0; drawn < count && pool_size > 0; drawn++) {
+        size_t slot = 0;
+
+        while (slot < MAX_DRAWN_CARDS && player->hand[slot]) {
+            slot++;
+        }
+
+        if (slot >= MAX_DRAWN_CARDS) {
+            break;
+        }
+
+        CardID pick        = pool[(size_t) rand_r(&BATTLE_RNG) % pool_size];
+
+        player->hand[slot] = (Card*) CARD_REGISTRY[pick];
+    }
+
+    SUBJECT_CARD   = saved_card;
+    CURRENT_BATTLE = saved_battle;
+}
+
 /// turn_start
 ///
-/// Starts a side's turn: restores actions, applies queried income, and
-/// fires ON_TURN_START. Card drawing joins this pipeline once hands are
-/// implemented.
+/// Starts a side's turn: restores actions, applies queried income, fires
+/// ON_TURN_START, resets the same-kingdom combo counters, and draws the
+/// side's hand.
 ///
 /// Params:
 /// - battle -> battle whose turn starts
@@ -376,18 +460,31 @@ static PieceInfo* battle_find_king(BattleState* battle, Side side) {
 static void turn_start(BattleState* battle, Side side) {
     PlayerState* player = battle_player(battle, side);
 
-    player->actions = 3;
+    player->actions     = 3;
 
-    int income = 10;
+    int income          = 10;
 
-    CURRENT_BATTLE = battle;
+    CURRENT_BATTLE      = battle;
     effect_fire(battle, side, QUERY_CP_INCOME, &income);
 
     player->cp += income;
 
-    effect_fire(battle, side, ON_TURN_START,
-                (void*) (uintptr_t) battle->turn);
+    effect_fire(battle, side, ON_TURN_START, (void*) (uintptr_t) battle->turn);
     CURRENT_BATTLE = nullptr;
+
+    for (size_t kingdom = 0; kingdom < KINGDOM_COUNT; kingdom++) {
+        KINGDOM_PLAYS[kingdom] = 0;
+    }
+
+    int draw       = 3;
+
+    CURRENT_BATTLE = battle;
+    effect_fire(battle, side, QUERY_CARD_DRAW_COUNT, &draw);
+    CURRENT_BATTLE = nullptr;
+
+    if (draw > 0) {
+        battle_draw(battle, side, (size_t) draw);
+    }
 }
 
 /// battle_finish
@@ -401,8 +498,7 @@ static void turn_start(BattleState* battle, Side side) {
 ///
 static void battle_finish(BattleState* battle, Side winner) {
     CURRENT_BATTLE = battle;
-    effect_fire(battle, winner, ON_BATTLE_END,
-                (void*) (uintptr_t) winner);
+    effect_fire(battle, winner, ON_BATTLE_END, (void*) (uintptr_t) winner);
     CURRENT_BATTLE = nullptr;
 
     protocol_emit("result won=%d", winner == HUMAN_SIDE ? 1 : 0);
@@ -411,6 +507,20 @@ static void battle_finish(BattleState* battle, Side winner) {
     free(battle);
 
     BATTLE_ENGINE->battle = nullptr;
+
+    run_battle_result(BATTLE_ENGINE, winner == HUMAN_SIDE);
+}
+
+/// battle_concede
+///
+/// Ends the battle immediately as a loss for the human, running the
+/// standard finish and result pipeline.
+///
+/// Params:
+/// - battle -> battle to concede
+///
+void battle_concede(BattleState* battle) {
+    battle_finish(battle, HUMAN_SIDE == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE);
 }
 
 /// battle_free
@@ -448,12 +558,10 @@ void battle_free(BattleState* battle) {
 ///
 /// Return: the spawned piece, nullptr when the spawn is invalid
 ///
-PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at,
-                        Side side) {
+PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at, Side side) {
     const Piece* template = PIECE_REGISTRY[id];
 
-    if (!template || !battle_in_bounds(battle, at)
-        || battle_at(battle, at)) {
+    if (!template || !battle_in_bounds(battle, at) || battle_at(battle, at)) {
         return nullptr;
     }
 
@@ -466,7 +574,7 @@ PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at,
         return nullptr;
     }
 
-    *copy = *template;
+    *copy        = *template;
 
     info->piece  = copy;
     info->square = at;
@@ -477,7 +585,7 @@ PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at,
             continue;
         }
 
-        copy->effects[slot].context = calloc(1, sizeof(EffectContext));
+        copy->effects[slot].context          = calloc(1, sizeof(EffectContext));
         copy->effects[slot].context->args[0] = info;
     }
 
@@ -501,19 +609,23 @@ PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at,
 void battle_flip(BattleState* battle, PieceInfo* piece) {
     PieceInfo* pick = piece;
 
-    FLIPPED_PIECE  = nullptr;
-    CURRENT_BATTLE = battle;
-    SUBJECT        = piece;
+    FLIPPED_PIECE   = nullptr;
+    CURRENT_BATTLE  = battle;
+    SUBJECT         = piece;
 
     effect_fire(battle, piece->side, ON_PIECE_FLIP_PRE, &pick);
 
     if (pick) {
-        pick->side = pick->side == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
+        pick->side    = pick->side == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
 
         FLIPPED_PIECE = pick;
 
-        protocol_emit("log flip piece=%s x=%d y=%d",
-                      pick->piece->name, pick->square.x, pick->square.y);
+        protocol_emit(
+            "log flip piece=%s x=%d y=%d",
+            pick->piece->name,
+            pick->square.x,
+            pick->square.y
+        );
 
         effect_fire(battle, pick->side, ON_PIECE_FLIP, pick);
     }
@@ -582,12 +694,11 @@ bool battle_move(BattleState* battle, Square from, Square to) {
 
     PlayerState* player = battle_player(battle, ACTING_SIDE);
 
-    int cost = 1;
+    int          cost   = 1;
 
-    CURRENT_BATTLE = battle;
-    SUBJECT        = piece;
-    effect_fire(battle, ACTING_SIDE, QUERY_PIECE_ACTION_COST_MOVE,
-                &cost);
+    CURRENT_BATTLE      = battle;
+    SUBJECT             = piece;
+    effect_fire(battle, ACTING_SIDE, QUERY_PIECE_ACTION_COST_MOVE, &cost);
 
     if (player->actions < cost) {
         CURRENT_BATTLE = nullptr;
@@ -595,15 +706,15 @@ bool battle_move(BattleState* battle, Square from, Square to) {
         return false;
     }
 
-    player->actions -= cost;
+    player->actions                               -= cost;
 
-    battle->board.piece_board[square_index(from)] = nullptr;
-    piece->square = to;
-    battle->board.piece_board[square_index(to)]   = piece;
+    battle->board.piece_board[square_index(from)]  = nullptr;
+    piece->square                                  = to;
+    battle->board.piece_board[square_index(to)]    = piece;
 
-    MOVE_FROM = from;
+    MOVE_FROM                                      = from;
     effect_fire(battle, ACTING_SIDE, ON_PIECE_MOVE, piece);
-    MOVE_FROM = SQUARE_END;
+    MOVE_FROM      = SQUARE_END;
 
     CURRENT_BATTLE = nullptr;
     SUBJECT        = nullptr;
@@ -638,21 +749,37 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
         }
     }
 
-    if (ACTING_SIDE == HUMAN_SIDE
-        && !BATTLE_ENGINE->run->pieces[id]) {
+    if (ACTING_SIDE == HUMAN_SIDE && !BATTLE_ENGINE->run->pieces[id]) {
         return false;
     }
 
-    PlayerState* player = battle_player(battle, ACTING_SIDE);
+    PlayerState* player      = battle_player(battle, ACTING_SIDE);
 
-    int cost        = template->value;
-    int action_cost = 1;
+    int          cost        = template->value;
+    int          action_cost = 1;
 
-    CURRENT_BATTLE = battle;
+    CURRENT_BATTLE           = battle;
     effect_fire(battle, ACTING_SIDE, QUERY_PIECE_CP_COST_BUY, &cost);
-    effect_fire(battle, ACTING_SIDE, QUERY_PIECE_ACTION_COST_BUY,
-                &action_cost);
+    effect_fire(battle, ACTING_SIDE, QUERY_PIECE_ACTION_COST_BUY, &action_cost);
     CURRENT_BATTLE = nullptr;
+
+    Effect* storm =
+        effect_find_mark(&player->effects, CARD_PAWN_STORM, nullptr);
+
+    if (storm && id == PIECE_PAWN && (uintptr_t) storm->context->args[2] > 0) {
+        action_cost = 0;
+
+        if ((uintptr_t) storm->context->args[2] == 1) {
+            cost = 0;
+        }
+    }
+
+    Effect* reforge = effect_find_mark(&player->effects, CARD_REFORGE, nullptr);
+
+    if (reforge && !reforge->context->args[3] &&
+        (PieceID) (uintptr_t) reforge->context->args[2] == id) {
+        cost = cost * 70 / 100;
+    }
 
     if (player->cp < cost || player->actions < action_cost) {
         return false;
@@ -667,6 +794,16 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
     player->cp      -= cost;
     player->actions -= action_cost;
     player->meter   += battle_value(battle, piece, nullptr);
+
+    if (storm && id == PIECE_PAWN && (uintptr_t) storm->context->args[2] > 0) {
+        storm->context->args[2] =
+            (void*) ((uintptr_t) storm->context->args[2] - 1);
+    }
+
+    if (reforge && !reforge->context->args[3] &&
+        (PieceID) (uintptr_t) reforge->context->args[2] == id) {
+        reforge->context->args[3] = (void*) 1;
+    }
 
     CURRENT_BATTLE = battle;
     effect_fire(battle, ACTING_SIDE, ON_PIECE_BUY, piece);
@@ -712,12 +849,99 @@ bool battle_combine(BattleState* battle, Square a, Square b) {
 /// Return: true when the card was played
 ///
 bool battle_play(BattleState* battle, size_t hand, long a, long b) {
-    (void) battle;
-    (void) hand;
-    (void) a;
-    (void) b;
+    if (hand >= MAX_DRAWN_CARDS) {
+        return false;
+    }
 
-    return false;
+    PlayerState* player = battle_player(battle, ACTING_SIDE);
+    Card*        card   = player->hand[hand];
+
+    if (!card) {
+        return false;
+    }
+
+    int cost       = card->play_cost;
+
+    CURRENT_BATTLE = battle;
+    SUBJECT_CARD   = card;
+    effect_fire(battle, ACTING_SIDE, QUERY_CARD_PLAY_COST, &cost);
+
+    if (player->cp < cost) {
+        SUBJECT_CARD   = nullptr;
+        CURRENT_BATTLE = nullptr;
+        return false;
+    }
+
+    player->cp -= cost;
+
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        const Effect* effect = &card->effects[slot];
+
+        if (!effect->func) {
+            continue;
+        }
+
+        if (effect->trigger == ON_CARD_PLAY) {
+            EffectContext ctx = {};
+
+            ctx.args[0]       = (void*) (uintptr_t) ACTING_SIDE;
+            ctx.args[1]       = (void*) (uintptr_t) a;
+            ctx.args[2]       = (void*) (uintptr_t) b;
+
+            if (effect->func(&ctx, card) && effect->name) {
+                protocol_emit(
+                    "log effect name=\"%s\" "
+                    "trigger=ON_CARD_PLAY",
+                    effect->name
+                );
+            }
+
+            continue;
+        }
+
+        Effect* attached = effect_attach(&player->effects, effect);
+
+        if (!attached) {
+            continue;
+        }
+
+        if (attached->func == eff_noop) {
+            attached->context->args[1] = (void*) (uintptr_t) card->id;
+            attached->context->args[2] = (void*) (uintptr_t) 3;
+        } else {
+            attached->context->args[0] = (void*) (uintptr_t) ACTING_SIDE;
+            attached->context->args[1] = (void*) (uintptr_t) a;
+            attached->context->args[2] = (void*) (uintptr_t) b;
+        }
+    }
+
+    effect_fire(battle, ACTING_SIDE, ON_CARD_PLAY, card);
+
+    if (card->id == CARD_QUEENS_GAMBIT) {
+        battle_draw(battle, ACTING_SIDE, 3);
+    }
+
+    if (card->kingdom < KINGDOM_COUNT) {
+        KINGDOM_PLAYS[card->kingdom]++;
+
+        if (KINGDOM_PLAYS[card->kingdom] == 2) {
+            player->cp += 15;
+            protocol_emit(
+                "log combo kingdom=%d refund=15",
+                (int) card->kingdom
+            );
+        } else if (KINGDOM_PLAYS[card->kingdom] == 3) {
+            protocol_emit("log climax kingdom=%d", (int) card->kingdom);
+            KINGDOM_CLIMAX[card->kingdom](battle, ACTING_SIDE);
+        }
+    }
+
+    player->hand[hand] = nullptr;
+
+    SUBJECT_CARD       = nullptr;
+    CURRENT_BATTLE     = nullptr;
+
+    return true;
 }
 
 /// battle_sell
@@ -732,10 +956,33 @@ bool battle_play(BattleState* battle, size_t hand, long a, long b) {
 /// Return: true when the card was sold
 ///
 bool battle_sell(BattleState* battle, size_t hand) {
-    (void) battle;
-    (void) hand;
+    if (hand >= MAX_DRAWN_CARDS) {
+        return false;
+    }
 
-    return false;
+    PlayerState* player = battle_player(battle, ACTING_SIDE);
+    Card*        card   = player->hand[hand];
+
+    if (!card) {
+        return false;
+    }
+
+    int value      = card->sell_cost;
+
+    CURRENT_BATTLE = battle;
+    SUBJECT_CARD   = card;
+    effect_fire(battle, ACTING_SIDE, QUERY_CARD_SELL_COST, &value);
+
+    player->cp += value;
+
+    effect_fire(battle, ACTING_SIDE, ON_CARD_SELL, card);
+
+    SUBJECT_CARD       = nullptr;
+    CURRENT_BATTLE     = nullptr;
+
+    player->hand[hand] = nullptr;
+
+    return true;
 }
 
 /// battle_reclaim
@@ -750,10 +997,32 @@ bool battle_sell(BattleState* battle, size_t hand) {
 /// Return: true when the reclaim was performed
 ///
 bool battle_reclaim(BattleState* battle, Square at) {
-    (void) battle;
-    (void) at;
+    PieceInfo* piece = battle_at(battle, at);
 
-    return false;
+    if (!piece || piece->side == ACTING_SIDE ||
+        piece->piece->id == PIECE_KING) {
+        return false;
+    }
+
+    PlayerState* player = battle_player(battle, ACTING_SIDE);
+
+    int          cost   = 30;
+
+    CURRENT_BATTLE      = battle;
+    SUBJECT             = piece;
+    effect_fire(battle, ACTING_SIDE, QUERY_PIECE_CP_COST_RECLAIM, &cost);
+    CURRENT_BATTLE = nullptr;
+    SUBJECT        = nullptr;
+
+    if (player->cp < cost) {
+        return false;
+    }
+
+    player->cp -= cost;
+
+    battle_flip(battle, piece);
+
+    return true;
 }
 
 /*----------------------------------------------------------------------------*\
@@ -786,8 +1055,8 @@ static int battle_resolve(BattleState* battle, Side attacker) {
         Square* coverage = battle_attacks(battle, piece);
         int     dealt    = 0;
 
-        Square targets[MAX_BOARD_SIZE + 1];
-        size_t count = 0;
+        Square  targets[MAX_BOARD_SIZE + 1];
+        size_t  count = 0;
 
         while (!(coverage[count].x == -1 && coverage[count].y == -1)) {
             targets[count] = coverage[count];
@@ -797,8 +1066,8 @@ static int battle_resolve(BattleState* battle, Side attacker) {
         for (size_t i = 0; i < count; i++) {
             PieceInfo* victim = battle_at(battle, targets[i]);
 
-            if (!victim || victim->side == attacker
-                || victim->side == SIDE_NEUTRAL) {
+            if (!victim || victim->side == attacker ||
+                victim->side == SIDE_NEUTRAL) {
                 continue;
             }
 
@@ -806,8 +1075,8 @@ static int battle_resolve(BattleState* battle, Side attacker) {
         }
 
         if (dealt > 0) {
-            total += dealt;
-            DAMAGER_LIST[damagers] = piece;
+            total                  += dealt;
+            DAMAGER_LIST[damagers]  = piece;
             damagers++;
         }
     }
@@ -836,23 +1105,23 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
     PlayerState* player = battle_player(battle, receiver);
 
     while (player->meter <= 0) {
-        int deficit = -player->meter;
+        int        deficit = -player->meter;
 
         PieceInfo* candidates[MAX_BOARD_SIZE];
-        size_t     count      = 0;
-        size_t     non_kings  = 0;
+        size_t     count     = 0;
+        size_t     non_kings = 0;
 
         for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
             PieceInfo* cell = battle->board.piece_board[index];
 
-            if (!cell || cell == &VOID_CELL || cell->side != receiver
-                || cell->piece->id == PIECE_KING) {
+            if (!cell || cell == &VOID_CELL || cell->side != receiver ||
+                cell->piece->id == PIECE_KING) {
                 continue;
             }
 
             non_kings++;
 
-            bool can = true;
+            bool can       = true;
 
             CURRENT_BATTLE = battle;
             SUBJECT        = cell;
@@ -882,28 +1151,26 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
             return false;
         }
 
-        size_t pick = (size_t) rand_r(&BATTLE_RNG) % count;
+        size_t pick         = (size_t) rand_r(&BATTLE_RNG) % count;
 
-        Side gainer_side = receiver == SIDE_WHITE
-                         ? SIDE_BLACK
-                         : SIDE_WHITE;
+        Side   gainer_side  = receiver == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
 
-        PlayerState* gainer     = battle_player(battle, gainer_side);
+        PlayerState* gainer = battle_player(battle, gainer_side);
         int          max_before = battle_meter_max(battle, gainer_side);
 
         battle_flip(battle, candidates[pick]);
 
-        int refill = battle_meter_max(battle, receiver);
+        int refill     = battle_meter_max(battle, receiver);
 
         CURRENT_BATTLE = battle;
         effect_fire(battle, receiver, QUERY_METER_REFILL, &refill);
-        CURRENT_BATTLE = nullptr;
+        CURRENT_BATTLE  = nullptr;
 
-        player->meter = refill - deficit;
+        player->meter   = refill - deficit;
 
-        int gainer_max = battle_meter_max(battle, gainer_side);
+        int gainer_max  = battle_meter_max(battle, gainer_side);
 
-        gainer->meter += gainer_max - max_before;
+        gainer->meter  += gainer_max - max_before;
 
         if (gainer->meter > 2 * gainer_max) {
             gainer->meter = 2 * gainer_max;
@@ -913,8 +1180,12 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
             CURRENT_BATTLE = battle;
             SUBJECT        = FLIPPED_PIECE;
 
-            effect_fire(battle, FLIPPED_PIECE->side, ON_PIECE_FLIP_POST,
-                        FLIPPED_PIECE);
+            effect_fire(
+                battle,
+                FLIPPED_PIECE->side,
+                ON_PIECE_FLIP_POST,
+                FLIPPED_PIECE
+            );
 
             CURRENT_BATTLE = nullptr;
             SUBJECT        = nullptr;
@@ -937,34 +1208,57 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
 /// Return: true when the battle ended during the cascade
 ///
 static bool battle_half_turn(BattleState* battle, Side side) {
-    Side         enemy_side = side == SIDE_WHITE
-                            ? SIDE_BLACK
-                            : SIDE_WHITE;
+    Side         enemy_side = side == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
     PlayerState* enemy      = battle_player(battle, enemy_side);
+    PlayerState* actor      = battle_player(battle, side);
 
-    CURRENT_BATTLE = battle;
-    effect_fire(battle, side, ON_TURN_END,
-                (void*) (uintptr_t) battle->turn);
+    CURRENT_BATTLE          = battle;
+
+    for (size_t index = 0; index < MAX_DRAWN_CARDS; index++) {
+        Card* card = actor->hand[index];
+
+        if (!card) {
+            continue;
+        }
+
+        int value    = card->sell_cost;
+
+        SUBJECT_CARD = card;
+        effect_fire(battle, side, QUERY_CARD_SELL_COST, &value);
+
+        actor->cp += value;
+
+        effect_fire(battle, side, ON_CARD_SELL, card);
+
+        SUBJECT_CARD       = nullptr;
+        actor->hand[index] = nullptr;
+
+        protocol_emit("log autosell name=\"%s\" value=%d", card->name, value);
+    }
+
+    effect_fire(battle, side, ON_TURN_END, (void*) (uintptr_t) battle->turn);
     CURRENT_BATTLE = nullptr;
 
-    DAMAGERS  = DAMAGER_LIST;
-    int total = battle_resolve(battle, side);
+    DAMAGERS       = DAMAGER_LIST;
+    int total      = battle_resolve(battle, side);
 
     CURRENT_BATTLE = battle;
     effect_fire(battle, enemy_side, QUERY_METER_DAMAGE_TAKEN, &total);
-    CURRENT_BATTLE = nullptr;
+    CURRENT_BATTLE  = nullptr;
 
-    enemy->meter -= total;
+    enemy->meter   -= total;
 
     if (total > 0) {
-        protocol_emit("log damage side=%s amount=%d",
-                      enemy_side == SIDE_WHITE ? "white" : "black",
-                      total);
+        protocol_emit(
+            "log damage side=%s amount=%d",
+            enemy_side == SIDE_WHITE ? "white" : "black",
+            total
+        );
     }
 
     bool over = battle_cascade(battle, enemy_side);
 
-    DAMAGERS = nullptr;
+    DAMAGERS  = nullptr;
 
     effect_tick(&battle_player(battle, side)->effects);
 
@@ -990,38 +1284,47 @@ static bool battle_half_turn(BattleState* battle, Side side) {
 void battle_begin(EngineState* engine, MapNode* node) {
     BattleState* battle = calloc(1, sizeof(BattleState));
 
-    BATTLE_ENGINE  = engine;
-    engine->battle = battle;
+    BATTLE_ENGINE       = engine;
+    engine->battle      = battle;
 
-    HUMAN_SIDE = engine->run->battles_fought % 2
-               ? SIDE_BLACK
-               : SIDE_WHITE;
+    HUMAN_SIDE  = engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
+
+    int8_t size = 10;
+
+    if (node && node->map) {
+        size = node->map->type == MAP_TOWN       ? 12
+               : node->map->type == MAP_PROVINCE ? 14
+                                                 : 16;
+    }
 
     battle->node          = node;
-    battle->board.width   = 10;
-    battle->board.height  = 10;
+    battle->board.width   = size;
+    battle->board.height  = size;
     battle->turn          = 1;
     battle->white.effects = ll_init();
     battle->black.effects = ll_init();
 
-    BATTLE_RNG = (unsigned int) rng_mix(engine->run->seed,
-                                        engine->run->battles_fought + 1);
+    BATTLE_RNG            = (unsigned int)
+        rng_mix(engine->run->seed, engine->run->battles_fought + 1);
 
     int8_t center = (int8_t) (battle->board.width / 2);
 
-    battle_spawn(battle, PIECE_KING,
-                 (Square) { center, (int8_t) (battle->board.height - 1) },
-                 SIDE_WHITE);
-    battle_spawn(battle, PIECE_KING, (Square) { center, 0 }, SIDE_BLACK);
+    battle_spawn(
+        battle,
+        PIECE_KING,
+        (Square) {center, (int8_t) (battle->board.height - 1)},
+        SIDE_WHITE
+    );
+    battle_spawn(battle, PIECE_KING, (Square) {center, 0}, SIDE_BLACK);
 
     battle->white.cp    = 20;
     battle->black.cp    = 20;
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);
 
-    ACTING_SIDE = SIDE_WHITE;
+    ACTING_SIDE         = SIDE_WHITE;
 
-    CURRENT_BATTLE = battle;
+    CURRENT_BATTLE      = battle;
     effect_fire(battle, SIDE_WHITE, ON_BATTLE_START, node);
     effect_fire(battle, SIDE_BLACK, ON_BATTLE_START, node);
     CURRENT_BATTLE = nullptr;
@@ -1055,24 +1358,25 @@ static void battle_territory_finish(BattleState* battle) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x = 0; x < battle->board.width; x++) {
-            Side holder = battle_territory(battle, (Square) { x, y });
+            Side holder    = battle_territory(battle, (Square) {x, y});
 
             white_squares += holder == SIDE_WHITE;
             black_squares += holder == SIDE_BLACK;
         }
     }
 
-    protocol_emit("log territory white=%d black=%d",
-                  white_squares, black_squares);
+    protocol_emit(
+        "log territory white=%d black=%d",
+        white_squares,
+        black_squares
+    );
 
     Side winner;
 
     if (white_squares == black_squares) {
         winner = HUMAN_SIDE == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
     } else {
-        winner = white_squares > black_squares
-               ? SIDE_WHITE
-               : SIDE_BLACK;
+        winner = white_squares > black_squares ? SIDE_WHITE : SIDE_BLACK;
     }
 
     battle_finish(battle, winner);
@@ -1151,8 +1455,8 @@ Square* battle_moves(BattleState* battle, PieceInfo* piece) {
     BattleState* saved_battle  = CURRENT_BATTLE;
     PieceInfo*   saved_subject = SUBJECT;
 
-    CURRENT_BATTLE = battle;
-    SUBJECT        = piece;
+    CURRENT_BATTLE             = battle;
+    SUBJECT                    = piece;
 
     mg_begin();
 
@@ -1189,8 +1493,8 @@ Square* battle_attacks(BattleState* battle, PieceInfo* piece) {
     BattleState* saved_battle  = CURRENT_BATTLE;
     PieceInfo*   saved_subject = SUBJECT;
 
-    CURRENT_BATTLE = battle;
-    SUBJECT        = piece;
+    CURRENT_BATTLE             = battle;
+    SUBJECT                    = piece;
 
     mg_begin();
 
@@ -1224,17 +1528,16 @@ Square* battle_attacks(BattleState* battle, PieceInfo* piece) {
 ///
 /// Return: queried damage or effective value
 ///
-int battle_value(BattleState* battle, PieceInfo* piece,
-                 PieceInfo* victim) {
+int battle_value(BattleState* battle, PieceInfo* piece, PieceInfo* victim) {
     BattleState* saved_battle  = CURRENT_BATTLE;
     PieceInfo*   saved_subject = SUBJECT;
     PieceInfo*   saved_victim  = VICTIM;
 
-    int damage = piece->piece->value;
+    int          damage        = piece->piece->value;
 
-    CURRENT_BATTLE = battle;
-    SUBJECT        = piece;
-    VICTIM         = victim;
+    CURRENT_BATTLE             = battle;
+    SUBJECT                    = piece;
+    VICTIM                     = victim;
 
     effect_fire(battle, piece->side, QUERY_PIECE_DAMAGE_DEALT, &damage);
 
@@ -1242,8 +1545,7 @@ int battle_value(BattleState* battle, PieceInfo* piece,
         SUBJECT = victim;
         VICTIM  = piece;
 
-        effect_fire(battle, victim->side, QUERY_PIECE_DAMAGE_TAKEN,
-                    &damage);
+        effect_fire(battle, victim->side, QUERY_PIECE_DAMAGE_TAKEN, &damage);
     }
 
     CURRENT_BATTLE = saved_battle;
@@ -1300,8 +1602,8 @@ Side battle_territory(BattleState* battle, Square square) {
             continue;
         }
 
-        int dx = abs(cell->square.x - square.x);
-        int dy = abs(cell->square.y - square.y);
+        int dx       = abs(cell->square.x - square.x);
+        int dy       = abs(cell->square.y - square.y);
         int distance = dx > dy ? dx : dy;
 
         if (cell->side == SIDE_WHITE && distance < nearest_white) {
@@ -1354,8 +1656,8 @@ PieceInfo* battle_at(BattleState* battle, Square square) {
 /// Return: true when the square exists on this board
 ///
 bool battle_in_bounds(BattleState* battle, Square square) {
-    if (square.x < 0 || square.x >= battle->board.width
-        || square.y < 0 || square.y >= battle->board.height) {
+    if (square.x < 0 || square.x >= battle->board.width || square.y < 0 ||
+        square.y >= battle->board.height) {
         return false;
     }
 

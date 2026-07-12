@@ -38,12 +38,11 @@ static Side ai_active_side(BattleState* battle) {
 ///
 static PieceInfo* ai_find_king(BattleState* battle, Side side) {
     for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
-        Square square = { (int8_t) (index % 20), (int8_t) (index / 20) };
+        Square     square = {(int8_t) (index % 20), (int8_t) (index / 20)};
 
-        PieceInfo* cell = battle_at(battle, square);
+        PieceInfo* cell   = battle_at(battle, square);
 
-        if (cell && cell->side == side
-            && cell->piece->id == PIECE_KING) {
+        if (cell && cell->side == side && cell->piece->id == PIECE_KING) {
             return cell;
         }
     }
@@ -64,9 +63,7 @@ static PieceInfo* ai_find_king(BattleState* battle, Side side) {
 ///
 static bool ai_try_buy(BattleState* battle, Side side) {
     PieceInfo*   king   = ai_find_king(battle, side);
-    PlayerState* player = side == SIDE_WHITE
-                        ? &battle->white
-                        : &battle->black;
+    PlayerState* player = side == SIDE_WHITE ? &battle->white : &battle->black;
 
     if (!king || player->cp < 30) {
         return false;
@@ -83,11 +80,13 @@ static bool ai_try_buy(BattleState* battle, Side side) {
                 (int8_t) (king->square.y + dy),
             };
 
-            if (battle_in_bounds(battle, spot)
-                && !battle_at(battle, spot)
-                && battle_buy(battle, PIECE_KNIGHT, spot)) {
-                protocol_emit("log ai buy piece=Knight x=%d y=%d",
-                              spot.x, spot.y);
+            if (battle_in_bounds(battle, spot) && !battle_at(battle, spot) &&
+                battle_buy(battle, PIECE_KNIGHT, spot)) {
+                protocol_emit(
+                    "log ai buy piece=Knight x=%d y=%d",
+                    spot.x,
+                    spot.y
+                );
                 return true;
             }
         }
@@ -108,35 +107,34 @@ static bool ai_try_buy(BattleState* battle, Side side) {
 /// Return: true when a piece was moved
 ///
 static bool ai_try_advance(BattleState* battle, Side side) {
-    Side enemy_side = side == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
+    Side       enemy_side = side == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
 
-    PieceInfo* target = ai_find_king(battle, enemy_side);
+    PieceInfo* target     = ai_find_king(battle, enemy_side);
 
     if (!target) {
         return false;
     }
 
     PieceInfo* best_piece = nullptr;
-    Square     best_dest  = { 0, 0 };
+    Square     best_dest  = {0, 0};
     int        best_gain  = 0;
 
     for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
-        Square square = { (int8_t) (index % 20), (int8_t) (index / 20) };
+        Square     square = {(int8_t) (index % 20), (int8_t) (index / 20)};
 
-        PieceInfo* piece = battle_at(battle, square);
+        PieceInfo* piece  = battle_at(battle, square);
 
         if (!piece || piece->side != side) {
             continue;
         }
 
-        int dx      = abs(piece->square.x - target->square.x);
-        int dy      = abs(piece->square.y - target->square.y);
-        int current = dx > dy ? dx : dy;
+        int     dx      = abs(piece->square.x - target->square.x);
+        int     dy      = abs(piece->square.y - target->square.y);
+        int     current = dx > dy ? dx : dy;
 
-        Square* moves = battle_moves(battle, piece);
+        Square* moves   = battle_moves(battle, piece);
 
-        for (size_t i = 0; !(moves[i].x == -1 && moves[i].y == -1);
-             i++) {
+        for (size_t i = 0; !(moves[i].x == -1 && moves[i].y == -1); i++) {
             int mx       = abs(moves[i].x - target->square.x);
             int my       = abs(moves[i].y - target->square.y);
             int distance = mx > my ? mx : my;
@@ -160,8 +158,13 @@ static bool ai_try_advance(BattleState* battle, Side side) {
         return false;
     }
 
-    protocol_emit("log ai move fx=%d fy=%d tx=%d ty=%d",
-                  from.x, from.y, best_dest.x, best_dest.y);
+    protocol_emit(
+        "log ai move fx=%d fy=%d tx=%d ty=%d",
+        from.x,
+        from.y,
+        best_dest.x,
+        best_dest.y
+    );
 
     return true;
 }
@@ -176,11 +179,9 @@ static bool ai_try_advance(BattleState* battle, Side side) {
 /// - battle -> battle whose AI actions are spent
 ///
 void ai_take_turn(BattleState* battle) {
-    Side side = ai_active_side(battle);
+    Side         side   = ai_active_side(battle);
 
-    PlayerState* player = side == SIDE_WHITE
-                        ? &battle->white
-                        : &battle->black;
+    PlayerState* player = side == SIDE_WHITE ? &battle->white : &battle->black;
 
     while (player->actions > 0) {
         if (ai_try_buy(battle, side)) {

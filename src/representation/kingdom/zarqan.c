@@ -10,9 +10,9 @@
 #include <forward.h>
 #include <prelude.h>
 
-const Piece      ZARQAN_PIECES[] = { {} };
-const Card       ZARQAN_CARDS[]  = { {} };
-const BoardTrait ZARQAN_TRAITS[] = { {} };
+const Piece      ZARQAN_PIECES[] = {{}};
+const Card       ZARQAN_CARDS[]  = {{}};
+const BoardTrait ZARQAN_TRAITS[] = {{}};
 
 /// zarqan_innate
 ///

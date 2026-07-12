@@ -74,8 +74,11 @@ static void effect_run(Effect* effect, EffectTrigger trigger, void* x) {
     bool applied = effect->func(effect->context, x);
 
     if (applied && effect->name) {
-        protocol_emit("log effect name=\"%s\" trigger=%s",
-                      effect->name, TRIGGER_NAME[trigger]);
+        protocol_emit(
+            "log effect name=\"%s\" trigger=%s",
+            effect->name,
+            TRIGGER_NAME[trigger]
+        );
     }
 }
 
@@ -125,11 +128,14 @@ Effect* effect_attach(LinkedList* list, const Effect* effect) {
 /// - trigger -> trigger to match effects against
 /// - x       -> queried value, type defined per trigger
 ///
-void effect_fire(BattleState* battle, Side side,
-                 EffectTrigger trigger, void* x) {
-    LinkedList* list = side == SIDE_WHITE
-                     ? &battle->white.effects
-                     : &battle->black.effects;
+void effect_fire(
+    BattleState*  battle,
+    Side          side,
+    EffectTrigger trigger,
+    void*         x
+) {
+    LinkedList* list =
+        side == SIDE_WHITE ? &battle->white.effects : &battle->black.effects;
 
     LLNode* node = list->head;
 
@@ -238,9 +244,8 @@ Effect* effect_find_mark(LinkedList* list, uintptr_t tag, void* subject) {
     while (node) {
         Effect* effect = node->data;
 
-        if (effect->func == eff_noop
-            && effect->context->args[0] == subject
-            && (uintptr_t) effect->context->args[1] == tag) {
+        if (effect->func == eff_noop && effect->context->args[0] == subject &&
+            (uintptr_t) effect->context->args[1] == tag) {
             return effect;
         }
 

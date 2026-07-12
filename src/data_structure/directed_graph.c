@@ -37,8 +37,12 @@ DirectedGraph dag_init() {
 /// - edges    -> number of edges to create
 /// - seed     -> seed value for deterministic generation
 ///
-void dag_rand(DirectedGraph* graph, size_t vertices, size_t edges,
-              size_t seed) {
+void dag_rand(
+    DirectedGraph* graph,
+    size_t         vertices,
+    size_t         edges,
+    size_t         seed
+) {
     graph->nodes          = calloc(vertices, sizeof(DGNode));
     graph->vertices_count = vertices;
     graph->edges_count    = 0;

@@ -31,6 +31,12 @@
         va_end(screen_args);                                                   \
     } while (0)
 
+/// SAVE_PATH
+///
+/// Default profile save file path used by the load and save commands.
+///
+static const char* const SAVE_PATH = "daulat.sav";
+
 /// piece_letter
 ///
 /// Maps a live piece to its one-character board representation:
@@ -42,14 +48,12 @@
 ///
 /// Return: board character for the piece
 ///
-static char piece_letter(PieceInfo* piece) {
+static char              piece_letter(PieceInfo* piece) {
     char letter = piece->piece->id == PIECE_KNIGHT
-                ? 'n'
-                : (char) tolower(piece->piece->name[0]);
+                      ? 'n'
+                      : (char) tolower(piece->piece->name[0]);
 
-    return piece->side == SIDE_WHITE
-         ? (char) toupper(letter)
-         : letter;
+    return piece->side == SIDE_WHITE ? (char) toupper(letter) : letter;
 }
 
 /// emit_battle_state
@@ -76,7 +80,8 @@ static void emit_battle_state(EngineState* engine) {
         human->cp,
         human->meter,
         enemy->meter,
-        human->actions);
+        human->actions
+    );
 }
 
 /// emit_board
@@ -124,29 +129,43 @@ static void emit_squares(const Square* list) {
     }
 }
 
-/// handle_stub
+/// emit_hand
 ///
-/// Placeholder handler shared by screens without a real handler yet.
-/// Rejects every command with an error line.
+/// Emits one line per card in the human's hand: index, id, name, tier,
+/// and play and sell costs.
 ///
 /// Params:
-/// - engine -> engine owning the screen
-/// - ...    -> the (int) argc, (char**) argv pair
+/// - engine -> engine owning the battle
 ///
-static void handle_stub(EngineState* engine, ...) {
-    SCREEN_ARGS(engine, argc, argv);
+static void emit_hand(EngineState* engine) {
+    BattleState* battle = engine->battle;
+    bool         black  = engine->run->battles_fought % 2;
 
-    (void) engine;
-    (void) argc;
-    (void) argv;
+    PlayerState* human  = black ? &battle->black : &battle->white;
 
-    protocol_emit("error msg=\"unknown command\"");
+    for (size_t i = 0; i < MAX_DRAWN_CARDS; i++) {
+        Card* card = human->hand[i];
+
+        if (!card) {
+            continue;
+        }
+
+        protocol_emit(
+            "card i=%zu id=%d name=\"%s\" tier=%d play=%d sell=%d",
+            i,
+            card->id,
+            card->name,
+            card->tier,
+            card->play_cost,
+            card->sell_cost
+        );
+    }
 }
 
 /// handle_title
 ///
-/// Handles the title screen: new starts a run and enters the synthetic
-/// battle until the campaign exists.
+/// Handles the title screen: new starts a fresh run and load restores a
+/// saved profile, both entering the campaign screen.
 ///
 /// Params:
 /// - engine -> engine owning the screen
@@ -156,24 +175,30 @@ static void handle_title(EngineState* engine, ...) {
     SCREEN_ARGS(engine, argc, argv);
 
     if (strcmp(argv[0], "new") == 0) {
-        size_t seed = (size_t) arg_long(argc, argv, "seed", 0);
+        size_t     seed = (size_t) arg_long(argc, argv, "seed", 0);
 
-        Difficulty difficulty = (Difficulty)
-            arg_long(argc, argv, "difficulty", DIFFICULTY_FREE);
+        Difficulty difficulty =
+            (Difficulty) arg_long(argc, argv, "difficulty", DIFFICULTY_FREE);
 
-        ChallengeRunID challenge = (ChallengeRunID)
-            arg_long(argc, argv, "challenge", CHALLENGE_NONE);
+        ChallengeRunID challenge =
+            (ChallengeRunID) arg_long(argc, argv, "challenge", CHALLENGE_NONE);
 
         run_new(engine, seed, difficulty, challenge);
-        battle_begin(engine, nullptr);
 
-        if (!engine->battle) {
-            protocol_emit("ok");
+        screen_goto(engine, SCREEN_CAMPAIGN);
+        run_emit_kingdoms(engine);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "load") == 0) {
+        if (!engine_load(engine, SAVE_PATH) || !engine->run) {
+            protocol_emit("error msg=\"no save\"");
             return;
         }
 
-        screen_goto(engine, SCREEN_BATTLE);
-        emit_battle_state(engine);
+        screen_goto(engine, SCREEN_CAMPAIGN);
+        run_emit_kingdoms(engine);
         protocol_emit("ok");
         return;
     }
@@ -193,8 +218,8 @@ static void handle_title(EngineState* engine, ...) {
 ///
 /// Return: parsed square, { -1, -1 } when either key is missing
 ///
-static Square battle_square_arg(int argc, char** argv,
-                                const char* key_x, const char* key_y) {
+static Square
+battle_square_arg(int argc, char** argv, const char* key_x, const char* key_y) {
     return (Square) {
         (int8_t) arg_long(argc, argv, key_x, -1),
         (int8_t) arg_long(argc, argv, key_y, -1),
@@ -227,8 +252,7 @@ static void handle_battle(EngineState* engine, ...) {
         return;
     }
 
-    if (strcmp(argv[0], "moves") == 0
-        || strcmp(argv[0], "attacks") == 0) {
+    if (strcmp(argv[0], "moves") == 0 || strcmp(argv[0], "attacks") == 0) {
         Square     at    = battle_square_arg(argc, argv, "x", "y");
         PieceInfo* piece = battle_at(battle, at);
 
@@ -237,9 +261,10 @@ static void handle_battle(EngineState* engine, ...) {
             return;
         }
 
-        emit_squares(strcmp(argv[0], "moves") == 0
-                     ? battle_moves(battle, piece)
-                     : battle_attacks(battle, piece));
+        emit_squares(
+            strcmp(argv[0], "moves") == 0 ? battle_moves(battle, piece)
+                                          : battle_attacks(battle, piece)
+        );
         protocol_emit("ok");
         return;
     }
@@ -258,12 +283,55 @@ static void handle_battle(EngineState* engine, ...) {
     }
 
     if (strcmp(argv[0], "buy") == 0) {
-        PieceID id = (PieceID) arg_long(argc, argv, "piece",
-                                        PIECE_COUNT);
+        PieceID id = (PieceID) arg_long(argc, argv, "piece", PIECE_COUNT);
         Square  at = battle_square_arg(argc, argv, "x", "y");
 
         if (id >= PIECE_COUNT || !battle_buy(battle, id, at)) {
             protocol_emit("error msg=\"illegal buy\"");
+            return;
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "hand") == 0) {
+        emit_hand(engine);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "play") == 0) {
+        size_t index = (size_t) arg_long(argc, argv, "i", -1);
+        long   a     = arg_long(argc, argv, "a", 0);
+        long   b     = arg_long(argc, argv, "b", 0);
+
+        if (!battle_play(battle, index, a, b)) {
+            protocol_emit("error msg=\"illegal play\"");
+            return;
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "sell") == 0) {
+        size_t index = (size_t) arg_long(argc, argv, "i", -1);
+
+        if (!battle_sell(battle, index)) {
+            protocol_emit("error msg=\"illegal sell\"");
+            return;
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "reclaim") == 0) {
+        Square at = battle_square_arg(argc, argv, "x", "y");
+
+        if (!battle_reclaim(battle, at)) {
+            protocol_emit("error msg=\"illegal reclaim\"");
             return;
         }
 
@@ -276,8 +344,6 @@ static void handle_battle(EngineState* engine, ...) {
 
         if (engine->battle) {
             emit_battle_state(engine);
-        } else {
-            screen_goto(engine, SCREEN_TITLE);
         }
 
         protocol_emit("ok");
@@ -285,12 +351,84 @@ static void handle_battle(EngineState* engine, ...) {
     }
 
     if (strcmp(argv[0], "concede") == 0) {
-        protocol_emit("result won=0");
+        battle_concede(battle);
+        protocol_emit("ok");
+        return;
+    }
 
-        battle_free(battle);
-        free(battle);
-        engine->battle = nullptr;
+    protocol_emit("error msg=\"unknown command\"");
+}
 
+/// handle_campaign
+///
+/// Handles the campaign hub: the kingdom list, entering a kingdom's map,
+/// the Vorath finale, the codex and settings screens, saving, and
+/// returning to the title.
+///
+/// Params:
+/// - engine -> engine owning the screen
+/// - ...    -> the (int) argc, (char**) argv pair
+///
+static void handle_campaign(EngineState* engine, ...) {
+    SCREEN_ARGS(engine, argc, argv);
+
+    if (strcmp(argv[0], "kingdoms") == 0) {
+        run_emit_kingdoms(engine);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "enter") == 0) {
+        KingdomID kingdom =
+            (KingdomID) arg_long(argc, argv, "id", KINGDOM_COUNT);
+
+        if (kingdom >= KINGDOM_COUNT) {
+            protocol_emit("error msg=\"bad kingdom\"");
+            return;
+        }
+
+        run_enter_map(engine, kingdom);
+        screen_goto(engine, SCREEN_MAP);
+        run_emit_map(engine);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "vorath") == 0) {
+        if (!run_enter_vorath(engine)) {
+            protocol_emit("error msg=\"vorath not ready\"");
+            return;
+        }
+
+        screen_goto(engine, SCREEN_BATTLE);
+        emit_battle_state(engine);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "codex") == 0) {
+        screen_goto(engine, SCREEN_CODEX);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "settings") == 0) {
+        screen_goto(engine, SCREEN_SETTINGS);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "save") == 0) {
+        if (!engine_save(engine, SAVE_PATH)) {
+            protocol_emit("error msg=\"save failed\"");
+            return;
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "title") == 0) {
         screen_goto(engine, SCREEN_TITLE);
         protocol_emit("ok");
         return;
@@ -299,13 +437,238 @@ static void handle_battle(EngineState* engine, ...) {
     protocol_emit("error msg=\"unknown command\"");
 }
 
+/// handle_map
+///
+/// Handles the map screen: the node list, selecting a node, and resolving
+/// the event, offering, and relic choices a selected node leaves pending.
+///
+/// Params:
+/// - engine -> engine owning the screen
+/// - ...    -> the (int) argc, (char**) argv pair
+///
+static void handle_map(EngineState* engine, ...) {
+    SCREEN_ARGS(engine, argc, argv);
+
+    if (strcmp(argv[0], "nodes") == 0) {
+        run_emit_map(engine);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "select") == 0) {
+        size_t index = (size_t) arg_long(argc, argv, "i", -1);
+
+        if (!run_select_node(engine, index)) {
+            protocol_emit("error msg=\"not selectable\"");
+            return;
+        }
+
+        if (engine->battle) {
+            screen_goto(engine, SCREEN_BATTLE);
+            emit_battle_state(engine);
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "choose") == 0) {
+        EventChoice choice =
+            argc > 1 && argv[1][0] == 'b' ? CHOICE_B : CHOICE_A;
+
+        run_event_choose(engine, choice);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "remove") == 0) {
+        CardID card = (CardID) arg_long(argc, argv, "card", CARD_COUNT);
+
+        if (card >= CARD_COUNT) {
+            protocol_emit("error msg=\"bad card\"");
+            return;
+        }
+
+        run_offering(engine, card);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "relic") == 0) {
+        RelicID relic = (RelicID) arg_long(argc, argv, "id", RELIC_COUNT);
+
+        if (relic >= RELIC_COUNT) {
+            protocol_emit("error msg=\"bad relic\"");
+            return;
+        }
+
+        run_relic_pick(engine, relic);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "back") == 0) {
+        screen_goto(engine, SCREEN_CAMPAIGN);
+        run_emit_kingdoms(engine);
+        protocol_emit("ok");
+        return;
+    }
+
+    protocol_emit("error msg=\"unknown command\"");
+}
+
+/// handle_codex
+///
+/// Handles the codex screen: listing pieces, cards, and relics, showing
+/// one entry's detail, and returning to the campaign.
+///
+/// Params:
+/// - engine -> engine owning the screen
+/// - ...    -> the (int) argc, (char**) argv pair
+///
+static void handle_codex(EngineState* engine, ...) {
+    SCREEN_ARGS(engine, argc, argv);
+
+    if (strcmp(argv[0], "pieces") == 0) {
+        for (PieceID id = 0; id < PIECE_COUNT; id++) {
+            if (PIECE_REGISTRY[id]) {
+                protocol_emit(
+                    "piece id=%d name=\"%s\"",
+                    id,
+                    PIECE_REGISTRY[id]->name
+                );
+            }
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "cards") == 0) {
+        for (CardID id = 0; id < CARD_COUNT; id++) {
+            if (CARD_REGISTRY[id]) {
+                protocol_emit(
+                    "card id=%d name=\"%s\"",
+                    id,
+                    CARD_REGISTRY[id]->name
+                );
+            }
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "relics") == 0) {
+        for (RelicID id = 0; id < RELIC_COUNT; id++) {
+            if (RELIC_REGISTRY[id].name) {
+                protocol_emit(
+                    "relic id=%d name=\"%s\"",
+                    id,
+                    RELIC_REGISTRY[id].name
+                );
+            }
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "info") == 0) {
+        long piece = arg_long(argc, argv, "piece", -1);
+        long card  = arg_long(argc, argv, "card", -1);
+
+        if (piece >= 0 && piece < PIECE_COUNT && PIECE_REGISTRY[piece]) {
+            protocol_emit(
+                "info name=\"%s\" desc=\"%s\"",
+                PIECE_REGISTRY[piece]->name,
+                PIECE_REGISTRY[piece]->desc
+            );
+        } else if (card >= 0 && card < CARD_COUNT && CARD_REGISTRY[card]) {
+            protocol_emit(
+                "info name=\"%s\" desc=\"%s\"",
+                CARD_REGISTRY[card]->name,
+                CARD_REGISTRY[card]->desc
+            );
+        } else {
+            protocol_emit("error msg=\"no entry\"");
+            return;
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "back") == 0) {
+        screen_goto(engine, SCREEN_CAMPAIGN);
+        protocol_emit("ok");
+        return;
+    }
+
+    protocol_emit("error msg=\"unknown command\"");
+}
+
+/// handle_settings
+///
+/// Handles the settings screen: showing the profile, resetting the run or
+/// the whole profile, and returning to the campaign.
+///
+/// Params:
+/// - engine -> engine owning the screen
+/// - ...    -> the (int) argc, (char**) argv pair
+///
+static void handle_settings(EngineState* engine, ...) {
+    SCREEN_ARGS(engine, argc, argv);
+
+    if (strcmp(argv[0], "show") == 0) {
+        protocol_emit(
+            "settings cleared=%d masteries=%d,%d,%d,%d,%d",
+            engine->cleared,
+            engine->masteries[0],
+            engine->masteries[1],
+            engine->masteries[2],
+            engine->masteries[3],
+            engine->masteries[4]
+        );
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "reset") == 0 && argc > 1 &&
+        strcmp(argv[1], "run") == 0) {
+        if (engine->run) {
+            run_free(engine->run);
+            engine->run = nullptr;
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "reset") == 0 && argc > 1 &&
+        strcmp(argv[1], "all") == 0) {
+        engine_free(engine);
+        engine_init(engine);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "back") == 0) {
+        screen_goto(engine, SCREEN_CAMPAIGN);
+        protocol_emit("ok");
+        return;
+    }
+
+    protocol_emit("error msg=\"unknown command\"");
+}
+
 Screen SCREEN_REGISTRY[SCREEN_COUNT] = {
-    [SCREEN_TITLE]    = { "title",    nullptr, 0, handle_title  },
-    [SCREEN_CAMPAIGN] = { "campaign", nullptr, 0, handle_stub   },
-    [SCREEN_CODEX]    = { "codex",    nullptr, 0, handle_stub   },
-    [SCREEN_MAP]      = { "map",      nullptr, 0, handle_stub   },
-    [SCREEN_BATTLE]   = { "battle",   nullptr, 0, handle_battle },
-    [SCREEN_SETTINGS] = { "settings", nullptr, 0, handle_stub   },
+    [SCREEN_TITLE]    = {"title", nullptr, 0, handle_title},
+    [SCREEN_CAMPAIGN] = {"campaign", nullptr, 0, handle_campaign},
+    [SCREEN_CODEX]    = {"codex", nullptr, 0, handle_codex},
+    [SCREEN_MAP]      = {"map", nullptr, 0, handle_map},
+    [SCREEN_BATTLE]   = {"battle", nullptr, 0, handle_battle},
+    [SCREEN_SETTINGS] = {"settings", nullptr, 0, handle_settings},
 };
 
 /// screen_goto

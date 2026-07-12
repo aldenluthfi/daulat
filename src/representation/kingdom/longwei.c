@@ -10,9 +10,9 @@
 #include <forward.h>
 #include <prelude.h>
 
-const Piece      LONGWEI_PIECES[] = { {} };
-const Card       LONGWEI_CARDS[]  = { {} };
-const BoardTrait LONGWEI_TRAITS[] = { {} };
+const Piece      LONGWEI_PIECES[] = {{}};
+const Card       LONGWEI_CARDS[]  = {{}};
+const BoardTrait LONGWEI_TRAITS[] = {{}};
 
 /// longwei_innate
 ///

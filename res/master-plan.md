@@ -900,13 +900,59 @@ fresh profile. Saving only outside SCREEN_BATTLE (battles never saved).
      then a temporary `new` seat override or direct parity check);
      `log effect` lines appear for double-step and income once named
      effects exist; regression: Phase 1 harness + Phase 2 piped script.
-3. **Cards + combos.** Universal + Caelan cards, hand pipeline, combo
-   refund + climax, marks. Verify: Revitalize/Queen's Gambit play; 3
-   Caelan cards fire climax.
-4. **Campaign + save.** run.c maps/nodes/unlocks/chains/events/
-   offerings/archives/relic offers; engine.c save/load; remaining
-   screens. Verify: clear Caelan town via script; save -> load ->
-   identical `nodes` output (diff sessions).
+3. **Cards + combos.** DONE 2026-07-12. Universal + Caelan cards, hand
+   pipeline, combo refund + climax, marks. Verified: 24-check card
+   harness (climax +50%, refund +15, Revitalize/Sacrifice/Coronation/
+   Divine-Right/Chain-Break/Last-Stand/Hostage); piped seed=2 session
+   (QG mid-turn draw, combo refund line, force-sell autosells). Design:
+   battle_play is generic — a card's effects[] slot with trigger
+   ON_CARD_PLAY runs immediately (temp context, x = Card*), any other
+   trigger attaches to the acting player's list (args[0] = beneficiary
+   Side, args[1..2] = encoded a/b targets); eff_noop slots become marks
+   (args[1] = card->id tag, args[2] = payload). battle.c reads three
+   marks inline (no header change, tag = CardID): Pawn Storm and Reforge
+   in battle_buy (id-filtered pricing/action), and Last Stand routes
+   through the existing all-immune cascade branch via a
+   QUERY_PIECE_CAN_FLIP veto (no cascade coupling). Mercy/Spite/Hydra/
+   Reforge observe own-side losses through ON_PIECE_FLIP_PRE (pre-toggle
+   fires on the losing side's own list); Hostage/climax via own-list
+   fires. Queen's Gambit's 3-card draw is battle.c-side (needs engine);
+   only the human draws a hand (AI plays no cards this build). run_new
+   unlocks the 5 implemented District cards; battle_draw null-guards
+   CARD_REGISTRY so Phase 5 kingdom cards light up automatically.
+4. **Campaign + save.** DONE 2026-07-12. run.c 15 verbatim GDD layout
+   tables + map generation (dag_rand + i-1->i patch, heap MapNode per
+   vertex, per-battle modifier via rng_mix), node select/enter dispatch,
+   idempotent tier unlock schedule, chain add/remove, overseer capstone
+   reward + synergy, event dispatch (choice recorded, bodies deferred),
+   offering, archive reveal, relic offer, Vorath eligibility + finalize
+   wiring; engine.c text save/load codec + finalize (mastery advance
+   where !ever_chained, cleared bump); screen.c campaign/map/codex/
+   settings handlers; battle end returns to map via battle_finish ->
+   run_battle_result. Header adds (user-approved): MapNode gains
+   name/content fields — the static layout tables are MapNode arrays
+   (designated init), no separate row struct; run_emit_kingdoms /
+   run_emit_map / run_enter_vorath, battle_concede. Verified: 18-check
+   campaign harness (unlock schedule,
+   archive/offering/event dispatch, town-clear -> province unlock);
+   piped select->battle->concede returns to map; save -> load ->
+   identical `nodes` across sessions; chain 0->1 on loss; regressions
+   (phase1 24, phase3 24, black-seat 8) green; 80-col clean. Design
+   notes: `new` now enters the campaign screen (synthetic-battle path
+   retired); battle START transition done by screen.c on seeing
+   engine->battle, battle END transition done by run.c (called from
+   battle_finish); MapNode self-describes — name/content authored in the
+   static MapNode layout tables and copied in at generation (map_generate
+   does *node = LAYOUTS[k][t][i] then sets runtime fields), so no
+   reverse index lookup. DEFERRED to their phases: liberation node
+   injection +
+   Liberation Trial, Vorath-counter threshold battle effects, pressure
+   scaling, difficulty/challenge battle effects (all Phase 6); event
+   effect bodies (kingdom phases); overseer + Vorath battle armies
+   (Phase 7). run_battle_result increments the Vorath counter and forbids
+   a recipe every 4 losses (state only); board sizes by tier
+   (town 12 / province 14 / country 16); campaign battles are king-only
+   until pressure/free-piece setup lands (Phase 6).
 5. **Remaining kingdoms.** 4 kingdom files complete + recipes + combine.
    Verify: Pao screen capture, Ma elbow block, Berolina split, Ziraafa
    bent line via `moves`/`attacks` spot-checks.
@@ -939,7 +985,15 @@ lowest unheld relic substitutes; Kingdom Purity pads with universal when
 short; Clockwork soft-enforced (auto-end past 30 s); event elites count
 as normal losses; Queen's Favor lasts current map; pawn double-step =
 spawn-square compare + self-clearing flag (movegen previews cannot burn
-it).
+it). Phase 3 card interpretations: card-dealt meter damage
+(Spite/Vengeance/Crusade/Counter Coup echo) lowers the enemy meter
+without an immediate cascade — flips resolve on the next cascade (no
+public battle-scoped damage helper); Vengeance approximates "moved
+adjacent last turn" as "currently adjacent to a friendly piece" (no
+per-turn move history yet); Crusade resolves its Knight's three attacks
+as value x3 to the enemy meter; Reforge's "next turn" discount is a mark
+active until used (TURNS_2 approximation of the turn boundary); draws
+sample with replacement (duplicate cards in a hand allowed).
 
 ## 12. Risks
 

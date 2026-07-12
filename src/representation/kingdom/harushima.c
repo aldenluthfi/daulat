@@ -10,9 +10,9 @@
 #include <forward.h>
 #include <prelude.h>
 
-const Piece      HARUSHIMA_PIECES[] = { {} };
-const Card       HARUSHIMA_CARDS[]  = { {} };
-const BoardTrait HARUSHIMA_TRAITS[] = { {} };
+const Piece      HARUSHIMA_PIECES[] = {{}};
+const Card       HARUSHIMA_CARDS[]  = {{}};
+const BoardTrait HARUSHIMA_TRAITS[] = {{}};
 
 /// harushima_innate
 ///

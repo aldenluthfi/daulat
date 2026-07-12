@@ -735,7 +735,7 @@ struct Square {
 /// with the zero vector instead, since up-left { -1, -1 } is itself a
 /// legitimate offset while no piece ever has a zero offset.
 ///
-#define SQUARE_END ((Square) { -1, -1 })
+#define SQUARE_END ((Square) {-1, -1})
 
 /*----------------------------------------------------------------------------*\
                                 PIECE.C STRUCTS
@@ -756,9 +756,9 @@ struct Piece {
     PieceID    id;
     KingdomID  kingdom;
     UnlockTier tier;
-    MoveClass  class;
+    MoveClass class;
 
-    int        value;
+    int value;
 };
 
 /// PieceInfo
@@ -864,14 +864,21 @@ struct BoardTrait {
                             CAMPAING_MAP.C STRUCTS
 \*----------------------------------------------------------------------------*/
 
+#define RELIC_CHOICE(A, B) ((A << 8) | B)
+
 /// MapNode
 ///
-/// A single node on the campaign map representing a battle, elite, archive,
-///
-/// offering, or event.
+/// A single node on the campaign map representing a battle, elite,
+/// archive, offering, or event. The name and content are authored in the
+/// static layout tables and copied in at generation; content is
+/// interpreted by the type: an EventID for events, a result PieceID for
+/// archives, an OverseerTypeID for overseers, or a packed relic pair
+/// (a << 8 | b) for elites; unused otherwise.
 ///
 struct MapNode {
     MapNodeID       type;
+    const char*     name;
+    int             content;
 
     MapState*       map;
     KingdomState*   kingdom;
@@ -1015,8 +1022,12 @@ struct EngineState {
 \*----------------------------------------------------------------------------*/
 
 Effect* effect_attach(LinkedList* list, const Effect* effect);
-void    effect_fire(BattleState* battle, Side side,
-                    EffectTrigger trigger, void* x);
+void    effect_fire(
+    BattleState*  battle,
+    Side          side,
+    EffectTrigger trigger,
+    void*         x
+);
 void    effect_tick(LinkedList* list);
 void    effect_clear(LinkedList* list);
 bool    eff_noop(EffectContext* context, void* x);
@@ -1033,27 +1044,26 @@ Effect* effect_find_mark(LinkedList* list, uintptr_t tag, void* subject);
 ///
 extern const PieceInfo VOID_CELL;
 
-void       battle_begin(EngineState* engine, MapNode* node);
-void       battle_free(BattleState* battle);
+void                   battle_begin(EngineState* engine, MapNode* node);
+void                   battle_free(BattleState* battle);
+void                   battle_concede(BattleState* battle);
 
-bool       battle_move(BattleState* battle, Square from, Square to);
-bool       battle_buy(BattleState* battle, PieceID id, Square at);
-bool       battle_combine(BattleState* battle, Square a, Square b);
-bool       battle_play(BattleState* battle, size_t hand, long a, long b);
-bool       battle_sell(BattleState* battle, size_t hand);
-bool       battle_reclaim(BattleState* battle, Square at);
-void       battle_end_turn(BattleState* battle);
+bool                   battle_move(BattleState* battle, Square from, Square to);
+bool                   battle_buy(BattleState* battle, PieceID id, Square at);
+bool                   battle_combine(BattleState* battle, Square a, Square b);
+bool    battle_play(BattleState* battle, size_t hand, long a, long b);
+bool    battle_sell(BattleState* battle, size_t hand);
+bool    battle_reclaim(BattleState* battle, Square at);
+void    battle_end_turn(BattleState* battle);
 
-Square*    battle_moves(BattleState* battle, PieceInfo* piece);
-Square*    battle_attacks(BattleState* battle, PieceInfo* piece);
-int        battle_value(BattleState* battle, PieceInfo* piece,
-                        PieceInfo* victim);
-int        battle_meter_max(BattleState* battle, Side side);
-Side       battle_territory(BattleState* battle, Square square);
+Square* battle_moves(BattleState* battle, PieceInfo* piece);
+Square* battle_attacks(BattleState* battle, PieceInfo* piece);
+int     battle_value(BattleState* battle, PieceInfo* piece, PieceInfo* victim);
+int     battle_meter_max(BattleState* battle, Side side);
+Side    battle_territory(BattleState* battle, Square square);
 PieceInfo* battle_at(BattleState* battle, Square square);
 bool       battle_in_bounds(BattleState* battle, Square square);
-PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at,
-                        Side side);
+PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at, Side side);
 void       battle_flip(BattleState* battle, PieceInfo* piece);
 void       battle_remove(BattleState* battle, PieceInfo* piece);
 
@@ -1065,12 +1075,12 @@ void       battle_remove(BattleState* battle, PieceInfo* piece);
 /// list live only during resolve, and battle_move_from is valid only
 /// during ON_PIECE_MOVE.
 ///
-BattleState* battle_current(void);
-PieceInfo*   battle_subject(void);
-PieceInfo*   battle_victim(void);
-Card*        battle_subject_card(void);
-Square       battle_move_from(void);
-PieceInfo**  battle_damagers(void);
+BattleState*        battle_current(void);
+PieceInfo*          battle_subject(void);
+PieceInfo*          battle_victim(void);
+Card*               battle_subject_card(void);
+Square              battle_move_from(void);
+PieceInfo**         battle_damagers(void);
 
 /// Generic direction sets
 ///
@@ -1098,49 +1108,69 @@ extern const Square ALL_DIRECTIONS[];
 /// self's square and side.
 /// threat selects at (coverage) semantics over mv (movement) semantics.
 ///
-void    mg_begin(void);
-void    mg_push(Square square);
-Square* mg_end(void);
-void    mg_leap(BattleState* battle, PieceInfo* self,
-                const Square* offsets, bool threat);
-void    mg_slide(BattleState* battle, PieceInfo* self,
-                 const Square* directions, int8_t min, int8_t max,
-                 bool threat);
-void    mg_compound(BattleState* battle, PieceInfo* self,
-                    const PieceID* parts, bool threat);
+void                mg_begin(void);
+void                mg_push(Square square);
+Square*             mg_end(void);
+void                mg_leap(
+    BattleState*  battle,
+    PieceInfo*    self,
+    const Square* offsets,
+    bool          threat
+);
+void mg_slide(
+    BattleState*  battle,
+    PieceInfo*    self,
+    const Square* directions,
+    int8_t        min,
+    int8_t        max,
+    bool          threat
+);
+void mg_compound(
+    BattleState*   battle,
+    PieceInfo*     self,
+    const PieceID* parts,
+    bool           threat
+);
 
 /*----------------------------------------------------------------------------*\
                                       AI.C
 \*----------------------------------------------------------------------------*/
 
-void ai_take_turn(BattleState* battle);
-void ai_plan(BattleState* battle);
+void   ai_take_turn(BattleState* battle);
+void   ai_plan(BattleState* battle);
 
 /*----------------------------------------------------------------------------*\
                                      RUN.C
 \*----------------------------------------------------------------------------*/
 
 size_t rng_mix(size_t seed, size_t salt);
-void   run_new(EngineState* engine, size_t seed, Difficulty difficulty,
-               ChallengeRunID challenge);
-void   run_free(RunState* run);
-void   run_enter_map(EngineState* engine, KingdomID kingdom);
-bool   run_select_node(EngineState* engine, size_t index);
-void   run_battle_result(EngineState* engine, bool won);
-void   run_event_choose(EngineState* engine, EventChoice choice);
-void   run_offering(EngineState* engine, CardID card);
-void   run_relic_pick(EngineState* engine, RelicID relic);
-size_t run_pressure(RunState* run, KingdomID kingdom);
+void   run_new(
+    EngineState*   engine,
+    size_t         seed,
+    Difficulty     difficulty,
+    ChallengeRunID challenge
+);
+void               run_free(RunState* run);
+void               run_enter_map(EngineState* engine, KingdomID kingdom);
+bool               run_select_node(EngineState* engine, size_t index);
+void               run_battle_result(EngineState* engine, bool won);
+void               run_event_choose(EngineState* engine, EventChoice choice);
+void               run_offering(EngineState* engine, CardID card);
+void               run_relic_pick(EngineState* engine, RelicID relic);
+size_t             run_pressure(RunState* run, KingdomID kingdom);
+void               run_emit_kingdoms(EngineState* engine);
+void               run_emit_map(EngineState* engine);
+bool               run_enter_vorath(EngineState* engine);
 
 /*----------------------------------------------------------------------------*\
                                    ENGINE.C
 \*----------------------------------------------------------------------------*/
 
-void engine_init(EngineState* engine);
-void engine_free(EngineState* engine);
-bool engine_save(EngineState* engine, const char* path);
-bool engine_load(EngineState* engine, const char* path);
-void engine_finalize_run(EngineState* engine, bool vorath_won);
+void               engine_init(EngineState* engine);
+void               engine_free(EngineState* engine);
+bool               engine_save(EngineState* engine, const char* path);
+bool               engine_load(EngineState* engine, const char* path);
+void               engine_finalize_run(EngineState* engine, bool vorath_won);
 
 /*----------------------------------------------------------------------------*\
                                     RELIC.C
@@ -1164,36 +1194,42 @@ extern const Relic RELIC_REGISTRY[RELIC_COUNT];
 /// KINGDOM_ADJACENT maps each kingdom to its synergy neighbor and the
 /// EVENT_* tables hold narrative strings indexed by EventID.
 ///
-extern const Piece          UNIVERSAL_PIECES[];
-extern const Card           UNIVERSAL_CARDS[];
+extern const Piece UNIVERSAL_PIECES[];
+extern const Card  UNIVERSAL_CARDS[];
 
-extern const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT];
-extern const ChainPenalty   CHAIN_REGISTRY[CHAIN_PENALTY_COUNT];
+extern const BattleModifier    MODIFIER_REGISTRY[MODIFIER_COUNT];
+extern const ChainPenalty      CHAIN_REGISTRY[CHAIN_PENALTY_COUNT];
 
 extern const Piece* const      PIECE_REGISTRY[PIECE_COUNT];
 extern const Card* const       CARD_REGISTRY[CARD_COUNT];
 extern const BoardTrait* const TRAIT_REGISTRY[BOARD_TRAIT_COUNT];
 
-extern const KingdomID KINGDOM_ADJACENT[KINGDOM_COUNT];
+extern const KingdomID         KINGDOM_ADJACENT[KINGDOM_COUNT];
 
-extern const char* const EVENT_NAME[EVENT_COUNT];
-extern const char* const EVENT_TEXT[EVENT_COUNT];
-extern const char* const EVENT_OPTION_A[EVENT_COUNT];
-extern const char* const EVENT_OPTION_B[EVENT_COUNT];
+extern const char* const       EVENT_NAME[EVENT_COUNT];
+extern const char* const       EVENT_TEXT[EVENT_COUNT];
+extern const char* const       EVENT_OPTION_A[EVENT_COUNT];
+extern const char* const       EVENT_OPTION_B[EVENT_COUNT];
 
-void vorath_setup(BattleState* battle);
+void                           vorath_setup(BattleState* battle);
 
 /// Kingdom dispatch tables
 ///
 /// Function pointer tables indexed by KingdomID aggregating each
 /// kingdom's innate, climax, overseer setup, and event handler.
 ///
-extern void (*const KINGDOM_INNATE[KINGDOM_COUNT])(BattleState*, Side,
-                                                   MasteryLevel);
+extern void                    (*const KINGDOM_INNATE[KINGDOM_COUNT])(
+    BattleState*,
+    Side,
+    MasteryLevel
+);
 extern void (*const KINGDOM_CLIMAX[KINGDOM_COUNT])(BattleState*, Side);
 extern void (*const KINGDOM_OVERSEER[KINGDOM_COUNT])(BattleState*);
-extern void (*const KINGDOM_EVENT[KINGDOM_COUNT])(EngineState*, EventID,
-                                                  EventChoice);
+extern void (*const KINGDOM_EVENT[KINGDOM_COUNT])(
+    EngineState*,
+    EventID,
+    EventChoice
+);
 
 /*----------------------------------------------------------------------------*\
                                KINGDOM/LONGWEI.C

@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     EngineState engine;
     engine_init(&engine);
 
-    Protocol protocol = { &engine, stdin, stdout };
+    Protocol protocol = {&engine, stdin, stdout};
     protocol_run(&protocol);
 
     engine_free(&engine);

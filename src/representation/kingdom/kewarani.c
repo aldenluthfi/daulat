@@ -10,9 +10,9 @@
 #include <forward.h>
 #include <prelude.h>
 
-const Piece      KEWARANI_PIECES[] = { {} };
-const Card       KEWARANI_CARDS[]  = { {} };
-const BoardTrait KEWARANI_TRAITS[] = { {} };
+const Piece      KEWARANI_PIECES[] = {{}};
+const Card       KEWARANI_CARDS[]  = {{}};
+const BoardTrait KEWARANI_TRAITS[] = {{}};
 
 /// kewarani_innate
 ///
