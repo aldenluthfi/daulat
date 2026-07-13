@@ -503,6 +503,13 @@ map_generate(MapState* map, KingdomID kingdom, MapTypeID tier, size_t seed) {
             size_t pick    = rng_mix(seed, i) % MODIFIER_COUNT;
 
             node->modifier = (BattleModifier*) &MODIFIER_REGISTRY[pick];
+
+            if (rng_mix(seed, i + 100) % 2 == 0) {
+                size_t trait = (size_t) kingdom * 2 +
+                               rng_mix(seed, i + 200) % 2;
+
+                node->trait = (BoardTrait*) TRAIT_REGISTRY[trait];
+            }
         }
 
         map->nodes.nodes[i].data = node;

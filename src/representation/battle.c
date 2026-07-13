@@ -1771,6 +1771,40 @@ static void battle_walk_modifiers(BattleState* battle) {
     }
 }
 
+/// battle_walk_trait
+///
+/// Attaches the board trait's effects to both seats, one copy each, so a
+/// battlefield-wide rule like Sandstorm or Castle Corners applies to every
+/// piece regardless of side.
+///
+/// Params:
+/// - battle -> battle being set up
+///
+static void battle_walk_trait(BattleState* battle) {
+    if (!battle->board.trait) {
+        return;
+    }
+
+    Side sides[2] = {SIDE_WHITE, SIDE_BLACK};
+
+    for (size_t seat = 0; seat < 2; seat++) {
+        for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+            if (!battle->board.trait->effects[slot].func) {
+                continue;
+            }
+
+            Effect* attached = effect_attach(
+                &battle_player(battle, sides[seat])->effects,
+                &battle->board.trait->effects[slot]
+            );
+
+            if (attached) {
+                attached->context->args[0] = (void*) (uintptr_t) sides[seat];
+            }
+        }
+    }
+}
+
 /// battle_dense_terrain
 ///
 /// Marks a fifth of the board as missing squares for the Dense Terrain
@@ -1799,6 +1833,51 @@ static void battle_dense_terrain(BattleState* battle) {
         }
 
         battle->board.piece_board[index] = (PieceInfo*) &VOID_CELL;
+    }
+}
+
+/// battle_trait_voids
+///
+/// Applies the structural board traits that carve out impassable squares:
+/// Mirage scatters five percent of the board, Island Chain checkers the
+/// four middle columns. Occupied cells are skipped so no piece is buried.
+///
+/// Params:
+/// - battle -> battle whose board gains voids
+///
+static void battle_trait_voids(BattleState* battle) {
+    if (!battle->board.trait) {
+        return;
+    }
+
+    int8_t width  = battle->board.width;
+    int8_t height = battle->board.height;
+
+    if (battle->board.trait->id == BOARD_TRAIT_MIRAGE) {
+        int voids = width * height * 5 / 100;
+
+        for (int placed = 0; placed < voids; placed++) {
+            int8_t x     = (int8_t) (rand_r(&BATTLE_RNG) % width);
+            int8_t y     = (int8_t) (rand_r(&BATTLE_RNG) % height);
+
+            size_t index = square_index((Square) {x, y});
+
+            if (!battle->board.piece_board[index]) {
+                battle->board.piece_board[index] = (PieceInfo*) &VOID_CELL;
+            }
+        }
+    } else if (battle->board.trait->id == BOARD_TRAIT_ISLAND_CHAIN) {
+        for (int8_t y = 0; y < height; y++) {
+            for (int8_t x = (int8_t) (width / 2 - 2);
+                 x < (int8_t) (width / 2 + 2);
+                 x++) {
+                size_t index = square_index((Square) {x, y});
+
+                if ((x + y) % 2 == 0 && !battle->board.piece_board[index]) {
+                    battle->board.piece_board[index] = (PieceInfo*) &VOID_CELL;
+                }
+            }
+        }
     }
 }
 
@@ -1847,6 +1926,7 @@ void battle_begin(EngineState* engine, MapNode* node) {
 
     battle->board.width   = width;
     battle->board.height  = size;
+    battle->board.trait   = node ? node->trait : nullptr;
     battle->turn          = 1;
     battle->white.effects = ll_init();
     battle->black.effects = ll_init();
@@ -1865,12 +1945,14 @@ void battle_begin(EngineState* engine, MapNode* node) {
     battle_spawn(battle, PIECE_KING, (Square) {center, 0}, SIDE_BLACK);
 
     battle_dense_terrain(battle);
+    battle_trait_voids(battle);
 
     battle->white.cp    = 20;
     battle->black.cp    = 20;
 
     battle_walk_run(battle);
     battle_walk_modifiers(battle);
+    battle_walk_trait(battle);
     battle_setup_armies(battle);
     battle_walk_innates(battle);
     battle_walk_synergies(battle);

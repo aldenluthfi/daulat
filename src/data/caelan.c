@@ -1108,7 +1108,91 @@ const Card CAELAN_CARDS[] = {
     },
 };
 
-const BoardTrait CAELAN_TRAITS[] = {{}};
+/// eff_castle_corners
+///
+/// Castle Corners: a piece standing in one of the four two-by-two corner
+/// zones cannot be flipped.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> bool* flip eligibility to veto
+///
+/// Return: true when a cornered piece was made immune
+///
+static bool eff_castle_corners(EffectContext* context, void* x) {
+    (void) context;
+
+    PieceInfo* piece = battle_subject();
+
+    if (!piece) {
+        return false;
+    }
+
+    BattleState* battle = battle_current();
+    int8_t       width  = battle->board.width;
+    int8_t       height = battle->board.height;
+
+    bool in_x = piece->square.x < 2 || piece->square.x >= width - 2;
+    bool in_y = piece->square.y < 2 || piece->square.y >= height - 2;
+
+    if (!in_x || !in_y) {
+        return false;
+    }
+
+    *(bool*) x = false;
+
+    return true;
+}
+
+/// eff_siege_trench
+///
+/// Siege Trench: a piece standing on the board's middle row cannot be
+/// flipped.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> bool* flip eligibility to veto
+///
+/// Return: true when a piece on the trench was made immune
+///
+static bool eff_siege_trench(EffectContext* context, void* x) {
+    (void) context;
+
+    PieceInfo* piece = battle_subject();
+
+    if (!piece || piece->square.y != battle_current()->board.height / 2) {
+        return false;
+    }
+
+    *(bool*) x = false;
+
+    return true;
+}
+
+const BoardTrait CAELAN_TRAITS[] = {
+    {
+        .name    = "Castle Corners",
+        .desc    = "The four 2x2 corner zones grant flip immunity.",
+        .id      = BOARD_TRAIT_CASTLE_CORNERS,
+        .effects = {{
+            .func      = eff_castle_corners,
+            .name      = "Castle Corners",
+            .trigger   = QUERY_PIECE_CAN_FLIP,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    {
+        .name    = "Siege Trench",
+        .desc    = "A row of immunity squares crosses the board's middle.",
+        .id      = BOARD_TRAIT_SIEGE_TRENCH,
+        .effects = {{
+            .func      = eff_siege_trench,
+            .name      = "Siege Trench",
+            .trigger   = QUERY_PIECE_CAN_FLIP,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+};
 
 /*----------------------------------------------------------------------------*\
                               KINGDOM MECHANICS

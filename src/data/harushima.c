@@ -1108,7 +1108,18 @@ const Card HARUSHIMA_CARDS[] = {
     },
 };
 
-const BoardTrait HARUSHIMA_TRAITS[] = {{}};
+const BoardTrait HARUSHIMA_TRAITS[] = {
+    {
+        .name = "Fog Coast",
+        .desc = "The 3 farthest rows hide enemy values until they move.",
+        .id   = BOARD_TRAIT_FOG_COAST,
+    },
+    {
+        .name = "Island Chain",
+        .desc = "The middle columns are checkered with impassable gaps.",
+        .id   = BOARD_TRAIT_ISLAND_CHAIN,
+    },
+};
 
 /*----------------------------------------------------------------------------*\
                               KINGDOM MECHANICS
