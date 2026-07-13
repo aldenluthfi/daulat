@@ -1066,6 +1066,167 @@ const ChainPenalty CHAIN_REGISTRY[CHAIN_PENALTY_COUNT] = {
     },
 };
 
+/*----------------------------------------------------------------------------*\
+                                   SYNERGIES
+\*----------------------------------------------------------------------------*/
+
+/// eff_syn_pao
+///
+/// Longwei synergy in Kewarani: Pao attacks deal ten extra damage.
+///
+/// Params:
+/// - context -> args[0] beneficiary side
+/// - x       -> int* damage to raise
+///
+/// Return: true when a Pao struck an enemy
+///
+static bool eff_syn_pao(EffectContext* context, void* x) {
+    Side       side    = (Side) (uintptr_t) context->args[0];
+    PieceInfo* subject = battle_subject();
+
+    if (!battle_victim() || !subject || subject->side != side ||
+        subject->piece->id != PIECE_PAO) {
+        return false;
+    }
+
+    *(int*) x += 10;
+
+    return true;
+}
+
+/// eff_syn_kewarani
+///
+/// Kewarani synergy in Zarqan: Kewarani pieces cost ten currency less.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* buy cost to lower
+///
+/// Return: true when a Kewarani piece was discounted
+///
+static bool eff_syn_kewarani(EffectContext* context, void* x) {
+    (void) context;
+
+    const Piece* piece = battle_buy_piece();
+
+    if (!piece || piece->kingdom != KINGDOM_KEWARANI) {
+        return false;
+    }
+
+    *(int*) x -= 10;
+
+    if (*(int*) x < 0) {
+        *(int*) x = 0;
+    }
+
+    return true;
+}
+
+/// eff_syn_zarqan
+///
+/// Zarqan synergy in Harushima: Ziraafa and Talliya gain five value.
+///
+/// Params:
+/// - context -> args[0] beneficiary side
+/// - x       -> int* damage or effective value to raise
+///
+/// Return: true when the subject was a Ziraafa or Talliya
+///
+static bool eff_syn_zarqan(EffectContext* context, void* x) {
+    Side       side    = (Side) (uintptr_t) context->args[0];
+    PieceInfo* subject = battle_subject();
+
+    if (!subject || subject->side != side ||
+        (subject->piece->id != PIECE_ZIRAAFA &&
+         subject->piece->id != PIECE_TALLIYA)) {
+        return false;
+    }
+
+    *(int*) x += 5;
+
+    return true;
+}
+
+/// eff_syn_harushima
+///
+/// Harushima synergy in Caelan: playing a Caelan card draws one bonus
+/// card.
+///
+/// Params:
+/// - context -> args[0] beneficiary side
+/// - x       -> Card* being played
+///
+/// Return: true when a Caelan card triggered the draw
+///
+static bool eff_syn_harushima(EffectContext* context, void* x) {
+    Side  side = (Side) (uintptr_t) context->args[0];
+    Card* card = x;
+
+    if (card->kingdom != KINGDOM_CAELAN) {
+        return false;
+    }
+
+    battle_draw(battle_current(), side, 1);
+
+    return true;
+}
+
+/// eff_syn_caelan
+///
+/// Caelan synergy in Longwei: Sultan's Gold yields ten extra currency.
+///
+/// Params:
+/// - context -> args[0] beneficiary side
+/// - x       -> Card* being played
+///
+/// Return: true when Sultan's Gold was played
+///
+static bool eff_syn_caelan(EffectContext* context, void* x) {
+    Side  side = (Side) (uintptr_t) context->args[0];
+    Card* card = x;
+
+    if (card->id != CARD_SULTANS_GOLD) {
+        return false;
+    }
+
+    battle_player(battle_current(), side)->cp += 10;
+
+    return true;
+}
+
+const Effect SYNERGY_REGISTRY[KINGDOM_COUNT] = {
+    [KINGDOM_LONGWEI] = {
+        .func      = eff_syn_pao,
+        .name      = "Longwei Synergy",
+        .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+        .lasts_for = ENTIRE_BATTLE,
+    },
+    [KINGDOM_KEWARANI] = {
+        .func      = eff_syn_kewarani,
+        .name      = "Kewarani Synergy",
+        .trigger   = QUERY_PIECE_CP_COST_BUY,
+        .lasts_for = ENTIRE_BATTLE,
+    },
+    [KINGDOM_ZARQAN] = {
+        .func      = eff_syn_zarqan,
+        .name      = "Zarqan Synergy",
+        .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+        .lasts_for = ENTIRE_BATTLE,
+    },
+    [KINGDOM_HARUSHIMA] = {
+        .func      = eff_syn_harushima,
+        .name      = "Harushima Synergy",
+        .trigger   = ON_CARD_PLAY,
+        .lasts_for = ENTIRE_BATTLE,
+    },
+    [KINGDOM_CAELAN] = {
+        .func      = eff_syn_caelan,
+        .name      = "Caelan Synergy",
+        .trigger   = ON_CARD_PLAY,
+        .lasts_for = ENTIRE_BATTLE,
+    },
+};
+
 const Piece* const   PIECE_REGISTRY[PIECE_COUNT]         = {
     [PIECE_KING]             = &UNIVERSAL_PIECES[0],
 

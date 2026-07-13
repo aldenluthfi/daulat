@@ -1110,8 +1110,10 @@ BattleState*        battle_current(void);
 PieceInfo*          battle_subject(void);
 PieceInfo*          battle_victim(void);
 Card*               battle_subject_card(void);
+const Piece*        battle_buy_piece(void);
 Square              battle_move_from(void);
 PieceInfo**         battle_damagers(void);
+void                battle_draw(BattleState* battle, Side side, size_t count);
 
 /*----------------------------------------------------------------------------*\
                                      PIECE.C
@@ -1275,6 +1277,7 @@ extern const Card* const       CARD_REGISTRY[CARD_COUNT];
 extern const BoardTrait* const TRAIT_REGISTRY[BOARD_TRAIT_COUNT];
 
 extern const KingdomID         KINGDOM_ADJACENT[KINGDOM_COUNT];
+extern const Effect            SYNERGY_REGISTRY[KINGDOM_COUNT];
 
 extern const char* const       EVENT_NAME[EVENT_COUNT];
 extern const char* const       EVENT_TEXT[EVENT_COUNT];

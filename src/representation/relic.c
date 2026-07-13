@@ -469,6 +469,46 @@ static bool eff_forward_command(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_fortified_line
+///
+/// Fortified Line: a piece that did not move this turn deals five extra
+/// damage. The MARK_MOVED stamp records the last turn a piece moved.
+///
+/// Params:
+/// - context -> args[0] beneficiary side
+/// - x       -> int* damage to raise
+///
+/// Return: true when a still piece got the bonus
+///
+static bool eff_fortified_line(EffectContext* context, void* x) {
+    if (!battle_victim()) {
+        return false;
+    }
+
+    Side         side    = (Side) (uintptr_t) context->args[0];
+    PieceInfo*   subject = battle_subject();
+    BattleState* battle  = battle_current();
+
+    if (!subject || subject->side != side) {
+        return false;
+    }
+
+    Effect* moved = effect_find_mark(
+        &battle_player(battle, side)->effects,
+        MARK_MOVED,
+        subject
+    );
+
+    if (moved &&
+        (size_t) (uintptr_t) moved->context->args[2] == battle->turn) {
+        return false;
+    }
+
+    *(int*) x += 5;
+
+    return true;
+}
+
 /// eff_warlords_banner
 ///
 /// Warlord's Banner: pieces adjacent to the friendly king deal five extra
@@ -757,9 +797,15 @@ const Relic RELIC_REGISTRY[RELIC_COUNT] = {
         }},
     },
     [RELIC_FORTIFIED_LINE] = {
-        .name = "Fortified Line",
-        .desc = "Pieces that did not move this turn deal +5 damage.",
-        .id   = RELIC_FORTIFIED_LINE,
+        .name    = "Fortified Line",
+        .desc    = "Pieces that did not move this turn deal +5 damage.",
+        .id      = RELIC_FORTIFIED_LINE,
+        .effects = {{
+            .func      = eff_fortified_line,
+            .name      = "Fortified Line",
+            .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     [RELIC_WARLORDS_BANNER] = {
         .name    = "Warlord's Banner",

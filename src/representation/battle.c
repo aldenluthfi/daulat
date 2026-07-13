@@ -20,6 +20,7 @@ static BattleState*  CURRENT_BATTLE;
 static PieceInfo*    SUBJECT;
 static PieceInfo*    VICTIM;
 static Card*         SUBJECT_CARD;
+static const Piece*  BUY_PIECE;
 static Square        MOVE_FROM = {-1, -1};
 static PieceInfo**   DAMAGERS;
 
@@ -141,6 +142,17 @@ PieceInfo* battle_victim(void) {
 ///
 Card* battle_subject_card(void) {
     return SUBJECT_CARD;
+}
+
+/// battle_buy_piece
+///
+/// Returns the piece template being priced during a buy query, letting
+/// pricing effects act on the piece's kingdom or id. Null outside a buy.
+///
+/// Return: the template under purchase, or null
+///
+const Piece* battle_buy_piece(void) {
+    return BUY_PIECE;
 }
 
 /// battle_move_from
@@ -270,7 +282,7 @@ void battle_meter_gain(BattleState* battle, Side side, int amount) {
 /// - side   -> side drawing cards
 /// - count  -> number of cards to draw
 ///
-static void battle_draw(BattleState* battle, Side side, size_t count) {
+void battle_draw(BattleState* battle, Side side, size_t count) {
     if (side != HUMAN_SIDE) {
         return;
     }
@@ -643,6 +655,42 @@ bool battle_move(BattleState* battle, Square from, Square to) {
     return true;
 }
 
+/// battle_challenge_allows_buy
+///
+/// Enforces the buy constraints of the active challenge: Pacifist Doctrine
+/// forbids pieces valued above twenty, Solo Vanguard forbids a second
+/// non-king piece on the human's side.
+///
+/// Params:
+/// - battle   -> battle being played
+/// - template -> piece being bought
+///
+/// Return: true when the purchase is permitted
+///
+static bool battle_challenge_allows_buy(
+    BattleState* battle,
+    const Piece* template
+) {
+    ChallengeRunID challenge = BATTLE_ENGINE->run->challenge;
+
+    if (challenge == CHALLENGE_PACIFIST_DOCTRINE && template->value > 20) {
+        return false;
+    }
+
+    if (challenge == CHALLENGE_SOLO_VANGUARD) {
+        for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
+            PieceInfo* cell = battle->board.piece_board[index];
+
+            if (cell && cell != &VOID_CELL && cell->side == HUMAN_SIDE &&
+                cell->piece->id != PIECE_KING) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 /// battle_price
 ///
 /// Computes the base currency cost of a piece before the buy queries,
@@ -712,14 +760,21 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
         return false;
     }
 
+    if (ACTING_SIDE == HUMAN_SIDE &&
+        !battle_challenge_allows_buy(battle, template)) {
+        return false;
+    }
+
     PlayerState* player      = battle_player(battle, ACTING_SIDE);
 
     int          cost        = battle_price(battle, template, ACTING_SIDE);
     int          action_cost = 1;
 
     CURRENT_BATTLE           = battle;
+    BUY_PIECE                = template;
     effect_fire(battle, ACTING_SIDE, QUERY_PIECE_CP_COST_BUY, &cost);
     effect_fire(battle, ACTING_SIDE, QUERY_PIECE_ACTION_COST_BUY, &action_cost);
+    BUY_PIECE      = nullptr;
     CURRENT_BATTLE = nullptr;
 
     Effect* storm =
@@ -1475,20 +1530,23 @@ static const PieceID KINGDOM_BASIC[KINGDOM_COUNT] = {
 
 /// battle_free_army
 ///
-/// Spawns count free pieces of one type on random empty squares in a
-/// side's own half, the enemy reinforcements that pressure, chains, and
-/// elite nodes grant. Occupied and void squares are skipped; a bounded
+/// Spawns count free pieces of one type on random empty squares within a
+/// chosen half of the board: the enemy reinforcements that pressure,
+/// chains, and elite nodes grant, or the Traitor's Gambit intrusion into
+/// the human's half. Occupied and void squares are skipped; a bounded
 /// retry keeps a crowded board from looping forever.
 ///
 /// Params:
 /// - battle -> battle to place pieces in
-/// - side   -> side receiving the pieces
+/// - owner  -> side the pieces belong to
+/// - half   -> side whose half the pieces spawn in
 /// - id     -> piece type to spawn
 /// - count  -> number of pieces to place
 ///
 static void battle_free_army(
     BattleState* battle,
-    Side         side,
+    Side         owner,
+    Side         half,
     PieceID      id,
     size_t       count
 ) {
@@ -1497,15 +1555,15 @@ static void battle_free_army(
     }
 
     int8_t height = battle->board.height;
-    int8_t low    = side == SIDE_BLACK ? 0 : (int8_t) (height / 2);
-    int8_t high   = side == SIDE_BLACK ? (int8_t) (height / 2) : height;
+    int8_t low    = half == SIDE_BLACK ? 0 : (int8_t) (height / 2);
+    int8_t high   = half == SIDE_BLACK ? (int8_t) (height / 2) : height;
 
     for (size_t placed = 0; placed < count; placed++) {
         for (int attempt = 0; attempt < 64; attempt++) {
             int8_t x = (int8_t) (rand_r(&BATTLE_RNG) % battle->board.width);
             int8_t y = (int8_t) (low + rand_r(&BATTLE_RNG) % (high - low));
 
-            if (battle_spawn(battle, id, (Square) {x, y}, side)) {
+            if (battle_spawn(battle, id, (Square) {x, y}, owner)) {
                 break;
             }
         }
@@ -1555,12 +1613,19 @@ static void battle_setup_armies(BattleState* battle) {
         count += 2;
     }
 
-    battle_free_army(
-        battle,
-        battle_enemy(HUMAN_SIDE),
-        KINGDOM_BASIC[kingdom],
-        count
-    );
+    Side enemy = battle_enemy(HUMAN_SIDE);
+
+    battle_free_army(battle, enemy, enemy, KINGDOM_BASIC[kingdom], count);
+
+    if (BATTLE_ENGINE->run->challenge == CHALLENGE_THE_TRAITORS_GAMBIT) {
+        battle_free_army(
+            battle,
+            enemy,
+            HUMAN_SIDE,
+            KINGDOM_BASIC[kingdom],
+            3
+        );
+    }
 
     if (level < CHAIN_BRONZE) {
         return;
@@ -1586,6 +1651,40 @@ static void battle_setup_armies(BattleState* battle) {
 
             attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
             attached->context->args[1] = (void*) (uintptr_t) penalty;
+        }
+    }
+}
+
+/// battle_walk_synergies
+///
+/// Attaches the human's overseer synergies that apply in this region: a
+/// synergy earned by clearing a kingdom's overseer fires while fighting in
+/// that kingdom's lore-adjacent neighbour.
+///
+/// Params:
+/// - battle -> battle being set up
+///
+static void battle_walk_synergies(BattleState* battle) {
+    RunState* run = BATTLE_ENGINE ? BATTLE_ENGINE->run : nullptr;
+
+    if (!run || !battle->node || !battle->node->kingdom) {
+        return;
+    }
+
+    KingdomID region = battle->node->kingdom->id;
+
+    for (size_t source = 0; source < KINGDOM_COUNT; source++) {
+        if (!run->synergies[source] || KINGDOM_ADJACENT[source] != region) {
+            continue;
+        }
+
+        Effect* attached = effect_attach(
+            &battle_player(battle, HUMAN_SIDE)->effects,
+            &SYNERGY_REGISTRY[source]
+        );
+
+        if (attached) {
+            attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
         }
     }
 }
@@ -1764,9 +1863,20 @@ void battle_begin(EngineState* engine, MapNode* node) {
     battle_walk_modifiers(battle);
     battle_setup_armies(battle);
     battle_walk_innates(battle);
+    battle_walk_synergies(battle);
 
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);
+
+    size_t vorath = engine->run->vorath_counter / 2;
+
+    if (vorath > 0) {
+        battle_meter_gain(
+            battle,
+            battle_enemy(HUMAN_SIDE),
+            (int) (vorath * 20)
+        );
+    }
 
     ACTING_SIDE         = SIDE_WHITE;
 
