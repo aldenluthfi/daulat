@@ -1033,6 +1033,14 @@ void    effect_clear(LinkedList* list);
 bool    eff_noop(EffectContext* context, void* x);
 Effect* effect_find_mark(LinkedList* list, uintptr_t tag, void* subject);
 
+/// MARK_MOVED
+///
+/// Mark tag stamped by battle_move onto the acting side's list, keyed to
+/// the moved piece, recording that the piece moved recently. Read through
+/// effect_find_mark; its tag range sits clear of the CardID tags.
+///
+#define MARK_MOVED ((uintptr_t) 0x4D4F5645)
+
 /*----------------------------------------------------------------------------*\
                                     BATTLE.C
 \*----------------------------------------------------------------------------*/
@@ -1067,6 +1075,29 @@ PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at, Side side);
 void       battle_flip(BattleState* battle, PieceInfo* piece);
 void       battle_remove(BattleState* battle, PieceInfo* piece);
 
+/// Battle state accessors
+///
+/// Shared read and mutate helpers over battle state: the player state for
+/// a side, the opposing side, the side's king, and a meter gain clamped
+/// to the two hundred percent ceiling.
+///
+PlayerState* battle_player(BattleState* battle, Side side);
+Side         battle_enemy(Side side);
+PieceInfo*   battle_find_king(BattleState* battle, Side side);
+void         battle_meter_gain(BattleState* battle, Side side, int amount);
+
+/// Direct damage and single-piece strike
+///
+/// battle_damage reduces a side's meter by an amount and runs the flip
+/// cascade at once, so card and relic meter damage flips pieces the
+/// moment it lands rather than deferring to the next resolve.
+/// battle_lunge force-moves a piece to a square, resolves that piece's
+/// coverage into the enemy meter, cascades, and returns the damage dealt;
+/// it powers multi-strike card choreography such as Crusade.
+///
+void         battle_damage(BattleState* battle, Side side, int amount);
+int          battle_lunge(BattleState* battle, PieceInfo* piece, Square to);
+
 /// Subject registers
 ///
 /// Hidden per-fire state set only by the battle.c emission points so
@@ -1081,6 +1112,10 @@ PieceInfo*          battle_victim(void);
 Card*               battle_subject_card(void);
 Square              battle_move_from(void);
 PieceInfo**         battle_damagers(void);
+
+/*----------------------------------------------------------------------------*\
+                                     PIECE.C
+\*----------------------------------------------------------------------------*/
 
 /// Generic direction sets
 ///
@@ -1131,6 +1166,40 @@ void mg_compound(
     const PieceID* parts,
     bool           threat
 );
+
+/// Piece behaviour effects
+///
+/// Generic effects shared by the kingdom pieces: pawn classification, a
+/// slot embedder, a one-shot free move grant, the alternating double
+/// move, and the movement copying pair with its attach helper.
+///
+bool     piece_is_pawn(PieceID id);
+Effect*  piece_embed_effect(PieceInfo* piece, const Effect* template);
+void     piece_grant_free_move(PieceInfo* piece, const char* name);
+bool     eff_free_move(EffectContext* context, void* x);
+bool     eff_double_move(EffectContext* context, void* x);
+bool     eff_copy_mv(EffectContext* context, void* x);
+bool     eff_copy_at(EffectContext* context, void* x);
+void     piece_adopt_move(
+    BattleState*   battle,
+    PieceInfo*     target,
+    PieceID        copied,
+    EffectDuration lasts,
+    bool           replace
+);
+
+/*----------------------------------------------------------------------------*\
+                                     CARD.C
+\*----------------------------------------------------------------------------*/
+
+/// Card play target codec
+///
+/// card_pack encodes a board square into the packed target pointer
+/// convention, offset by one so a zero square is not an absent target;
+/// card_square decodes one back into a board square.
+///
+uintptr_t card_pack(Square square);
+Square    card_square(void* packed);
 
 /*----------------------------------------------------------------------------*\
                                       AI.C

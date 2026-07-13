@@ -360,20 +360,6 @@ static Square* banner_at(BattleState* battle, PieceInfo* self) {
                                 PIECE EFFECTS
 \*----------------------------------------------------------------------------*/
 
-/// square_pack
-///
-/// Packs a square into a nonzero integer so it can live in a context
-/// slot with zero meaning unset.
-///
-/// Params:
-/// - square -> square to pack
-///
-/// Return: packed nonzero representation
-///
-static uintptr_t square_pack(Square square) {
-    return (uintptr_t) (square.y * 20 + square.x) + 1;
-}
-
 /// eff_pawn_double_step
 ///
 /// Adds the Pawn's double-step to its move list while it still stands on
@@ -397,7 +383,7 @@ static bool eff_pawn_double_step(EffectContext* context, void* x) {
         return false;
     }
 
-    uintptr_t here = square_pack(self->square);
+    uintptr_t here = card_pack(self->square);
 
     if (!context->args[1]) {
         context->args[1] = (void*) here;
@@ -512,72 +498,6 @@ static bool eff_banner_aura(EffectContext* context, void* x) {
                                  CARD EFFECTS
 \*----------------------------------------------------------------------------*/
 
-/// card_player
-///
-/// Returns the given side's player state.
-///
-/// Params:
-/// - battle -> battle to look into
-/// - side   -> side to fetch
-///
-/// Return: that side's player state
-///
-static PlayerState* card_player(BattleState* battle, Side side) {
-    return side == SIDE_WHITE ? &battle->white : &battle->black;
-}
-
-/// card_enemy
-///
-/// Returns the opposing side.
-///
-/// Params:
-/// - side -> side to invert
-///
-/// Return: the other side
-///
-static Side card_enemy(Side side) {
-    return side == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
-}
-
-/// card_square
-///
-/// Decodes a card target square packed as y * 20 + x in a context slot.
-///
-/// Params:
-/// - packed -> context slot holding the encoded square
-///
-/// Return: the decoded square
-///
-static Square card_square(void* packed) {
-    long value = (long) (uintptr_t) packed;
-
-    return (Square) {(int8_t) (value % 20), (int8_t) (value / 20)};
-}
-
-/// card_find_king
-///
-/// Finds a side's king on the board.
-///
-/// Params:
-/// - battle -> battle to search
-/// - side   -> owning side
-///
-/// Return: the king, nullptr when it is not present
-///
-static PieceInfo* card_find_king(BattleState* battle, Side side) {
-    for (int8_t y = 0; y < battle->board.height; y++) {
-        for (int8_t x = 0; x < battle->board.width; x++) {
-            PieceInfo* cell = battle_at(battle, (Square) {x, y});
-
-            if (cell && cell->side == side && cell->piece->id == PIECE_KING) {
-                return cell;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
 /// defended_by_bishop
 ///
 /// Reports whether a friendly bishop covers the target's square along an
@@ -647,7 +567,7 @@ static bool eff_castling(EffectContext* context, void* x) {
 
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   king   = card_find_king(battle, side);
+    PieceInfo*   king   = battle_find_king(battle, side);
     PieceInfo*   rook   = battle_at(battle, card_square(context->args[1]));
 
     if (!king || !rook || rook->side != side || rook->piece->id != PIECE_ROOK) {
@@ -749,9 +669,17 @@ static bool eff_vengeance(EffectContext* context, void* x) {
         return false;
     }
 
+    if (!effect_find_mark(
+            &battle_player(battle, target->side)->effects,
+            MARK_MOVED,
+            target
+        )) {
+        return false;
+    }
+
     int dmg = battle_value(battle, target, nullptr) * 2;
 
-    card_player(battle, card_enemy(side))->meter -= dmg;
+    battle_damage(battle, battle_enemy(side), dmg);
 
     return true;
 }
@@ -840,14 +768,15 @@ static bool eff_coronation(EffectContext* context, void* x) {
 
 /// eff_crusade
 ///
-/// Immediate play effect resolving a chosen Knight's three consecutive
-/// attacks as three times its value against the enemy meter.
+/// Immediate play effect: a chosen Knight makes three consecutive leaps
+/// toward the enemy king through battle_lunge, resolving its coverage on
+/// each landing so each hop attacks from a real square.
 ///
 /// Params:
 /// - context -> beneficiary side in args[0], knight square in args[1]
 /// - x       -> played card, unused
 ///
-/// Return: true when the attacks were resolved
+/// Return: true when the knight made its charge
 ///
 static bool eff_crusade(EffectContext* context, void* x) {
     (void) x;
@@ -860,9 +789,38 @@ static bool eff_crusade(EffectContext* context, void* x) {
         return false;
     }
 
-    int dmg = battle_value(battle, knight, nullptr) * 3;
+    PieceInfo* enemy_king = battle_find_king(battle, battle_enemy(side));
 
-    card_player(battle, card_enemy(side))->meter -= dmg;
+    for (int hop = 0; hop < 3; hop++) {
+        Square* moves = battle_moves(battle, knight);
+        Square  cand[MAX_BOARD_SIZE + 1];
+        size_t  count = 0;
+
+        while (!(moves[count].x == -1 && moves[count].y == -1)) {
+            cand[count] = moves[count];
+            count++;
+        }
+
+        Square best     = knight->square;
+        int    best_dist = 1 << 24;
+
+        for (size_t i = 0; i < count && enemy_king; i++) {
+            int dx = cand[i].x - enemy_king->square.x;
+            int dy = cand[i].y - enemy_king->square.y;
+
+            dx     = dx < 0 ? -dx : dx;
+            dy     = dy < 0 ? -dy : dy;
+
+            int dist = dx > dy ? dx : dy;
+
+            if (dist < best_dist) {
+                best_dist = dist;
+                best      = cand[i];
+            }
+        }
+
+        battle_lunge(battle, knight, best);
+    }
 
     return true;
 }
@@ -1189,7 +1147,7 @@ void caelan_climax(BattleState* battle, Side side) {
     };
 
     Effect* attached =
-        effect_attach(&card_player(battle, side)->effects, &climax);
+        effect_attach(&battle_player(battle, side)->effects, &climax);
 
     if (attached) {
         attached->context->args[0] = (void*) (uintptr_t) side;

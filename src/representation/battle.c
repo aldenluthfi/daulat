@@ -43,12 +43,62 @@ static const PieceID COMBO_RESULTS[] = {
     PIECE_HONORABLE_HORSE,
     PIECE_PROMOTED_BISHOP,
     PIECE_DAIMYO,
+    PIECE_DRAGON,
     PIECE_CHANCELLOR,
     PIECE_SOVEREIGN_BANNER,
     PIECE_NONE,
 };
 
-static int   KINGDOM_PLAYS[KINGDOM_COUNT];
+static const PieceID RECIPES[][3] = {
+    {PIECE_BING, PIECE_SABA, PIECE_SANG},
+    {PIECE_FARAS, PIECE_BING, PIECE_NORTHERN_CAVALRY},
+    {PIECE_PAO, PIECE_BISHOP, PIECE_HWACHA},
+
+    {PIECE_MEDEQ, PIECE_MEDEQ, PIECE_MEDEQ_SQUAD},
+    {PIECE_NEGUS_GUARD, PIECE_MEDEQ, PIECE_SULTANS_LEVY},
+
+    {PIECE_MAKWANAM, PIECE_WAZIR, PIECE_OLD_KING},
+    {PIECE_KNIGHT, PIECE_JAMAL, PIECE_CATAPHRACT},
+    {PIECE_KYOSHA, PIECE_WAZIR, PIECE_ROOK},
+    {PIECE_ZIRAAFA, PIECE_JAMAL, PIECE_WAR_ELEPHANT},
+
+    {PIECE_KYOSHA, PIECE_KNIGHT, PIECE_HONORABLE_HORSE},
+    {PIECE_BISHOP, PIECE_WAZIR, PIECE_PROMOTED_BISHOP},
+    {PIECE_KINSHO, PIECE_GINSHO, PIECE_DAIMYO},
+    {PIECE_ROOK, PIECE_WAZIR, PIECE_DRAGON},
+
+    {PIECE_ROOK, PIECE_BISHOP, PIECE_CHANCELLOR},
+    {PIECE_QUEEN, PIECE_KYOSHA, PIECE_SOVEREIGN_BANNER},
+
+    {PIECE_NONE, PIECE_NONE, PIECE_NONE},
+};
+
+static int        KINGDOM_PLAYS[KINGDOM_COUNT];
+
+static PieceInfo* REAP_LIST[2 * MAX_BOARD_SIZE];
+static size_t     REAP_COUNT;
+
+/// battle_reap
+///
+/// Frees every piece unlinked from the board since the last reap. Removal
+/// only unlinks and queues a piece so effects may remove their own piece
+/// while effect_fire is still walking the board; the actual free happens
+/// here at turn and battle boundaries where no walk is in flight.
+///
+static void       battle_reap(void) {
+    for (size_t i = 0; i < REAP_COUNT; i++) {
+        PieceInfo* piece = REAP_LIST[i];
+
+        for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+            free(piece->piece->effects[slot].context);
+        }
+
+        free(piece->piece);
+        free(piece);
+    }
+
+    REAP_COUNT = 0;
+}
 
 /// battle_current
 ///
@@ -116,39 +166,8 @@ PieceInfo** battle_damagers(void) {
 }
 
 /*----------------------------------------------------------------------------*\
-                                  MOVEGEN KIT
+                                 BOARD INDEXING
 \*----------------------------------------------------------------------------*/
-
-const Square ORTHOGONAL_DIRECTIONS[] = {
-    {0, -1},
-    {-1, 0},
-    {1, 0},
-    {0, 1},
-    {0, 0},
-};
-
-const Square DIAGONAL_DIRECTIONS[] = {
-    {-1, -1},
-    {1, -1},
-    {-1, 1},
-    {1, 1},
-    {0, 0},
-};
-
-const Square ALL_DIRECTIONS[] = {
-    {-1, -1},
-    {0, -1},
-    {1, -1},
-    {-1, 0},
-    {1, 0},
-    {-1, 1},
-    {0, 1},
-    {1, 1},
-    {0, 0},
-};
-
-static Square SCRATCH[MAX_BOARD_SIZE + 1];
-static size_t SCRATCH_CURSOR;
 
 /// square_index
 ///
@@ -162,186 +181,6 @@ static size_t SCRATCH_CURSOR;
 ///
 static size_t square_index(Square square) {
     return (size_t) square.y * 20 + (size_t) square.x;
-}
-
-/// mg_begin
-///
-/// Resets the shared static scratch buffer that movement generation
-/// writes into. See the header for the full scratch buffer convention.
-///
-void mg_begin(void) {
-    SCRATCH_CURSOR = 0;
-}
-
-/// mg_push
-///
-/// Appends one square to the scratch buffer. Squares past the buffer
-/// capacity are dropped.
-///
-/// Params:
-/// - square -> square to append
-///
-void mg_push(Square square) {
-    if (SCRATCH_CURSOR < MAX_BOARD_SIZE) {
-        SCRATCH[SCRATCH_CURSOR] = square;
-        SCRATCH_CURSOR++;
-    }
-}
-
-/// mg_end
-///
-/// Terminates the scratch buffer with SQUARE_END and returns it. The
-/// sentinel is overwritten by the next push, so sequential generator
-/// calls concatenate their output.
-///
-/// Return: the scratch buffer, SQUARE_END terminated
-///
-Square* mg_end(void) {
-    SCRATCH[SCRATCH_CURSOR] = SQUARE_END;
-
-    return SCRATCH;
-}
-
-/// mg_emit
-///
-/// Pushes the destination when it satisfies the generation semantics:
-/// movement wants empty squares only, threat wants every square not
-/// held by a friendly piece.
-///
-/// Params:
-/// - battle -> battle providing the board
-/// - self   -> generating piece
-/// - dest   -> candidate destination
-/// - threat -> true for at (coverage), false for mv (movement)
-///
-static void
-mg_emit(BattleState* battle, PieceInfo* self, Square dest, bool threat) {
-    PieceInfo* occupant = battle_at(battle, dest);
-
-    if (!occupant || (threat && occupant->side != self->side)) {
-        mg_push(dest);
-    }
-}
-
-/// mg_leap
-///
-/// Emits one destination per offset from self's square. Offsets are
-/// mirrored vertically for black. Movement emits only empty squares;
-/// threat emits every covered square not holding a friendly piece.
-///
-/// Params:
-/// - battle  -> battle providing the board
-/// - self    -> piece generating from its square and side
-/// - offsets -> zero vector terminated offset array, white perspective
-/// - threat  -> true for at (coverage), false for mv (movement)
-///
-void mg_leap(
-    BattleState*  battle,
-    PieceInfo*    self,
-    const Square* offsets,
-    bool          threat
-) {
-    for (size_t i = 0; offsets[i].x != 0 || offsets[i].y != 0; i++) {
-        int8_t dy =
-            self->side == SIDE_BLACK ? (int8_t) -offsets[i].y : offsets[i].y;
-
-        Square dest = {
-            (int8_t) (self->square.x + offsets[i].x),
-            (int8_t) (self->square.y + dy),
-        };
-
-        if (battle_in_bounds(battle, dest)) {
-            mg_emit(battle, self, dest, threat);
-        }
-    }
-}
-
-/// mg_slide
-///
-/// Walks each direction from self's square emitting squares between min
-/// and max steps. Blockers stop the walk regardless of min. Movement
-/// emits empty squares; threat also emits the first non-friendly
-/// occupant reached.
-///
-/// Params:
-/// - battle     -> battle providing the board
-/// - self       -> piece generating from its square and side
-/// - directions -> zero vector terminated direction array
-/// - min        -> minimum step distance to emit
-/// - max        -> maximum step distance, 127 for unbounded
-/// - threat     -> true for at (coverage), false for mv (movement)
-///
-void mg_slide(
-    BattleState*  battle,
-    PieceInfo*    self,
-    const Square* directions,
-    int8_t        min,
-    int8_t        max,
-    bool          threat
-) {
-    for (size_t i = 0; directions[i].x != 0 || directions[i].y != 0; i++) {
-        int8_t dx = directions[i].x;
-        int8_t dy = self->side == SIDE_BLACK ? (int8_t) -directions[i].y
-                                             : directions[i].y;
-
-        for (int step = 1; step <= max; step++) {
-            Square dest = {
-                (int8_t) (self->square.x + dx * step),
-                (int8_t) (self->square.y + dy * step),
-            };
-
-            if (!battle_in_bounds(battle, dest)) {
-                break;
-            }
-
-            PieceInfo* occupant = battle_at(battle, dest);
-
-            if (occupant) {
-                if (threat && step >= min && occupant->side != self->side) {
-                    mg_push(dest);
-                }
-
-                break;
-            }
-
-            if (step >= min) {
-                mg_push(dest);
-            }
-        }
-    }
-}
-
-/// mg_compound
-///
-/// Emits the union of other pieces' patterns generated from self's own
-/// square and side, matching mv or at according to threat. Parts with
-/// no registry entry are skipped.
-///
-/// Params:
-/// - battle -> battle providing the board
-/// - self   -> piece generating from its square and side
-/// - parts  -> PIECE_NONE terminated array of pieces to copy
-/// - threat -> true for at (coverage), false for mv (movement)
-///
-void mg_compound(
-    BattleState*   battle,
-    PieceInfo*     self,
-    const PieceID* parts,
-    bool           threat
-) {
-    for (size_t i = 0; parts[i] != PIECE_NONE; i++) {
-        const Piece* part = PIECE_REGISTRY[parts[i]];
-
-        if (!part) {
-            continue;
-        }
-
-        if (threat) {
-            part->at(battle, self);
-        } else {
-            part->mv(battle, self);
-        }
-    }
 }
 
 /*----------------------------------------------------------------------------*\
@@ -358,8 +197,21 @@ void mg_compound(
 ///
 /// Return: that side's player state
 ///
-static PlayerState* battle_player(BattleState* battle, Side side) {
+PlayerState* battle_player(BattleState* battle, Side side) {
     return side == SIDE_WHITE ? &battle->white : &battle->black;
+}
+
+/// battle_enemy
+///
+/// Returns the side opposing the given side.
+///
+/// Params:
+/// - side -> side to oppose
+///
+/// Return: the opposing side
+///
+Side battle_enemy(Side side) {
+    return side == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
 }
 
 /// battle_find_king
@@ -372,7 +224,7 @@ static PlayerState* battle_player(BattleState* battle, Side side) {
 ///
 /// Return: the king, nullptr when it is not on the board
 ///
-static PieceInfo* battle_find_king(BattleState* battle, Side side) {
+PieceInfo* battle_find_king(BattleState* battle, Side side) {
     for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
         PieceInfo* cell = battle->board.piece_board[index];
 
@@ -383,6 +235,27 @@ static PieceInfo* battle_find_king(BattleState* battle, Side side) {
     }
 
     return nullptr;
+}
+
+/// battle_meter_gain
+///
+/// Adds to a side's meter and clamps it to the two hundred percent
+/// ceiling, the shared path for card and effect meter rewards.
+///
+/// Params:
+/// - battle -> battle the side plays in
+/// - side   -> side gaining meter
+/// - amount -> meter to add, may be negative
+///
+void battle_meter_gain(BattleState* battle, Side side, int amount) {
+    PlayerState* player = battle_player(battle, side);
+    int          max    = battle_meter_max(battle, side);
+
+    player->meter += amount;
+
+    if (player->meter > 2 * max) {
+        player->meter = 2 * max;
+    }
 }
 
 /// battle_draw
@@ -460,11 +333,13 @@ static void battle_draw(BattleState* battle, Side side, size_t count) {
 static void turn_start(BattleState* battle, Side side) {
     PlayerState* player = battle_player(battle, side);
 
-    player->actions     = 3;
+    battle_reap();
 
-    int income          = 10;
+    player->actions = 3;
 
-    CURRENT_BATTLE      = battle;
+    int income      = 10;
+
+    CURRENT_BATTLE  = battle;
     effect_fire(battle, side, QUERY_CP_INCOME, &income);
 
     player->cp += income;
@@ -532,6 +407,8 @@ void battle_concede(BattleState* battle) {
 /// - battle -> battle to deallocate
 ///
 void battle_free(BattleState* battle) {
+    battle_reap();
+
     for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
         PieceInfo* cell = battle->board.piece_board[index];
 
@@ -539,6 +416,8 @@ void battle_free(BattleState* battle) {
             battle_remove(battle, cell);
         }
     }
+
+    battle_reap();
 
     effect_clear(&battle->white.effects);
     effect_clear(&battle->black.effects);
@@ -636,22 +515,22 @@ void battle_flip(BattleState* battle, PieceInfo* piece) {
 
 /// battle_remove
 ///
-/// Removes a piece from the board entirely, freeing its effect contexts,
-/// its heap piece copy, and the piece info itself.
+/// Removes a piece from the board by unlinking its cell and queuing it for
+/// the next reap. Unlinking is immediate so meter, movement, and spawning
+/// see the removal at once; the free is deferred so an effect may remove
+/// its own piece while effect_fire is still walking the board.
 ///
 /// Params:
 /// - battle -> battle the piece lives in
-/// - piece  -> piece to remove and free
+/// - piece  -> piece to remove
 ///
 void battle_remove(BattleState* battle, PieceInfo* piece) {
     battle->board.piece_board[square_index(piece->square)] = nullptr;
 
-    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
-        free(piece->piece->effects[slot].context);
+    if (REAP_COUNT < 2 * MAX_BOARD_SIZE) {
+        REAP_LIST[REAP_COUNT] = piece;
+        REAP_COUNT++;
     }
-
-    free(piece->piece);
-    free(piece);
 }
 
 /*----------------------------------------------------------------------------*\
@@ -706,15 +585,46 @@ bool battle_move(BattleState* battle, Square from, Square to) {
         return false;
     }
 
-    player->actions                               -= cost;
+    player->actions     -= cost;
 
-    battle->board.piece_board[square_index(from)]  = nullptr;
-    piece->square                                  = to;
-    battle->board.piece_board[square_index(to)]    = piece;
+    PieceInfo* occupant  = battle_at(battle, to);
 
-    MOVE_FROM                                      = from;
+    if (occupant && occupant->side == piece->side) {
+        battle->board.piece_board[square_index(from)] = occupant;
+        battle->board.piece_board[square_index(to)]   = piece;
+
+        occupant->square                              = from;
+        piece->square                                 = to;
+    } else {
+        battle->board.piece_board[square_index(from)] = nullptr;
+        piece->square                                 = to;
+        battle->board.piece_board[square_index(to)]   = piece;
+    }
+
+    MOVE_FROM = from;
     effect_fire(battle, ACTING_SIDE, ON_PIECE_MOVE, piece);
     MOVE_FROM      = SQUARE_END;
+
+    Effect* moved  = effect_find_mark(&player->effects, MARK_MOVED, piece);
+
+    if (moved) {
+        moved->context->args[2] = (void*) (uintptr_t) battle->turn;
+    } else {
+        Effect mark = {
+            .func      = eff_noop,
+            .name      = "Moved",
+            .trigger   = ON_TURN_START,
+            .lasts_for = TURNS_2,
+        };
+
+        Effect* stamp = effect_attach(&player->effects, &mark);
+
+        if (stamp) {
+            stamp->context->args[0] = piece;
+            stamp->context->args[1] = (void*) (uintptr_t) MARK_MOVED;
+            stamp->context->args[2] = (void*) (uintptr_t) battle->turn;
+        }
+    }
 
     CURRENT_BATTLE = nullptr;
     SUBJECT        = nullptr;
@@ -776,8 +686,12 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
 
     Effect* reforge = effect_find_mark(&player->effects, CARD_REFORGE, nullptr);
 
-    if (reforge && !reforge->context->args[3] &&
-        (PieceID) (uintptr_t) reforge->context->args[2] == id) {
+    bool reforge_ok =
+        reforge && !reforge->context->args[3] &&
+        (PieceID) (uintptr_t) reforge->context->args[2] == id &&
+        battle->turn <= (size_t) (uintptr_t) reforge->context->args[4] + 1;
+
+    if (reforge_ok) {
         cost = cost * 70 / 100;
     }
 
@@ -800,8 +714,7 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
             (void*) ((uintptr_t) storm->context->args[2] - 1);
     }
 
-    if (reforge && !reforge->context->args[3] &&
-        (PieceID) (uintptr_t) reforge->context->args[2] == id) {
+    if (reforge_ok) {
         reforge->context->args[3] = (void*) 1;
     }
 
@@ -826,11 +739,73 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
 /// Return: true when the combination was performed
 ///
 bool battle_combine(BattleState* battle, Square a, Square b) {
-    (void) battle;
-    (void) a;
-    (void) b;
+    PieceInfo* first  = battle_at(battle, a);
+    PieceInfo* second = battle_at(battle, b);
 
-    return false;
+    if (!first || !second || first == second || first->side != ACTING_SIDE ||
+        second->side != ACTING_SIDE) {
+        return false;
+    }
+
+    PieceID result = PIECE_NONE;
+
+    for (size_t i = 0; RECIPES[i][2] != PIECE_NONE; i++) {
+        PieceID left  = RECIPES[i][0];
+        PieceID right = RECIPES[i][1];
+
+        if ((first->piece->id == left && second->piece->id == right) ||
+            (first->piece->id == right && second->piece->id == left)) {
+            result = RECIPES[i][2];
+            break;
+        }
+    }
+
+    if (result == PIECE_NONE) {
+        return false;
+    }
+
+    if (ACTING_SIDE == HUMAN_SIDE && !BATTLE_ENGINE->run->pieces[result]) {
+        return false;
+    }
+
+    PlayerState* player      = battle_player(battle, ACTING_SIDE);
+
+    int          action_cost = 1;
+
+    CURRENT_BATTLE           = battle;
+    effect_fire(
+        battle,
+        ACTING_SIDE,
+        QUERY_PIECE_ACTION_COST_COMBINE,
+        &action_cost
+    );
+    CURRENT_BATTLE = nullptr;
+
+    if (player->actions < action_cost) {
+        return false;
+    }
+
+    int first_value  = battle_value(battle, first, nullptr);
+    int second_value = battle_value(battle, second, nullptr);
+
+    battle_remove(battle, first);
+    battle_remove(battle, second);
+
+    PieceInfo* piece = battle_spawn(battle, result, b, ACTING_SIDE);
+
+    if (!piece) {
+        return false;
+    }
+
+    player->actions -= action_cost;
+    player->meter +=
+        battle_value(battle, piece, nullptr) - first_value - second_value;
+
+    CURRENT_BATTLE = battle;
+    effect_fire(battle, ACTING_SIDE, ON_PIECE_COMBINE, piece);
+    CURRENT_BATTLE = nullptr;
+
+    return true;
 }
 
 /// battle_play
@@ -1264,7 +1239,163 @@ static bool battle_half_turn(BattleState* battle, Side side) {
 
     battle_player(battle, side)->actions = 0;
 
+    battle_reap();
+
     return over;
+}
+
+/// battle_damage
+///
+/// Reduces a side's meter by an amount then runs the flip cascade at
+/// once, so card and relic meter damage flips pieces the moment it lands.
+/// Fires QUERY_METER_DAMAGE_TAKEN first so receiver-side interceptors act.
+///
+/// Params:
+/// - battle -> battle to damage in
+/// - side   -> side whose meter takes the damage
+/// - amount -> meter damage to apply
+///
+void battle_damage(BattleState* battle, Side side, int amount) {
+    if (amount <= 0) {
+        return;
+    }
+
+    BattleState* saved = CURRENT_BATTLE;
+    int          dmg   = amount;
+
+    CURRENT_BATTLE     = battle;
+    effect_fire(battle, side, QUERY_METER_DAMAGE_TAKEN, &dmg);
+
+    battle_player(battle, side)->meter -= dmg;
+
+    if (dmg > 0) {
+        protocol_emit(
+            "log damage side=%s amount=%d",
+            side == SIDE_WHITE ? "white" : "black",
+            dmg
+        );
+    }
+
+    battle_cascade(battle, side);
+
+    CURRENT_BATTLE = saved;
+}
+
+/// battle_lunge
+///
+/// Force-moves a piece to an empty in-bounds destination, firing
+/// ON_PIECE_MOVE, then resolves that one piece's attack coverage into the
+/// enemy meter and cascades. Powers multi-strike card choreography such
+/// as Crusade.
+///
+/// Params:
+/// - battle -> battle to act in
+/// - piece  -> the striking piece
+/// - to     -> square to move to before striking
+///
+/// Return: total damage dealt to the enemy meter
+///
+int battle_lunge(BattleState* battle, PieceInfo* piece, Square to) {
+    if (!piece) {
+        return 0;
+    }
+
+    BattleState* saved = CURRENT_BATTLE;
+
+    if ((to.x != piece->square.x || to.y != piece->square.y) &&
+        battle_in_bounds(battle, to) && !battle_at(battle, to)) {
+        Square from = piece->square;
+
+        battle->board.piece_board[square_index(from)] = nullptr;
+        piece->square                                 = to;
+        battle->board.piece_board[square_index(to)]   = piece;
+
+        CURRENT_BATTLE = battle;
+        MOVE_FROM      = from;
+        effect_fire(battle, piece->side, ON_PIECE_MOVE, piece);
+        MOVE_FROM      = SQUARE_END;
+        CURRENT_BATTLE = saved;
+    }
+
+    Square* coverage = battle_attacks(battle, piece);
+    Square  targets[MAX_BOARD_SIZE + 1];
+    size_t  count = 0;
+
+    while (!(coverage[count].x == -1 && coverage[count].y == -1)) {
+        targets[count] = coverage[count];
+        count++;
+    }
+
+    Side enemy_side = battle_enemy(piece->side);
+    int  dealt      = 0;
+
+    for (size_t i = 0; i < count; i++) {
+        PieceInfo* victim = battle_at(battle, targets[i]);
+
+        if (!victim || victim->side == piece->side ||
+            victim->side == SIDE_NEUTRAL) {
+            continue;
+        }
+
+        dealt += battle_value(battle, piece, victim);
+    }
+
+    if (dealt > 0) {
+        DAMAGER_LIST[0] = piece;
+        DAMAGER_LIST[1] = nullptr;
+        DAMAGERS        = DAMAGER_LIST;
+
+        battle_damage(battle, enemy_side, dealt);
+
+        DAMAGERS = nullptr;
+    }
+
+    return dealt;
+}
+
+/// battle_walk_run
+///
+/// Attaches the run's held relics to the seats at battle start. Relics go
+/// on the human seat with the human as their beneficiary in args[0]; Soul
+/// Shard observes the enemy, so it attaches to the enemy list while still
+/// crediting the human. Runs before the meters are computed so value
+/// editing relics fold into the starting meter maxima.
+///
+/// Params:
+/// - battle -> battle being set up
+///
+static void battle_walk_run(BattleState* battle) {
+    RunState* run = BATTLE_ENGINE ? BATTLE_ENGINE->run : nullptr;
+
+    if (!run) {
+        return;
+    }
+
+    for (int id = 0; id < RELIC_COUNT; id++) {
+        if (!run->relics[id]) {
+            continue;
+        }
+
+        Side list =
+            id == RELIC_SOUL_SHARD ? battle_enemy(HUMAN_SIDE) : HUMAN_SIDE;
+
+        const Relic* relic = &RELIC_REGISTRY[id];
+
+        for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+            if (!relic->effects[slot].func) {
+                continue;
+            }
+
+            Effect* attached = effect_attach(
+                &battle_player(battle, list)->effects,
+                &relic->effects[slot]
+            );
+
+            if (attached) {
+                attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
+            }
+        }
+    }
 }
 
 /// battle_begin
@@ -1319,6 +1450,9 @@ void battle_begin(EngineState* engine, MapNode* node) {
 
     battle->white.cp    = 20;
     battle->black.cp    = 20;
+
+    battle_walk_run(battle);
+
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);
 

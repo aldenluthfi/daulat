@@ -53,93 +53,6 @@ static Square* king_at(BattleState* battle, PieceInfo* self) {
                                  CARD EFFECTS
 \*----------------------------------------------------------------------------*/
 
-/// card_player
-///
-/// Returns the given side's player state.
-///
-/// Params:
-/// - battle -> battle to look into
-/// - side   -> side to fetch
-///
-/// Return: that side's player state
-///
-static PlayerState* card_player(BattleState* battle, Side side) {
-    return side == SIDE_WHITE ? &battle->white : &battle->black;
-}
-
-/// card_enemy
-///
-/// Returns the opposing side.
-///
-/// Params:
-/// - side -> side to invert
-///
-/// Return: the other side
-///
-static Side card_enemy(Side side) {
-    return side == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
-}
-
-/// card_square
-///
-/// Decodes a card target square packed as y * 20 + x in a context slot.
-///
-/// Params:
-/// - packed -> context slot holding the encoded square
-///
-/// Return: the decoded square
-///
-static Square card_square(void* packed) {
-    long value = (long) (uintptr_t) packed;
-
-    return (Square) {(int8_t) (value % 20), (int8_t) (value / 20)};
-}
-
-/// card_meter_gain
-///
-/// Adds meter to a side, clamping to twice its maximum per the overflow
-/// rule.
-///
-/// Params:
-/// - battle -> battle providing the meters
-/// - side   -> side gaining meter
-/// - amount -> meter to add
-///
-static void card_meter_gain(BattleState* battle, Side side, int amount) {
-    PlayerState* player  = card_player(battle, side);
-    int          max     = battle_meter_max(battle, side);
-
-    player->meter       += amount;
-
-    if (player->meter > 2 * max) {
-        player->meter = 2 * max;
-    }
-}
-
-/// card_find_king
-///
-/// Finds a side's king on the board.
-///
-/// Params:
-/// - battle -> battle to search
-/// - side   -> owning side
-///
-/// Return: the king, nullptr when it is not present
-///
-static PieceInfo* card_find_king(BattleState* battle, Side side) {
-    for (int8_t y = 0; y < battle->board.height; y++) {
-        for (int8_t x = 0; x < battle->board.width; x++) {
-            PieceInfo* cell = battle_at(battle, (Square) {x, y});
-
-            if (cell && cell->side == side && cell->piece->id == PIECE_KING) {
-                return cell;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
 /// eff_revitalize
 ///
 /// Immediate play effect restoring fifty meter to the playing side.
@@ -153,7 +66,11 @@ static PieceInfo* card_find_king(BattleState* battle, Side side) {
 static bool eff_revitalize(EffectContext* context, void* x) {
     (void) x;
 
-    card_meter_gain(battle_current(), (Side) (uintptr_t) context->args[0], 50);
+    battle_meter_gain(
+        battle_current(),
+        (Side) (uintptr_t) context->args[0],
+        50
+    );
 
     return true;
 }
@@ -177,7 +94,7 @@ static bool eff_hostage(EffectContext* context, void* x) {
         return false;
     }
 
-    card_meter_gain(battle_current(), side, 20);
+    battle_meter_gain(battle_current(), side, 20);
     context->args[3] = (void*) 1;
 
     return true;
@@ -228,7 +145,7 @@ static bool eff_sacrifice(EffectContext* context, void* x) {
     int gain = battle_value(battle, piece, nullptr) * 2;
 
     battle_remove(battle, piece);
-    card_meter_gain(battle, side, gain);
+    battle_meter_gain(battle, side, gain);
 
     return true;
 }
@@ -259,11 +176,12 @@ static bool eff_reforge(EffectContext* context, void* x) {
         .lasts_for = TURNS_2
     };
     Effect* attached =
-        effect_attach(&card_player(battle, side)->effects, &mark);
+        effect_attach(&battle_player(battle, side)->effects, &mark);
 
     if (attached) {
         attached->context->args[1] = (void*) (uintptr_t) CARD_REFORGE;
         attached->context->args[2] = (void*) (uintptr_t) (*slot)->piece->id;
+        attached->context->args[4] = (void*) (uintptr_t) battle->turn;
     }
 
     context->args[3] = (void*) 1;
@@ -325,7 +243,7 @@ static bool eff_bloodletting(EffectContext* context, void* x) {
     }
 
     int missing =
-        battle_meter_max(battle, side) - card_player(battle, side)->meter;
+        battle_meter_max(battle, side) - battle_player(battle, side)->meter;
 
     if (missing <= 0) {
         return false;
@@ -356,7 +274,7 @@ static bool eff_counter_coup(EffectContext* context, void* x) {
         return false;
     }
 
-    card_player(battle, card_enemy(side))->meter -= echo;
+    battle_damage(battle, battle_enemy(side), echo);
 
     return true;
 }
@@ -383,8 +301,8 @@ static bool eff_spite(EffectContext* context, void* x) {
 
     int dmg = battle_value(battle, *slot, nullptr) * 3;
 
-    card_player(battle, card_enemy(side))->meter -= dmg;
-    context->args[3]                              = (void*) 1;
+    battle_damage(battle, battle_enemy(side), dmg);
+    context->args[3] = (void*) 1;
 
     return true;
 }
@@ -435,7 +353,7 @@ static bool eff_hydra(EffectContext* context, void* x) {
         return false;
     }
 
-    PieceInfo* king = card_find_king(battle, side);
+    PieceInfo* king = battle_find_king(battle, side);
 
     if (!king) {
         return false;
@@ -667,6 +585,44 @@ const ChainPenalty   CHAIN_REGISTRY[CHAIN_PENALTY_COUNT] = {};
 
 const Piece* const   PIECE_REGISTRY[PIECE_COUNT]         = {
     [PIECE_KING]             = &UNIVERSAL_PIECES[0],
+
+    [PIECE_BING]             = &LONGWEI_PIECES[0],
+    [PIECE_XIANG]            = &LONGWEI_PIECES[1],
+    [PIECE_MA]               = &LONGWEI_PIECES[2],
+    [PIECE_PAO]              = &LONGWEI_PIECES[3],
+    [PIECE_LIUBO_DIVINER]    = &LONGWEI_PIECES[4],
+    [PIECE_SANG]             = &LONGWEI_PIECES[5],
+    [PIECE_NORTHERN_CAVALRY] = &LONGWEI_PIECES[6],
+    [PIECE_HWACHA]           = &LONGWEI_PIECES[7],
+
+    [PIECE_FUHYO]            = &HARUSHIMA_PIECES[0],
+    [PIECE_KYOSHA]           = &HARUSHIMA_PIECES[1],
+    [PIECE_GINSHO]           = &HARUSHIMA_PIECES[2],
+    [PIECE_KINSHO]           = &HARUSHIMA_PIECES[3],
+    [PIECE_SHISHI]           = &HARUSHIMA_PIECES[4],
+    [PIECE_HONORABLE_HORSE]  = &HARUSHIMA_PIECES[5],
+    [PIECE_PROMOTED_BISHOP]  = &HARUSHIMA_PIECES[6],
+    [PIECE_DAIMYO]           = &HARUSHIMA_PIECES[7],
+    [PIECE_DRAGON]           = &HARUSHIMA_PIECES[8],
+
+    [PIECE_MEDEQ]            = &KEWARANI_PIECES[0],
+    [PIECE_MAKWANAM]         = &KEWARANI_PIECES[1],
+    [PIECE_SABA]             = &KEWARANI_PIECES[2],
+    [PIECE_FARAS]            = &KEWARANI_PIECES[3],
+    [PIECE_NEGUS_GUARD]      = &KEWARANI_PIECES[4],
+    [PIECE_MEDEQ_SQUAD]      = &KEWARANI_PIECES[5],
+    [PIECE_SULTANS_LEVY]     = &KEWARANI_PIECES[6],
+
+    [PIECE_WAZIR]            = &ZARQAN_PIECES[0],
+    [PIECE_JAMAL]            = &ZARQAN_PIECES[1],
+    [PIECE_TALLIYA]          = &ZARQAN_PIECES[2],
+    [PIECE_ZIRAAFA]          = &ZARQAN_PIECES[3],
+    [PIECE_SHAHZADEH]        = &ZARQAN_PIECES[4],
+    [PIECE_OLD_KING]         = &ZARQAN_PIECES[5],
+    [PIECE_CATAPHRACT]       = &ZARQAN_PIECES[6],
+    [PIECE_ROOK]             = &ZARQAN_PIECES[7],
+    [PIECE_WAR_ELEPHANT]     = &ZARQAN_PIECES[8],
+
     [PIECE_PAWN]             = &CAELAN_PIECES[0],
     [PIECE_KNIGHT]           = &CAELAN_PIECES[1],
     [PIECE_BISHOP]           = &CAELAN_PIECES[2],
@@ -689,6 +645,39 @@ const Card* const CARD_REGISTRY[CARD_COUNT] = {
     [CARD_SPITE]         = &UNIVERSAL_CARDS[9],
     [CARD_CHAIN_BREAK]   = &UNIVERSAL_CARDS[10],
     [CARD_HYDRA]         = &UNIVERSAL_CARDS[11],
+
+    [CARD_RIVER_WADE]    = &LONGWEI_CARDS[0],
+    [CARD_CHARGE]        = &LONGWEI_CARDS[1],
+    [CARD_FORMATION]     = &LONGWEI_CARDS[2],
+    [CARD_DIVINATION]    = &LONGWEI_CARDS[3],
+    [CARD_CANNON_VOLLEY] = &LONGWEI_CARDS[4],
+    [CARD_PALACE_DECREE] = &LONGWEI_CARDS[5],
+    [CARD_MANDATE]       = &LONGWEI_CARDS[6],
+
+    [CARD_RONIN]         = &HARUSHIMA_CARDS[0],
+    [CARD_RESURRECTION]  = &HARUSHIMA_CARDS[1],
+    [CARD_GOLD_STANDARD] = &HARUSHIMA_CARDS[2],
+    [CARD_PROMOTION]     = &HARUSHIMA_CARDS[3],
+    [CARD_DUAL_DROP]     = &HARUSHIMA_CARDS[4],
+    [CARD_FORCE_DROP]    = &HARUSHIMA_CARDS[5],
+    [CARD_BUSHIDO]       = &HARUSHIMA_CARDS[6],
+
+    [CARD_SULTANS_GOLD]  = &KEWARANI_CARDS[0],
+    [CARD_MARCH]         = &KEWARANI_CARDS[1],
+    [CARD_DOUBLE_TIME]   = &KEWARANI_CARDS[2],
+    [CARD_SALT_ROAD]     = &KEWARANI_CARDS[3],
+    [CARD_CARAVAN]       = &KEWARANI_CARDS[4],
+    [CARD_DOUBLESTRIKE]  = &KEWARANI_CARDS[5],
+    [CARD_HAJJ]          = &KEWARANI_CARDS[6],
+
+    [CARD_COUNSEL]       = &ZARQAN_CARDS[0],
+    [CARD_PILLAGE]       = &ZARQAN_CARDS[1],
+    [CARD_ROYAL_DECOY]   = &ZARQAN_CARDS[2],
+    [CARD_BAZAAR]        = &ZARQAN_CARDS[3],
+    [CARD_STEPPE_RIDERS] = &ZARQAN_CARDS[4],
+    [CARD_AMBITION]      = &ZARQAN_CARDS[5],
+    [CARD_CITADEL]       = &ZARQAN_CARDS[6],
+    [CARD_CONQUEST]      = &ZARQAN_CARDS[7],
 
     [CARD_CASTLING]      = &CAELAN_CARDS[0],
     [CARD_QUEENS_GAMBIT] = &CAELAN_CARDS[1],

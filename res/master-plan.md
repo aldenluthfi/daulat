@@ -953,13 +953,104 @@ fresh profile. Saving only outside SCREEN_BATTLE (battles never saved).
    a recipe every 4 losses (state only); board sizes by tier
    (town 12 / province 14 / country 16); campaign battles are king-only
    until pressure/free-piece setup lands (Phase 6).
-5. **Remaining kingdoms.** 4 kingdom files complete + recipes + combine.
+5. **Remaining kingdoms.** DONE 2026-07-12. Longwei/Kewarani/Zarqan/
+   Harushima full: all base + combined + capstone pieces, all 7-8 cards
+   each with real bodies, climaxes real; innate/overseer/event stubbed to
+   the caelan bar (deferred to Phases 6/7). Registries extended in
+   universal.c (PIECE_REGISTRY + CARD_REGISTRY). battle.c: 16-recipe
+   flat table + battle_combine (unordered match, human-seat unlock gate,
+   QUERY_PIECE_ACTION_COST_COMBINE, meter delta = result - parents,
+   ON_PIECE_COMBINE); PIECE_DRAGON added to COMBO_RESULTS (was missing).
+   ENGINE FIX: effect_fire walks live pieces without snapshotting, so a
+   piece freeing itself mid-ON_PIECE_FLIP_PRE (Kewarani splitters) was a
+   use-after-free. battle_remove now unlinks the board cell immediately
+   but DEFERS the free to a REAP_LIST drained at turn_start / half_turn
+   end / battle_free (transparent to all callers; meter/spawn see removal
+   at once). battle_move gained friendly-destination swap (Shahzadeh,
+   future Royal Substitution). Verified: make debug exit 0 zero
+   diagnostics, 80-col; 44-check Phase-5 harness (Ma elbow, Pao screen,
+   Berolina split, Ziraafa bent line, Kinsho gold, Jamal, Talliya min-2,
+   War Elephant multi-hit, Cataphract/Dragon compounds, Shahzadeh swap,
+   splitter self-removal safety, combine + reject); regressions phase1/
+   phase3/phase4/black-seat all green. (ASan unavailable: its runtime
+   hangs at startup in this sandbox, confirmed with a trivial program;
+   splitter safety verified by the clean run completing battle_free's
+   reap.) Interpretations flagged: Charge = one jump past a blocker;
+   Formation = contiguous line >= 3; Shahzadeh swap repeatable + costs an
+   action; Zarqan climax auto-swaps top 2; Harushima climax auto-reclaims
+   first enemy; Steppe Riders / Double Time / Kewarani climax = per-piece
+   one turn-bound free move; Counsel discards the first drawable next
+   turn; Ambition/Conquest/Gold Standard/Promotion copy via mg_compound
+   (replace vs append flag); Cannon Volley / Mandate / Vengeance-style
+   card damage lowers enemy meter without an immediate cascade.
    Verify: Pao screen capture, Ma elbow block, Berolina split, Ziraafa
    bent line via `moves`/`attacks` spot-checks.
+5.5. **Structural refactor (user-directed).** DONE 2026-07-13. Pulled the
+   shared machinery out of the kingdom files and battle.c into sensibly
+   named homes; no behaviour change. NEW `src/representation/piece.c` =
+   the movegen kit (mg_leap/mg_slide/mg_compound, mg_begin/push/end,
+   SCRATCH, and the ORTHOGONAL/DIAGONAL/ALL direction tables, all moved
+   out of battle.c) PLUS the de-duplicated piece-behaviour effects that
+   were copy-pasted across kingdoms: piece_is_pawn, piece_embed_effect
+   (was grant_embedded), piece_grant_free_move(piece, name) (name is now
+   a param — was baked per kingdom), eff_free_move, eff_double_move,
+   eff_copy_mv/at, piece_adopt_move (was attach_copy). The copy pair
+   unified on harushima's superset with the args[3] replace flag; zarqan
+   call sites now pass replace=true. NEW `src/representation/card.c` =
+   card-play target codec only: card_square (decode) and card_pack
+   (encode, was caelan's square_pack). Basic state accessors are now
+   PUBLIC in battle.c — battle_player and battle_find_king lost `static`,
+   and battle_enemy + battle_meter_gain were added — so the identical
+   card_player/card_enemy/card_find_king/card_meter_gain bodies duplicated
+   in every kingdom file route to one definition. battle.c keeps
+   square_index (its banner renamed BOARD INDEXING) and battle_moves/
+   battle_attacks (they read the subject-register statics, so they stay
+   with them). ALL six kingdom files git-mv'd from
+   `src/representation/kingdom/` to `src/data/` — they hold DATA for the
+   kingdoms, not representation logic — and the empty kingdom/ dir was
+   removed; relic.c stays under representation/ (user choice). Header:
+   representation.h grew a PIECE.C section (mg decls relocated from the
+   BATTLE.C section + the new piece helpers) and a CARD.C section, and the
+   4 battle accessors under BATTLE.C. Makefile needs no edit (it globs
+   `find src -name '*.c'`). Two leftover kingdom-local helpers (harushima
+   GOLD_OFFSETS, kewarani spawn_medeq) had their now-misnamed SHARED
+   HELPERS banner renamed to KINGDOM HELPERS. Verified: make debug exit 0
+   zero diagnostics, full-tree 80-col clean, `printf 'quit' | bin/daulat`
+   smoke ok, and all five harnesses (phase1/phase3/phase4/phase5 +
+   black-seat) 0 failures. battle.c shrank 1795 -> 1618; piece.c 482,
+   card.c 42.
 6. **Run-scale systems.** relic.c bodies; modifiers; synergies;
    liberation; Vorath counter; pressure; difficulties; masteries + M2
    cards + M3 params; challenges. Verify: two scripted losses -> bronze
    chain in `kingdoms`; Offering removal reflected in seeded draws.
+   - SLICE 1 DONE 2026-07-13 (relics + cascade correctness). relic.c =
+     full RELIC_REGISTRY (26); 19 battle-effect bodies real (economy,
+     meter, cards, combos, board); the 7 run/screen/pricing-level relics
+     (Trade Routes, Librarian's Notes, Deep Hand, Master's Notes, Eagle
+     Eye, Surveyor's Map, Fortified Line) carry name/desc only, behaviour
+     pending their own slices. battle.c gained `battle_walk_run` attaching
+     held relics to the human seat before meters compute (Soul Shard goes
+     on the enemy list, human as beneficiary in args[0]). TWO approved
+     header adds: `battle_damage(battle, side, amount)` (meter damage +
+     immediate cascade) and `battle_lunge(battle, piece, to)` (force-move
+     + single-piece resolve + cascade, returns damage); plus the shared
+     `#define MARK_MOVED` mark tag. The four Phase-3 deferrals are now
+     RESOLVED: (1) Spite/Vengeance/Counter Coup + the Last Breath relic
+     route through battle_damage so lethal card/relic damage flips at
+     once; (3) Crusade uses battle_lunge to make three real leaps toward
+     the enemy king, each striking; (2) battle_move stamps a MARK_MOVED
+     mark and Vengeance now also requires the target moved recently
+     (effect_find_mark); (4) Reforge stamps its flip turn (args[4]) and
+     battle_buy bounds the discount to turn <= flip_turn + 1. Verified:
+     make debug exit 0, 80-col clean, smoke ok, 7-check phase6 harness +
+     phase1/3/4/5/black-seat regressions all 0 failures.
+   - REMAINING slices: home/foreign + Open Market pricing (unblocks Trade
+     Routes); battle modifiers (18, universal.c) + their battle_begin
+     attach; kingdom innate bodies (5); events (~26, run.c dispatch);
+     board traits; pressure free pieces + chain silver/elite/liberation/
+     Traitor's Gambit setup; difficulties; masteries (engine finalize +
+     M2 cards + M3 params); challenges; the run/screen-level relics; Iron
+     Will/Mirror dealer-side meter reactions.
 7. **Overseers + Vorath + AI.** 5 overseer setups, vorath_setup, 4
    remaining archetypes + fallbacks, ai_plan/Divination. Verify:
    overseer entry shows bespoke army; full seeded run end-to-end.
