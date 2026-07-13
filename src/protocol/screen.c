@@ -132,7 +132,8 @@ static void emit_squares(const Square* list) {
 /// emit_hand
 ///
 /// Emits one line per card in the human's hand: index, id, name, tier,
-/// and play and sell costs.
+/// and play and sell costs. Under the Blind Draft challenge the id and
+/// name are masked, leaving only the kingdom and tier visible.
 ///
 /// Params:
 /// - engine -> engine owning the battle
@@ -143,10 +144,26 @@ static void emit_hand(EngineState* engine) {
 
     PlayerState* human  = black ? &battle->black : &battle->white;
 
+    bool blind = engine->run->challenge == CHALLENGE_BLIND_DRAFT;
+
     for (size_t i = 0; i < MAX_DRAWN_CARDS; i++) {
         Card* card = human->hand[i];
 
         if (!card) {
+            continue;
+        }
+
+        if (blind) {
+            protocol_emit(
+                "card i=%zu id=-1 name=\"?\" kingdom=%d tier=%d "
+                "play=%d sell=%d",
+                i,
+                card->kingdom,
+                card->tier,
+                card->play_cost,
+                card->sell_cost
+            );
+
             continue;
         }
 
