@@ -783,10 +783,65 @@ const BoardTrait KEWARANI_TRAITS[] = {{}};
                               KINGDOM MECHANICS
 \*----------------------------------------------------------------------------*/
 
+/// kewarani_grant_double
+///
+/// Embeds the Double Time free-second-move effect on a Kewarani piece,
+/// skipping the king and any piece that already carries it.
+///
+/// Params:
+/// - piece -> piece to grant the double move
+///
+static void kewarani_grant_double(PieceInfo* piece) {
+    if (piece->piece->id == PIECE_KING ||
+        piece->piece->kingdom != KINGDOM_KEWARANI) {
+        return;
+    }
+
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        if (piece->piece->effects[slot].func == eff_double_move) {
+            return;
+        }
+    }
+
+    Effect grant = {
+        .func      = eff_double_move,
+        .name      = "Double Time",
+        .trigger   = QUERY_PIECE_ACTION_COST_MOVE,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    piece_embed_effect(piece, &grant);
+}
+
+/// eff_double_time_buy
+///
+/// Grants Double Time to a freshly bought Kewarani piece so reinforcements
+/// move twice as well.
+///
+/// Params:
+/// - context -> args[0] owning side
+/// - x       -> PieceInfo* just bought
+///
+/// Return: true when the piece received the double move
+///
+static bool eff_double_time_buy(EffectContext* context, void* x) {
+    Side       side  = (Side) (uintptr_t) context->args[0];
+    PieceInfo* piece = x;
+
+    if (piece->side != side || piece->piece->kingdom != KINGDOM_KEWARANI) {
+        return false;
+    }
+
+    kewarani_grant_double(piece);
+
+    return true;
+}
+
 /// kewarani_innate
 ///
-/// Attaches the Double Time innate to the given side at the given mastery
-/// level.
+/// Attaches Double Time: every Kewarani piece may move twice per move
+/// action. The effect is embedded on the side's Kewarani pieces present at
+/// the start and on any bought later through an ON_PIECE_BUY hook.
 ///
 /// Params:
 /// - battle -> battle to attach into
@@ -794,9 +849,29 @@ const BoardTrait KEWARANI_TRAITS[] = {{}};
 /// - level  -> mastery level scaling the innate
 ///
 void kewarani_innate(BattleState* battle, Side side, MasteryLevel level) {
-    (void) battle;
-    (void) side;
     (void) level;
+
+    for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
+        PieceInfo* cell = battle->board.piece_board[index];
+
+        if (cell && cell != &VOID_CELL && cell->side == side) {
+            kewarani_grant_double(cell);
+        }
+    }
+
+    Effect hook = {
+        .func      = eff_double_time_buy,
+        .name      = "Double Time",
+        .trigger   = ON_PIECE_BUY,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    Effect* attached =
+        effect_attach(&battle_player(battle, side)->effects, &hook);
+
+    if (attached) {
+        attached->context->args[0] = (void*) (uintptr_t) side;
+    }
 }
 
 /// kewarani_climax

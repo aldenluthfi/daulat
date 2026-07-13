@@ -1373,6 +1373,58 @@ const BoardTrait LONGWEI_TRAITS[] = {{}};
                               KINGDOM MECHANICS
 \*----------------------------------------------------------------------------*/
 
+/// eff_bulwark
+///
+/// Bulwark: a Longwei piece with an orthogonally adjacent friendly piece
+/// takes reduced damage — half normally, sixty percent less at mastery
+/// three.
+///
+/// Params:
+/// - context -> args[0] owning side, args[1] mastery level
+/// - x       -> int* incoming damage to reduce
+///
+/// Return: true when the reduction applied
+///
+static bool eff_bulwark(EffectContext* context, void* x) {
+    Side         side  = (Side) (uintptr_t) context->args[0];
+    MasteryLevel level = (MasteryLevel) (uintptr_t) context->args[1];
+    PieceInfo*   piece = battle_subject();
+
+    if (!piece || piece->side != side ||
+        piece->piece->kingdom != KINGDOM_LONGWEI) {
+        return false;
+    }
+
+    BattleState* battle  = battle_current();
+    bool         guarded = false;
+
+    for (size_t o = 0; ORTHOGONAL_DIRECTIONS[o].x != 0 ||
+                       ORTHOGONAL_DIRECTIONS[o].y != 0;
+         o++) {
+        Square adjacent = {
+            (int8_t) (piece->square.x + ORTHOGONAL_DIRECTIONS[o].x),
+            (int8_t) (piece->square.y + ORTHOGONAL_DIRECTIONS[o].y),
+        };
+
+        PieceInfo* neighbour = battle_at(battle, adjacent);
+
+        if (neighbour && neighbour != &VOID_CELL && neighbour->side == side) {
+            guarded = true;
+            break;
+        }
+    }
+
+    if (!guarded) {
+        return false;
+    }
+
+    int reduction = level >= MASTERY_LEVEL_3 ? 60 : 50;
+
+    *(int*) x = *(int*) x * (100 - reduction) / 100;
+
+    return true;
+}
+
 /// longwei_innate
 ///
 /// Attaches the Bulwark innate to the given side at the given mastery
@@ -1384,9 +1436,20 @@ const BoardTrait LONGWEI_TRAITS[] = {{}};
 /// - level  -> mastery level scaling the innate
 ///
 void longwei_innate(BattleState* battle, Side side, MasteryLevel level) {
-    (void) battle;
-    (void) side;
-    (void) level;
+    Effect bulwark = {
+        .func      = eff_bulwark,
+        .name      = "Bulwark",
+        .trigger   = QUERY_PIECE_DAMAGE_TAKEN,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    Effect* attached =
+        effect_attach(&battle_player(battle, side)->effects, &bulwark);
+
+    if (attached) {
+        attached->context->args[0] = (void*) (uintptr_t) side;
+        attached->context->args[1] = (void*) (uintptr_t) level;
+    }
 }
 
 /// longwei_climax

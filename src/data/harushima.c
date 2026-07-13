@@ -1114,10 +1114,30 @@ const BoardTrait HARUSHIMA_TRAITS[] = {{}};
                               KINGDOM MECHANICS
 \*----------------------------------------------------------------------------*/
 
+/// eff_reclaim_cost
+///
+/// Tomohito's upgrade to Reclaim: at mastery three the reclaim action
+/// costs twenty currency instead of thirty.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* reclaim cost to lower
+///
+/// Return: true, the discount always applies
+///
+static bool eff_reclaim_cost(EffectContext* context, void* x) {
+    (void) context;
+
+    *(int*) x = 20;
+
+    return true;
+}
+
 /// harushima_innate
 ///
-/// Attaches the Reclaim innate to the given side at the given mastery
-/// level.
+/// Attaches the Reclaim innate. Reclaim itself is the always-available
+/// board action; mastery three lowers its cost to twenty currency through
+/// an attached cost query.
 ///
 /// Params:
 /// - battle -> battle to attach into
@@ -1125,9 +1145,23 @@ const BoardTrait HARUSHIMA_TRAITS[] = {{}};
 /// - level  -> mastery level scaling the innate
 ///
 void harushima_innate(BattleState* battle, Side side, MasteryLevel level) {
-    (void) battle;
-    (void) side;
-    (void) level;
+    if (level < MASTERY_LEVEL_3) {
+        return;
+    }
+
+    Effect discount = {
+        .func      = eff_reclaim_cost,
+        .name      = "Reclaim",
+        .trigger   = QUERY_PIECE_CP_COST_RECLAIM,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    Effect* attached =
+        effect_attach(&battle_player(battle, side)->effects, &discount);
+
+    if (attached) {
+        attached->context->args[0] = (void*) (uintptr_t) side;
+    }
 }
 
 /// harushima_climax

@@ -1114,10 +1114,56 @@ const BoardTrait CAELAN_TRAITS[] = {{}};
                               KINGDOM MECHANICS
 \*----------------------------------------------------------------------------*/
 
+/// eff_conqueror
+///
+/// Conqueror's Reward: every Caelan piece that helped a flip permanently
+/// gains half its value (sixty percent at mastery three, rounded up) for
+/// the rest of the battle.
+///
+/// Params:
+/// - context -> args[0] owning side, args[1] mastery level
+/// - x       -> PieceInfo* that just flipped to the side
+///
+/// Return: true when at least one Caelan damager grew
+///
+static bool eff_conqueror(EffectContext* context, void* x) {
+    Side         side    = (Side) (uintptr_t) context->args[0];
+    MasteryLevel level   = (MasteryLevel) (uintptr_t) context->args[1];
+    PieceInfo*   flipped = x;
+
+    if (flipped->side != side) {
+        return false;
+    }
+
+    PieceInfo** damagers = battle_damagers();
+
+    if (!damagers) {
+        return false;
+    }
+
+    int  percent = level >= MASTERY_LEVEL_3 ? 60 : 50;
+    bool applied = false;
+
+    for (size_t i = 0; damagers[i]; i++) {
+        PieceInfo* piece = damagers[i];
+
+        if (piece->side != side ||
+            piece->piece->kingdom != KINGDOM_CAELAN) {
+            continue;
+        }
+
+        piece->piece->value += (piece->piece->value * percent + 99) / 100;
+        applied              = true;
+    }
+
+    return applied;
+}
+
 /// caelan_innate
 ///
-/// Attaches the Conqueror's Reward innate to the given side at the
-/// given mastery level.
+/// Attaches Conqueror's Reward: when a Caelan piece contributes to a flip,
+/// its value permanently gains half (sixty percent at mastery three,
+/// rounded up) for the rest of the battle.
 ///
 /// Params:
 /// - battle -> battle to attach into
@@ -1125,9 +1171,20 @@ const BoardTrait CAELAN_TRAITS[] = {{}};
 /// - level  -> mastery level scaling the innate
 ///
 void caelan_innate(BattleState* battle, Side side, MasteryLevel level) {
-    (void) battle;
-    (void) side;
-    (void) level;
+    Effect conqueror = {
+        .func      = eff_conqueror,
+        .name      = "Conqueror's Reward",
+        .trigger   = ON_PIECE_FLIP,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    Effect* attached =
+        effect_attach(&battle_player(battle, side)->effects, &conqueror);
+
+    if (attached) {
+        attached->context->args[0] = (void*) (uintptr_t) side;
+        attached->context->args[1] = (void*) (uintptr_t) level;
+    }
 }
 
 /// caelan_climax

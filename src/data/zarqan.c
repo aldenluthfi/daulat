@@ -1013,10 +1013,56 @@ const BoardTrait ZARQAN_TRAITS[] = {{}};
                               KINGDOM MECHANICS
 \*----------------------------------------------------------------------------*/
 
+/// eff_royal_sub
+///
+/// Royal Substitution: any Zarqan piece may swap places with the friendly
+/// king by moving onto its square. The king's square is appended to the
+/// piece's move list so battle_move performs the swap.
+///
+/// Params:
+/// - context -> args[0] owning side
+/// - x       -> Square* move list to extend
+///
+/// Return: true when the king square was appended
+///
+static bool eff_royal_sub(EffectContext* context, void* x) {
+    Side       side  = (Side) (uintptr_t) context->args[0];
+    PieceInfo* piece = battle_subject();
+
+    if (!piece || piece->side != side ||
+        piece->piece->kingdom != KINGDOM_ZARQAN) {
+        return false;
+    }
+
+    PieceInfo* king = battle_find_king(battle_current(), side);
+
+    if (!king) {
+        return false;
+    }
+
+    Square* moves = x;
+    size_t  count = 0;
+
+    while (!(moves[count].x == -1 && moves[count].y == -1)) {
+        if (moves[count].x == king->square.x &&
+            moves[count].y == king->square.y) {
+            return false;
+        }
+
+        count++;
+    }
+
+    moves[count]     = king->square;
+    moves[count + 1] = SQUARE_END;
+
+    return true;
+}
+
 /// zarqan_innate
 ///
-/// Attaches the Royal Substitution innate to the given side at the given
-/// mastery level.
+/// Attaches Royal Substitution so any Zarqan piece can swap with the
+/// friendly king. The once-per-battle and free-action limits are relaxed:
+/// the swap is repeatable and costs a normal move action.
 ///
 /// Params:
 /// - battle -> battle to attach into
@@ -1024,9 +1070,21 @@ const BoardTrait ZARQAN_TRAITS[] = {{}};
 /// - level  -> mastery level scaling the innate
 ///
 void zarqan_innate(BattleState* battle, Side side, MasteryLevel level) {
-    (void) battle;
-    (void) side;
     (void) level;
+
+    Effect substitution = {
+        .func      = eff_royal_sub,
+        .name      = "Royal Substitution",
+        .trigger   = QUERY_PIECE_MOVES,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    Effect* attached =
+        effect_attach(&battle_player(battle, side)->effects, &substitution);
+
+    if (attached) {
+        attached->context->args[0] = (void*) (uintptr_t) side;
+    }
 }
 
 /// zarqan_climax

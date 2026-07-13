@@ -1018,7 +1018,7 @@ const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT] = {
 /// less currency.
 ///
 /// Params:
-/// - context -> args[0] the human side this penalty serves
+/// - context -> args[0] human side, args[1] cp penalty (default 10)
 /// - x       -> unused battle node
 ///
 /// Return: true, the deduction always applies
@@ -1031,7 +1031,9 @@ static bool eff_bronze_chain(EffectContext* context, void* x) {
         (Side) (uintptr_t) context->args[0]
     );
 
-    player->cp -= 10;
+    int penalty = context->args[1] ? (int) (uintptr_t) context->args[1] : 10;
+
+    player->cp -= penalty;
 
     if (player->cp < 0) {
         player->cp = 0;

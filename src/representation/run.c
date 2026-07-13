@@ -1147,6 +1147,26 @@ void run_relic_pick(EngineState* engine, RelicID relic) {
 ///
 /// Return: pressure level for the kingdom
 ///
+/// run_innate_ready
+///
+/// Reports whether the human has unlocked a kingdom's innate: from its
+/// Province map normally, or from Town once that kingdom reaches mastery
+/// one.
+///
+/// Params:
+/// - run     -> run to inspect
+/// - kingdom -> kingdom whose innate is queried
+///
+/// Return: true when the innate is active for the human
+///
+bool run_innate_ready(RunState* run, KingdomID kingdom) {
+    if (run->kingdoms[kingdom].mastery >= MASTERY_LEVEL_1) {
+        return true;
+    }
+
+    return map_complete(run->kingdoms[kingdom].town_map);
+}
+
 size_t run_pressure(RunState* run, KingdomID kingdom) {
     size_t pressure = 0;
 

@@ -1536,7 +1536,12 @@ static void battle_setup_armies(BattleState* battle) {
         ? (ChainPenaltyID) (node->kingdom->chain - CHAIN_REGISTRY)
         : CHAIN_NONE;
 
-    size_t count = run_pressure(BATTLE_ENGINE->run, kingdom);
+    Difficulty difficulty = BATTLE_ENGINE->run->difficulty;
+    size_t     count      = run_pressure(BATTLE_ENGINE->run, kingdom);
+
+    if (difficulty >= DIFFICULTY_BOUND && difficulty <= DIFFICULTY_ENSLAVED) {
+        count += 2;
+    }
 
     if (level >= CHAIN_SILVER) {
         count++;
@@ -1574,8 +1579,52 @@ static void battle_setup_armies(BattleState* battle) {
         );
 
         if (attached) {
+            int penalty = difficulty >= DIFFICULTY_SHACKLED &&
+                          difficulty <= DIFFICULTY_ENSLAVED
+                ? 25
+                : 10;
+
             attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
+            attached->context->args[1] = (void*) (uintptr_t) penalty;
         }
+    }
+}
+
+/// battle_walk_innates
+///
+/// Attaches each kingdom innate the human has unlocked to the human seat,
+/// and under the Enslaved difficulty attaches the region kingdom's innate
+/// to the enemy seat so its army fights with its innate from battle one.
+///
+/// Params:
+/// - battle -> battle being set up
+///
+static void battle_walk_innates(BattleState* battle) {
+    RunState* run = BATTLE_ENGINE ? BATTLE_ENGINE->run : nullptr;
+
+    if (!run) {
+        return;
+    }
+
+    for (size_t kingdom = 0; kingdom < KINGDOM_COUNT; kingdom++) {
+        if (run_innate_ready(run, kingdom)) {
+            KINGDOM_INNATE[kingdom](
+                battle,
+                HUMAN_SIDE,
+                run->kingdoms[kingdom].mastery
+            );
+        }
+    }
+
+    if (run->difficulty == DIFFICULTY_ENSLAVED && battle->node &&
+        battle->node->kingdom) {
+        KingdomID kingdom = battle->node->kingdom->id;
+
+        KINGDOM_INNATE[kingdom](
+            battle,
+            battle_enemy(HUMAN_SIDE),
+            MASTERY_NONE
+        );
     }
 }
 
@@ -1714,6 +1763,7 @@ void battle_begin(EngineState* engine, MapNode* node) {
     battle_walk_run(battle);
     battle_walk_modifiers(battle);
     battle_setup_armies(battle);
+    battle_walk_innates(battle);
 
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);
