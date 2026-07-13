@@ -1098,36 +1098,41 @@ fresh profile. Saving only outside SCREEN_BATTLE (battles never saved).
      Vorath meter). SYNERGY_REGISTRY (5) attached when fighting the
      lore-adjacent region: Pao +10, Kewarani -10 cp, Ziraafa/Talliya +5,
      Harushima->Caelan draw, Sultan's Gold +10. battle_buy_piece register
-     added (routine) so piece-type buy pricing works; battle_draw exposed.
-     Fortified Line relic (+5 for unmoved pieces via MARK_MOVED). Challenge
-     guards: Pacifist buy cap 20, Solo Vanguard single non-king, Traitor's
-     Gambit 3 enemy pieces in the human half. Vorath counter lifts the
-     enemy opening meter (+20 per 2 losses, clamped).
-   - SLICE 7 DONE 2026-07-13 (events, run-scoped bonuses). run_value_bonus
-     / run_cost_bonus derive permanent piece value adds and buy discounts
-     from chosen events (stored in run->events, no new fields), folded
-     into battle_spawn (human only) and battle_price. run_event_choose
-     applies the Vorath-counter reductions (12-entry table) and Desert
-     Crossing chain removal. Deferred (need pending-cp storage / screen
-     flow): +cp-next-battle, remove-1-card, relic-choice presentation,
-     skip-node, reveal, elite-battle event variants.
+     added so piece-type buy pricing works; battle_draw exposed. Fortified
+     Line relic (+5 unmoved via MARK_MOVED). Challenge guards: Pacifist
+     buy cap 20, Solo Vanguard single non-king, Traitor's Gambit 3 enemy
+     pieces in the human half. Vorath counter lifts enemy opening meter.
+   - SLICE 7 DONE 2026-07-13 (events). run_value_bonus / run_cost_bonus
+     derive permanent piece value adds and buy discounts from chosen
+     events (stored in run->events, no new fields), folded into
+     battle_spawn (human only) and battle_price. run_event_choose applies
+     the Vorath-counter reductions (table) and Desert Crossing chain
+     removal. Deferred (need pending-cp / screen flow): +cp-next-battle,
+     remove-1-card, relic-choice presentation, skip-node, reveal-node.
    - SLICE 8 DONE 2026-07-13 (board traits). TRAIT_REGISTRY (10); node->
-     trait on 50% of in-region battles. Effect traits attached to both
-     seats: Castle Corners + Siege Trench (QUERY_PIECE_CAN_FLIP immunity),
-     Sandstorm (even-turn slider cap 3). Structural: Mirage 5% voids,
-     Island Chain checkered middle columns. River Crossing / The Palace /
-     Trade Route / Contested Market / Fog Coast carry name+desc, mechanics
-     pending (king-confine storage, piece-specific rules, neutral spawns,
-     +1-move geometry, display masking).
-   - REMAINING (mostly header/screen/timer-blocked): M2 mastery cards (5,
-     need CARD_REGISTRY entries + unlock + bodies); run/screen relics
-     Librarian's/Deep Hand (draw peek/bonus), Master's Notes (archive 2),
-     Eagle Eye/Surveyor's (display/reveal); Double Time pricing downside;
-     the 5 name-only traits' mechanics; liberation trial node injection +
-     kingdom-only draw; the deferred event effects; Daily Conquest seed /
-     Blind Draft / Clockwork / Fog of War masking (screen.c + timer).
-     Several need user-owned RunState fields (pending cp, once-counters,
-     per-kingdom value/cost caches) or the screen display layer.
+     trait on 50% of in-region battle nodes. Effect traits on both seats:
+     Castle Corners + Siege Trench (QUERY_PIECE_CAN_FLIP immunity),
+     Sandstorm (even-turn slider Chebyshev cap 3), The Palace (king 3x3
+     confine). Structural voids via battle_terrain: Mirage 5%, Island
+     Chain 10% (shared with Dense Terrain 20%). River Crossing / Trade
+     Route / Contested Market / Fog Coast carry name+desc.
+   - SLICE 9 DONE 2026-07-13 (mastery-2 cards + Master's Notes + Blind
+     Draft). Five M2 figurehead cards with real bodies (Isabella pawns->
+     queens, Mingzhu 3-turn move lock, Selassie Kewarani free moves,
+     Tomohito reclaim 3 at 15cp, Timur auto Royal Sub under 20 meter);
+     registered + unlocked at mastery 2 in run_new; new battle_swap
+     primitive. Master's Notes reveals a 2nd recipe at archives
+     (battle_is_recipe_result exposed). Blind Draft masks the hand
+     emission (kingdom+tier only) in screen.c.
+   - REMAINING (deferred to Phase 7 / screen layer): overseer + Vorath
+     armies; liberation trial node injection + kingdom-only draw (the
+     battle-side +2 pieces is done); Deep Hand / Librarian's Notes / Eagle
+     Eye (draw-peek + value reveal, need per-turn draw state and a board
+     value emission that does not exist yet); Fog of War / Fog Coast value
+     masking (board emits letters only, no per-piece value to hide);
+     Surveyor's Map (all nodes already reveal their modifier in this
+     build); mastery-3 innate params live but M3 cosmetic titles and the
+     Double Time pricing downside stay unmodelled.
 7. **Overseers + Vorath + AI.** 5 overseer setups, vorath_setup, 4
    remaining archetypes + fallbacks, ai_plan/Divination. Verify:
    overseer entry shows bespoke army; full seeded run end-to-end.
@@ -1166,7 +1171,16 @@ army interpretations (GDD names counts, not piece types): free enemy
 reinforcements from pressure / Silver chain / elite / liberation all
 spawn as the region kingdom's basic infantry (the pawn-analog: Bing /
 Medeq / Wazir / Fuhyo / Pawn) on random empty squares in the enemy's own
-half; chain penalties stack by level (Silver keeps Bronze's -10 cp).
+half; chain penalties stack by level (Silver keeps Bronze's -10 cp). More
+Phase 6 approximations: Double Time's no-home-discount / +40% foreign
+downside is unmodelled (only the move-doubling upside is); Royal
+Substitution drops its once-per-battle and free-action limits (repeatable,
+costs a normal action); Selassie's March grants one free move per Kewarani
+piece (not literally three-per-action); Timur's Conquest fires its swap
+from ON_PIECE_FLIP_POST when the meter reads below 20 (approximating "when
+it drops below"); The Palace centres its 3x3 on the king's spawn square,
+captured on first fire; board traits attach to a battle node at a flat 50%
+with the two region traits equally likely.
 
 ## 12. Risks
 
