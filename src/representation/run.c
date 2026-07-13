@@ -737,6 +737,20 @@ void run_new(
         }
     }
 
+    static const CardID MASTERY_CARDS[KINGDOM_COUNT] = {
+        [KINGDOM_LONGWEI]   = CARD_MINGZHUS_SEAL,
+        [KINGDOM_KEWARANI]  = CARD_SELASSIES_MARCH,
+        [KINGDOM_ZARQAN]    = CARD_TIMURS_CONQUEST,
+        [KINGDOM_HARUSHIMA] = CARD_TOMOHITOS_PATIENCE,
+        [KINGDOM_CAELAN]    = CARD_ISABELLAS_CORONATION,
+    };
+
+    for (size_t kingdom = 0; kingdom < KINGDOM_COUNT; kingdom++) {
+        if (run->kingdoms[kingdom].mastery >= MASTERY_LEVEL_2) {
+            run->cards[MASTERY_CARDS[kingdom]] = true;
+        }
+    }
+
     engine->run     = run;
     RUN_ENGINE      = engine;
     ENTERED_KINGDOM = KINGDOM_LONGWEI;

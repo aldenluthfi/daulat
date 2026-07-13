@@ -540,6 +540,28 @@ void battle_flip(BattleState* battle, PieceInfo* piece) {
     SUBJECT        = nullptr;
 }
 
+/// battle_swap
+///
+/// Exchanges the board squares of two pieces, the shared primitive behind
+/// the king-swap moves (Shahzadeh, Royal Substitution). Both cells and
+/// both stored squares are updated together.
+///
+/// Params:
+/// - battle -> battle the pieces live in
+/// - a      -> first piece
+/// - b      -> second piece
+///
+void battle_swap(BattleState* battle, PieceInfo* a, PieceInfo* b) {
+    Square square_a = a->square;
+    Square square_b = b->square;
+
+    battle->board.piece_board[square_index(square_a)] = b;
+    battle->board.piece_board[square_index(square_b)] = a;
+
+    a->square = square_b;
+    b->square = square_a;
+}
+
 /// battle_remove
 ///
 /// Removes a piece from the board by unlinking its cell and queuing it for

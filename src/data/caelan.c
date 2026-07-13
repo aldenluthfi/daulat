@@ -859,6 +859,45 @@ static bool eff_divine_right(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_isabella
+///
+/// Isabella's Coronation: every friendly Pawn promotes to a Queen at once.
+/// Each Pawn is removed and a Queen spawns on its square.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> played card, unused
+///
+/// Return: true when at least one Pawn promoted
+///
+static bool eff_isabella(EffectContext* context, void* x) {
+    (void) x;
+
+    BattleState* battle  = battle_current();
+    Side         side    = (Side) (uintptr_t) context->args[0];
+    bool         crowned = false;
+
+    for (int8_t y = 0; y < battle->board.height; y++) {
+        for (int8_t x_pos = 0; x_pos < battle->board.width; x_pos++) {
+            PieceInfo* cell = battle_at(battle, (Square) {x_pos, y});
+
+            if (!cell || cell->side != side ||
+                cell->piece->id != PIECE_PAWN) {
+                continue;
+            }
+
+            Square square = cell->square;
+
+            battle_remove(battle, cell);
+            battle_spawn(battle, PIECE_QUEEN, square, side);
+
+            crowned = true;
+        }
+    }
+
+    return crowned;
+}
+
 /// eff_caelan_climax
 ///
 /// Raises the playing side's attack damage by half for the Caelan combo
@@ -1105,6 +1144,20 @@ const Card CAELAN_CARDS[] = {
         .kingdom   = KINGDOM_CAELAN,
         .play_cost = 0,
         .sell_cost = 75,
+    },
+    {
+        .effects =
+            {{.func      = eff_isabella,
+              .name      = "Isabella's Coronation",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = ENTIRE_BATTLE}},
+        .name      = "Isabella's Coronation",
+        .desc      = "All friendly Pawns promote to Queens at once.",
+        .id        = CARD_ISABELLAS_CORONATION,
+        .tier      = TIER_MASTERY,
+        .kingdom   = KINGDOM_CAELAN,
+        .play_cost = 40,
+        .sell_cost = 60,
     },
 };
 

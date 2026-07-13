@@ -770,6 +770,90 @@ static bool eff_conquest(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_timur_watch
+///
+/// Timur's Conquest watcher: once the side's meter drops below twenty it
+/// swaps the friendly king with a Zarqan piece, the automatic Royal
+/// Substitution. Fires after each cascade step settles.
+///
+/// Params:
+/// - context -> args[0] owning side, args[1] spent flag
+/// - x       -> flipped piece, unused
+///
+/// Return: true when the automatic swap fired
+///
+static bool eff_timur_watch(EffectContext* context, void* x) {
+    (void) x;
+
+    if (context->args[1]) {
+        return false;
+    }
+
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+
+    if (battle_player(battle, side)->meter >= 20) {
+        return false;
+    }
+
+    PieceInfo* king = battle_find_king(battle, side);
+
+    if (!king) {
+        return false;
+    }
+
+    for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
+        PieceInfo* cell = battle->board.piece_board[index];
+
+        if (!cell || cell == &VOID_CELL || cell->side != side ||
+            cell->piece->kingdom != KINGDOM_ZARQAN) {
+            continue;
+        }
+
+        battle_swap(battle, king, cell);
+
+        context->args[1] = (void*) 1;
+
+        return true;
+    }
+
+    return false;
+}
+
+/// eff_timur
+///
+/// Timur's Conquest: attaches the automatic Royal Substitution watcher to
+/// the playing side for the rest of the battle.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> played card, unused
+///
+/// Return: true when the watcher was attached
+///
+static bool eff_timur(EffectContext* context, void* x) {
+    (void) x;
+
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+
+    static const Effect watch = {
+        .func      = eff_timur_watch,
+        .name      = "Timur's Conquest",
+        .trigger   = ON_PIECE_FLIP_POST,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    Effect* attached =
+        effect_attach(&battle_player(battle, side)->effects, &watch);
+
+    if (attached) {
+        attached->context->args[0] = (void*) (uintptr_t) side;
+    }
+
+    return attached != nullptr;
+}
+
 /*----------------------------------------------------------------------------*\
                                  KINGDOM DATA
 \*----------------------------------------------------------------------------*/
@@ -1004,6 +1088,21 @@ const Card ZARQAN_CARDS[] = {
         .kingdom   = KINGDOM_ZARQAN,
         .play_cost = 50,
         .sell_cost = 80,
+    },
+    {
+        .effects =
+            {{.func      = eff_timur,
+              .name      = "Timur's Conquest",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = ENTIRE_BATTLE}},
+        .name      = "Timur's Conquest",
+        .desc      = "Royal Substitution triggers when the meter drops "
+                     "below 20.",
+        .id        = CARD_TIMURS_CONQUEST,
+        .tier      = TIER_MASTERY,
+        .kingdom   = KINGDOM_ZARQAN,
+        .play_cost = 40,
+        .sell_cost = 60,
     },
 };
 

@@ -855,6 +855,48 @@ static bool eff_force_drop(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_tomohito
+///
+/// Tomohito's Patience: reclaim up to three enemy pieces this turn at
+/// fifteen currency each, flipping them to the playing side while it can
+/// afford the toll.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> played card, unused
+///
+/// Return: true when at least one piece was reclaimed
+///
+static bool eff_tomohito(EffectContext* context, void* x) {
+    (void) x;
+
+    BattleState* battle    = battle_current();
+    Side         side      = (Side) (uintptr_t) context->args[0];
+    PlayerState* player    = battle_player(battle, side);
+    int          reclaimed = 0;
+
+    for (size_t index = 0; index < MAX_BOARD_SIZE && reclaimed < 3; index++) {
+        PieceInfo* cell = battle->board.piece_board[index];
+
+        if (!cell || cell == &VOID_CELL || cell->side == side ||
+            cell->side == SIDE_NEUTRAL || cell->piece->id == PIECE_KING) {
+            continue;
+        }
+
+        if (player->cp < 15) {
+            break;
+        }
+
+        player->cp -= 15;
+
+        battle_flip(battle, cell);
+
+        reclaimed++;
+    }
+
+    return reclaimed > 0;
+}
+
 /*----------------------------------------------------------------------------*\
                                  KINGDOM DATA
 \*----------------------------------------------------------------------------*/
@@ -1102,6 +1144,21 @@ const Card HARUSHIMA_CARDS[] = {
                      "enemy meter.",
         .id        = CARD_BUSHIDO,
         .tier      = TIER_COUNTRY,
+        .kingdom   = KINGDOM_HARUSHIMA,
+        .play_cost = 0,
+        .sell_cost = 60,
+    },
+    {
+        .effects =
+            {{.func      = eff_tomohito,
+              .name      = "Tomohito's Patience",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = ENTIRE_BATTLE}},
+        .name      = "Tomohito's Patience",
+        .desc      = "Reclaim up to 3 flipped pieces this turn at 15 cp "
+                     "each.",
+        .id        = CARD_TOMOHITOS_PATIENCE,
+        .tier      = TIER_MASTERY,
         .kingdom   = KINGDOM_HARUSHIMA,
         .play_cost = 0,
         .sell_cost = 60,

@@ -1073,6 +1073,7 @@ PieceInfo* battle_at(BattleState* battle, Square square);
 bool       battle_in_bounds(BattleState* battle, Square square);
 PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at, Side side);
 void       battle_flip(BattleState* battle, PieceInfo* piece);
+void       battle_swap(BattleState* battle, PieceInfo* a, PieceInfo* b);
 void       battle_remove(BattleState* battle, PieceInfo* piece);
 
 /// Battle state accessors

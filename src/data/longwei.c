@@ -1064,6 +1064,68 @@ static bool eff_palace_decree(EffectContext* context, void* x) {
     return attached != nullptr;
 }
 
+/// eff_mingzhu_seal
+///
+/// The seal itself: while attached to the target's own side list it vetoes
+/// that one piece's movement.
+///
+/// Params:
+/// - context -> args[1] the sealed piece pointer
+/// - x       -> bool* move eligibility to veto
+///
+/// Return: true when the sealed piece was blocked
+///
+static bool eff_mingzhu_seal(EffectContext* context, void* x) {
+    if (battle_subject() != context->args[1]) {
+        return false;
+    }
+
+    *(bool*) x = false;
+
+    return true;
+}
+
+/// eff_mingzhu
+///
+/// Mingzhu's Seal: one enemy piece cannot move for three turns. Attaches
+/// the seal to the enemy side's list keyed on the targeted piece.
+///
+/// Params:
+/// - context -> beneficiary side in args[0], target square in args[1]
+/// - x       -> played card, unused
+///
+/// Return: true when a piece was sealed
+///
+static bool eff_mingzhu(EffectContext* context, void* x) {
+    (void) x;
+
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
+
+    if (!target || target->side == side) {
+        return false;
+    }
+
+    static const Effect seal = {
+        .func      = eff_mingzhu_seal,
+        .name      = "Mingzhu's Seal",
+        .trigger   = QUERY_PIECE_CAN_MOVE,
+        .lasts_for = TURNS_3,
+    };
+
+    Effect* attached = effect_attach(
+        &battle_player(battle, target->side)->effects,
+        &seal
+    );
+
+    if (attached) {
+        attached->context->args[1] = target;
+    }
+
+    return attached != nullptr;
+}
+
 /// eff_mandate
 ///
 /// Immediate play effect removing one of the playing side's pieces and
@@ -1364,6 +1426,20 @@ const Card LONGWEI_CARDS[] = {
         .kingdom   = KINGDOM_LONGWEI,
         .play_cost = 0,
         .sell_cost = 75,
+    },
+    {
+        .effects =
+            {{.func      = eff_mingzhu,
+              .name      = "Mingzhu's Seal",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = ENTIRE_BATTLE}},
+        .name      = "Mingzhu's Seal",
+        .desc      = "Target 1 enemy piece. It cannot move for 3 turns.",
+        .id        = CARD_MINGZHUS_SEAL,
+        .tier      = TIER_MASTERY,
+        .kingdom   = KINGDOM_LONGWEI,
+        .play_cost = 30,
+        .sell_cost = 50,
     },
 };
 

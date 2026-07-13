@@ -513,6 +513,42 @@ static bool eff_doublestrike(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_selassie
+///
+/// Selassie's March: Kewarani pieces move extra times this action this
+/// turn. Every friendly Kewarani piece is granted a free move, standing in
+/// for the design's three-moves-per-action burst.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> played card, unused
+///
+/// Return: true when at least one Kewarani piece was granted a free move
+///
+static bool eff_selassie(EffectContext* context, void* x) {
+    (void) x;
+
+    BattleState* battle  = battle_current();
+    Side         side    = (Side) (uintptr_t) context->args[0];
+    bool         granted = false;
+
+    for (int8_t y = 0; y < battle->board.height; y++) {
+        for (int8_t x_pos = 0; x_pos < battle->board.width; x_pos++) {
+            PieceInfo* cell = battle_at(battle, (Square) {x_pos, y});
+
+            if (!cell || cell->side != side ||
+                cell->piece->kingdom != KINGDOM_KEWARANI) {
+                continue;
+            }
+
+            piece_grant_free_move(cell, "Selassie's March");
+            granted = true;
+        }
+    }
+
+    return granted;
+}
+
 /// eff_hajj
 ///
 /// Immediate play effect teleporting a targeted friendly piece to any
@@ -774,6 +810,21 @@ const Card KEWARANI_CARDS[] = {
         .kingdom   = KINGDOM_KEWARANI,
         .play_cost = 0,
         .sell_cost = 70,
+    },
+    {
+        .effects =
+            {{.func      = eff_selassie,
+              .name      = "Selassie's March",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = ENTIRE_BATTLE}},
+        .name      = "Selassie's March",
+        .desc      = "Kewarani pieces move extra times this action "
+                     "this turn.",
+        .id        = CARD_SELASSIES_MARCH,
+        .tier      = TIER_MASTERY,
+        .kingdom   = KINGDOM_KEWARANI,
+        .play_cost = 40,
+        .sell_cost = 60,
     },
 };
 
