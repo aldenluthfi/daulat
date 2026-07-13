@@ -1230,6 +1230,8 @@ void               run_offering(EngineState* engine, CardID card);
 void               run_relic_pick(EngineState* engine, RelicID relic);
 size_t             run_pressure(RunState* run, KingdomID kingdom);
 bool               run_innate_ready(RunState* run, KingdomID kingdom);
+int                run_value_bonus(RunState* run, const Piece* piece);
+int                run_cost_bonus(RunState* run, const Piece* piece);
 void               run_emit_kingdoms(EngineState* engine);
 void               run_emit_map(EngineState* engine);
 bool               run_enter_vorath(EngineState* engine);

@@ -1084,6 +1084,48 @@ void run_event_choose(EngineState* engine, EventChoice choice) {
 
     KINGDOM_EVENT[king](engine, event, choice);
 
+    static const struct {
+        EventID     event;
+        EventChoice choice;
+        size_t      reduce;
+    } VORATH_REDUCTIONS[] = {
+        {EVENT_DEFECTOR, CHOICE_B, 1},
+        {EVENT_JANGGI_ELDER, CHOICE_B, 1},
+        {EVENT_CANNON_SALUTE, CHOICE_B, 2},
+        {EVENT_STOLEN_GUARD, CHOICE_B, 1},
+        {EVENT_CAMEL_CARAVAN, CHOICE_B, 2},
+        {EVENT_WARLORDS_CHALLENGE, CHOICE_B, 2},
+        {EVENT_BAZAAR_OF_SAMARKAND, CHOICE_B, 2},
+        {EVENT_SPY_REPORT, CHOICE_A, 2},
+        {EVENT_SPY_REPORT, CHOICE_B, 1},
+        {EVENT_VETERAN_LANCE, CHOICE_B, 1},
+        {EVENT_WANDERING_PIECE, CHOICE_A, 2},
+        {EVENT_VORATHS_DECREE, CHOICE_A, 3},
+        {EVENT_SCHOLARS_OFFER, NO_CHOICE, 0},
+    };
+
+    for (size_t i = 0; VORATH_REDUCTIONS[i].reduce != 0; i++) {
+        if (VORATH_REDUCTIONS[i].event != event ||
+            VORATH_REDUCTIONS[i].choice != choice) {
+            continue;
+        }
+
+        size_t reduce       = VORATH_REDUCTIONS[i].reduce;
+
+        run->vorath_counter = run->vorath_counter > reduce
+            ? run->vorath_counter - reduce
+            : 0;
+    }
+
+    if (event == EVENT_DESERT_CROSSING && choice == CHOICE_B) {
+        for (size_t kingdom = 0; kingdom < KINGDOM_COUNT; kingdom++) {
+            if (run->kingdoms[kingdom].chain) {
+                chain_remove(&run->kingdoms[kingdom]);
+                break;
+            }
+        }
+    }
+
     node->cleared = true;
     PENDING_NODE  = nullptr;
 
@@ -1165,6 +1207,107 @@ bool run_innate_ready(RunState* run, KingdomID kingdom) {
     }
 
     return map_complete(run->kingdoms[kingdom].town_map);
+}
+
+/// run_value_bonus
+///
+/// Sums the permanent value bonuses a piece has earned from narrative
+/// events chosen this run, keyed by the piece's kingdom or id.
+///
+/// Params:
+/// - run   -> run holding the chosen events
+/// - piece -> piece template being valued
+///
+/// Return: the added value from run events
+///
+int run_value_bonus(RunState* run, const Piece* piece) {
+    int       bonus   = 0;
+    KingdomID kingdom = piece->kingdom;
+    PieceID   id      = piece->id;
+
+    if (kingdom == KINGDOM_LONGWEI) {
+        if (run->events[EVENT_SCHOLARS_OFFER].choice_taken == CHOICE_A) {
+            bonus += 3;
+        }
+
+        if (run->events[EVENT_DRAGON_COURT_TRIBUTE].choice_taken == CHOICE_A) {
+            bonus += 5;
+        }
+    }
+
+    if (kingdom == KINGDOM_HARUSHIMA &&
+        run->events[EVENT_RONIN].choice_taken == CHOICE_B) {
+        bonus += 3;
+    }
+
+    if (kingdom == KINGDOM_CAELAN &&
+        run->events[EVENT_ROYAL_DECREE].choice_taken == CHOICE_A) {
+        bonus += 3;
+    }
+
+    if (id == PIECE_PAO) {
+        if (run->events[EVENT_CANNON_SALUTE].choice_taken == CHOICE_A) {
+            bonus += 5;
+        }
+
+        if (run->events[EVENT_SIEGE_ENGINEER].choice_taken == CHOICE_B) {
+            bonus += 5;
+        }
+    }
+
+    if (id == PIECE_MEDEQ &&
+        run->events[EVENT_SALT_ROAD_MERCHANT].choice_taken == CHOICE_B) {
+        bonus += 3;
+    }
+
+    if (id == PIECE_KYOSHA &&
+        run->events[EVENT_VETERAN_LANCE].choice_taken == CHOICE_A) {
+        bonus += 5;
+    }
+
+    if (piece_is_pawn(id) &&
+        run->events[EVENT_DESERTER].choice_taken == CHOICE_A) {
+        bonus += 3;
+    }
+
+    return bonus;
+}
+
+/// run_cost_bonus
+///
+/// Returns the percent buy discount a piece has earned from cost-reducing
+/// events chosen this run, keyed by the piece's kingdom.
+///
+/// Params:
+/// - run   -> run holding the chosen events
+/// - piece -> piece template being priced
+///
+/// Return: the percent discount from run events
+///
+int run_cost_bonus(RunState* run, const Piece* piece) {
+    KingdomID kingdom = piece->kingdom;
+
+    if (kingdom == KINGDOM_KEWARANI &&
+        run->events[EVENT_CAMEL_CARAVAN].choice_taken == CHOICE_A) {
+        return 15;
+    }
+
+    if (kingdom == KINGDOM_ZARQAN &&
+        run->events[EVENT_BAZAAR_OF_SAMARKAND].choice_taken == CHOICE_A) {
+        return 15;
+    }
+
+    if (kingdom == KINGDOM_HARUSHIMA &&
+        run->events[EVENT_BURNING_PORT].choice_taken == CHOICE_A) {
+        return 15;
+    }
+
+    if (kingdom == KINGDOM_CAELAN &&
+        run->events[EVENT_CHURCH_BLESSING].choice_taken == CHOICE_A) {
+        return 10;
+    }
+
+    return 0;
 }
 
 size_t run_pressure(RunState* run, KingdomID kingdom) {

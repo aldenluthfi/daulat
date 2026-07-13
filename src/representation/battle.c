@@ -478,6 +478,10 @@ PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at, Side side) {
 
     *copy        = *template;
 
+    if (BATTLE_ENGINE && side == HUMAN_SIDE) {
+        copy->value += run_value_bonus(BATTLE_ENGINE->run, copy);
+    }
+
     info->piece  = copy;
     info->square = at;
     info->side   = side;
@@ -712,6 +716,12 @@ static int battle_price(
     Side         side
 ) {
     int cost = template->value;
+
+    if (side == HUMAN_SIDE && BATTLE_ENGINE) {
+        int discount = run_cost_bonus(BATTLE_ENGINE->run, template);
+
+        cost = cost * (100 - discount) / 100;
+    }
 
     if (template->kingdom == KINGDOM_NONE || !battle->node ||
         !battle->node->kingdom) {
