@@ -1367,18 +1367,7 @@ const Card LONGWEI_CARDS[] = {
     },
 };
 
-const BoardTrait LONGWEI_TRAITS[] = {
-    {
-        .name = "River Crossing",
-        .desc = "A row bisects the board; Xiang cannot cross it.",
-        .id   = BOARD_TRAIT_RIVER_CROSSING,
-    },
-    {
-        .name = "The Palace",
-        .desc = "A 3x3 zone near the king; the king cannot leave it.",
-        .id   = BOARD_TRAIT_THE_PALACE,
-    },
-};
+const BoardTrait LONGWEI_TRAITS[] = {{}};
 
 /*----------------------------------------------------------------------------*\
                               KINGDOM MECHANICS
