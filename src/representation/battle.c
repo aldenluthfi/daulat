@@ -311,7 +311,18 @@ static void battle_draw(BattleState* battle, Side side, size_t count) {
             break;
         }
 
-        CardID pick        = pool[(size_t) rand_r(&BATTLE_RNG) % pool_size];
+        CardID pick = pool[(size_t) rand_r(&BATTLE_RNG) % pool_size];
+
+        if (drawn == 0 && battle->modifier &&
+            battle->modifier->id == MODIFIER_LUCKY_STRIKE) {
+            pick = pool[0];
+
+            for (size_t p = 1; p < pool_size; p++) {
+                if (CARD_REGISTRY[pool[p]]->tier > CARD_REGISTRY[pick]->tier) {
+                    pick = pool[p];
+                }
+            }
+        }
 
         player->hand[slot] = (Card*) CARD_REGISTRY[pick];
     }
@@ -632,6 +643,44 @@ bool battle_move(BattleState* battle, Square from, Square to) {
     return true;
 }
 
+/// battle_price
+///
+/// Computes the base currency cost of a piece before the buy queries,
+/// applying the region rule: pieces native to the battle's home kingdom
+/// cost forty percent less, foreign pieces twenty percent more. The king
+/// and kingdomless pieces price at face value. The human's Trade Routes
+/// relic drops the foreign markup for its own purchases.
+///
+/// Params:
+/// - battle   -> battle whose node fixes the home kingdom
+/// - template -> piece template being priced
+/// - side     -> side making the purchase
+///
+/// Return: the region-adjusted base cost
+///
+static int battle_price(
+    BattleState* battle,
+    const Piece* template,
+    Side         side
+) {
+    int cost = template->value;
+
+    if (template->kingdom == KINGDOM_NONE || !battle->node ||
+        !battle->node->kingdom) {
+        return cost;
+    }
+
+    if (template->kingdom == battle->node->kingdom->id) {
+        return cost * 60 / 100;
+    }
+
+    bool trade_routes =
+        side == HUMAN_SIDE && BATTLE_ENGINE &&
+        BATTLE_ENGINE->run->relics[RELIC_TRADE_ROUTES];
+
+    return trade_routes ? cost : cost * 120 / 100;
+}
+
 /// battle_buy
 ///
 /// Buys a piece onto any empty square, applying the pricing and action
@@ -665,7 +714,7 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
 
     PlayerState* player      = battle_player(battle, ACTING_SIDE);
 
-    int          cost        = template->value;
+    int          cost        = battle_price(battle, template, ACTING_SIDE);
     int          action_cost = 1;
 
     CURRENT_BATTLE           = battle;
@@ -1126,14 +1175,32 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
             return false;
         }
 
-        size_t pick         = (size_t) rand_r(&BATTLE_RNG) % count;
-
         Side   gainer_side  = receiver == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
 
         PlayerState* gainer = battle_player(battle, gainer_side);
         int          max_before = battle_meter_max(battle, gainer_side);
 
-        battle_flip(battle, candidates[pick]);
+        int flips =
+            battle->modifier && battle->modifier->id == MODIFIER_BLOODBATH
+                ? 2
+                : 1;
+
+        PieceInfo* toggled[2];
+        int        toggled_count = 0;
+
+        for (int f = 0; f < flips && count > 0; f++) {
+            size_t pick = (size_t) rand_r(&BATTLE_RNG) % count;
+
+            battle_flip(battle, candidates[pick]);
+
+            if (FLIPPED_PIECE) {
+                toggled[toggled_count] = FLIPPED_PIECE;
+                toggled_count++;
+            }
+
+            candidates[pick] = candidates[count - 1];
+            count--;
+        }
 
         int refill     = battle_meter_max(battle, receiver);
 
@@ -1151,15 +1218,15 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
             gainer->meter = 2 * gainer_max;
         }
 
-        if (FLIPPED_PIECE) {
+        for (int f = 0; f < toggled_count; f++) {
             CURRENT_BATTLE = battle;
-            SUBJECT        = FLIPPED_PIECE;
+            SUBJECT        = toggled[f];
 
             effect_fire(
                 battle,
-                FLIPPED_PIECE->side,
+                toggled[f]->side,
                 ON_PIECE_FLIP_POST,
-                FLIPPED_PIECE
+                toggled[f]
             );
 
             CURRENT_BATTLE = nullptr;
@@ -1398,6 +1465,71 @@ static void battle_walk_run(BattleState* battle) {
     }
 }
 
+/// battle_walk_modifiers
+///
+/// Attaches the battle modifier's effects to both seats, one copy each,
+/// so every copy fires only for its own side. Runs before the meters are
+/// computed so a value-editing modifier folds into the starting maxima.
+///
+/// Params:
+/// - battle -> battle being set up
+///
+static void battle_walk_modifiers(BattleState* battle) {
+    if (!battle->modifier) {
+        return;
+    }
+
+    Side sides[2] = {SIDE_WHITE, SIDE_BLACK};
+
+    for (size_t seat = 0; seat < 2; seat++) {
+        for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+            if (!battle->modifier->effects[slot].func) {
+                continue;
+            }
+
+            Effect* attached = effect_attach(
+                &battle_player(battle, sides[seat])->effects,
+                &battle->modifier->effects[slot]
+            );
+
+            if (attached) {
+                attached->context->args[0] = (void*) (uintptr_t) sides[seat];
+            }
+        }
+    }
+}
+
+/// battle_dense_terrain
+///
+/// Marks a fifth of the board as missing squares for the Dense Terrain
+/// modifier, skipping any cell already holding a piece so the kings and
+/// other placed pieces keep their squares.
+///
+/// Params:
+/// - battle -> battle whose board gains voids
+///
+static void battle_dense_terrain(BattleState* battle) {
+    if (!battle->modifier ||
+        battle->modifier->id != MODIFIER_DENSE_TERRAIN) {
+        return;
+    }
+
+    int voids = battle->board.width * battle->board.height * 20 / 100;
+
+    for (int placed = 0; placed < voids; placed++) {
+        int8_t x     = (int8_t) (rand_r(&BATTLE_RNG) % battle->board.width);
+        int8_t y     = (int8_t) (rand_r(&BATTLE_RNG) % battle->board.height);
+
+        size_t index = square_index((Square) {x, y});
+
+        if (battle->board.piece_board[index]) {
+            continue;
+        }
+
+        battle->board.piece_board[index] = (PieceInfo*) &VOID_CELL;
+    }
+}
+
 /// battle_begin
 ///
 /// Sets up a battle on the given campaign node: the human's seat from
@@ -1429,7 +1561,19 @@ void battle_begin(EngineState* engine, MapNode* node) {
     }
 
     battle->node          = node;
-    battle->board.width   = size;
+    battle->modifier      = node ? node->modifier : nullptr;
+
+    int8_t width          = size;
+
+    if (battle->modifier &&
+        battle->modifier->id == MODIFIER_EXTENDED_FRONT) {
+        width += 2;
+    } else if (battle->modifier &&
+               battle->modifier->id == MODIFIER_COMPRESSED) {
+        width -= 2;
+    }
+
+    battle->board.width   = width;
     battle->board.height  = size;
     battle->turn          = 1;
     battle->white.effects = ll_init();
@@ -1448,10 +1592,13 @@ void battle_begin(EngineState* engine, MapNode* node) {
     );
     battle_spawn(battle, PIECE_KING, (Square) {center, 0}, SIDE_BLACK);
 
+    battle_dense_terrain(battle);
+
     battle->white.cp    = 20;
     battle->black.cp    = 20;
 
     battle_walk_run(battle);
+    battle_walk_modifiers(battle);
 
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);

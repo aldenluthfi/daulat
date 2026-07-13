@@ -1044,13 +1044,37 @@ fresh profile. Saving only outside SCREEN_BATTLE (battles never saved).
      battle_buy bounds the discount to turn <= flip_turn + 1. Verified:
      make debug exit 0, 80-col clean, smoke ok, 7-check phase6 harness +
      phase1/3/4/5/black-seat regressions all 0 failures.
-   - REMAINING slices: home/foreign + Open Market pricing (unblocks Trade
-     Routes); battle modifiers (18, universal.c) + their battle_begin
-     attach; kingdom innate bodies (5); events (~26, run.c dispatch);
-     board traits; pressure free pieces + chain silver/elite/liberation/
-     Traitor's Gambit setup; difficulties; masteries (engine finalize +
-     M2 cards + M3 params); challenges; the run/screen-level relics; Iron
-     Will/Mirror dealer-side meter reactions.
+   - SLICE 2 DONE 2026-07-13 (region pricing). battle.c gained a static
+     battle_price(battle, template, side) applied before the buy queries:
+     pieces native to the battle node's kingdom cost 40% less, foreign
+     pieces 20% more, the King and kingdomless pieces price at face value.
+     The Trade Routes relic (run->relics gate, human seat only) drops the
+     foreign markup, so its body stays name/desc-only in relic.c. Open
+     Market/synergy/Double Time still layer on top through the existing
+     QUERY_PIECE_CP_COST_BUY hook. Verified: 4-check pricing harness (home
+     6, foreign 12, Trade Routes 10 + home intact) + regressions.
+   - SLICE 3 DONE 2026-07-13 (18 battle modifiers). universal.c holds the
+     full MODIFIER_REGISTRY: 12 effect-body modifiers (Lean Times/Windfall
+     ON_BATTLE_START cp deltas, Open Market halves buy, Devalued halves
+     sell, Tax Collector +5 on sell, Glass Cannon halves refill, Iron Will
+     -25%/Mirror +25% dealer meter on QUERY_METER_DAMAGE_TAKEN, Overflow
+     +30 to a flipped piece, Rich/Sparse draw counts, Kingdom Purity draw
+     veto) and 6 structural/battle.c ones carrying name/desc only. battle.c
+     wired them: battle->modifier set from node->modifier; Extended/
+     Compressed adjust board width and Dense Terrain scatters 20% voids
+     (skipping occupied cells) in battle_begin; battle_walk_modifiers
+     attaches effect modifiers to BOTH seats (args[0] = own side) before
+     meters; battle_cascade flips 2 per step under Bloodbath; battle_draw
+     biases the first draw to the highest tier under Lucky Strike. Iron
+     Will/Mirror dealer-side reactions are thus resolved. Verified: 15-
+     check modifier harness + all regressions 0 failures, 80-col clean.
+   - REMAINING slices: kingdom innate bodies (5, incl. Double Time
+     pricing rewrite via QUERY_PIECE_CP_COST_BUY); events (~26, run.c
+     dispatch); board traits; pressure free pieces + chain silver/elite/
+     liberation/Traitor's Gambit setup; difficulties; masteries (engine
+     finalize + M2 cards + M3 params); challenges; the run/screen-level
+     relics (Librarian's/Deep Hand/Master's/Eagle Eye/Surveyor's/Fortified
+     Line); Fog of War value masking (screen.c display).
 7. **Overseers + Vorath + AI.** 5 overseer setups, vorath_setup, 4
    remaining archetypes + fallbacks, ai_plan/Divination. Verify:
    overseer entry shows bespoke army; full seeded run end-to-end.

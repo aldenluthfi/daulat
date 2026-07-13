@@ -580,7 +580,434 @@ const Card UNIVERSAL_CARDS[] = {
     },
 };
 
-const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT]   = {};
+/*----------------------------------------------------------------------------*\
+                                   MODIFIERS
+\*----------------------------------------------------------------------------*/
+
+/// eff_lean_times
+///
+/// Lean Times: each side opens the battle with twenty less currency.
+///
+/// Params:
+/// - context -> args[0] the side this copy serves
+/// - x       -> unused battle node
+///
+/// Return: true, the deduction always applies
+///
+static bool eff_lean_times(EffectContext* context, void* x) {
+    (void) x;
+
+    PlayerState* player = battle_player(
+        battle_current(),
+        (Side) (uintptr_t) context->args[0]
+    );
+
+    player->cp -= 20;
+
+    if (player->cp < 0) {
+        player->cp = 0;
+    }
+
+    return true;
+}
+
+/// eff_windfall
+///
+/// Windfall: each side opens the battle with thirty more currency.
+///
+/// Params:
+/// - context -> args[0] the side this copy serves
+/// - x       -> unused battle node
+///
+/// Return: true, the bonus always applies
+///
+static bool eff_windfall(EffectContext* context, void* x) {
+    (void) x;
+
+    battle_player(
+        battle_current(),
+        (Side) (uintptr_t) context->args[0]
+    )->cp += 30;
+
+    return true;
+}
+
+/// eff_open_market
+///
+/// Open Market: every piece costs half its currency this battle.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* buy cost to halve
+///
+/// Return: true, the discount always applies
+///
+static bool eff_open_market(EffectContext* context, void* x) {
+    (void) context;
+
+    *(int*) x /= 2;
+
+    return true;
+}
+
+/// eff_devalued
+///
+/// Devalued Currency: card sell values are halved this battle.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* sell cost to halve
+///
+/// Return: true, the halving always applies
+///
+static bool eff_devalued(EffectContext* context, void* x) {
+    (void) context;
+
+    *(int*) x /= 2;
+
+    return true;
+}
+
+/// eff_tax_collector
+///
+/// Tax Collector: selling a card yields five extra currency.
+///
+/// Params:
+/// - context -> args[0] the side this copy serves
+/// - x       -> unused sold card
+///
+/// Return: true, the bonus always applies
+///
+static bool eff_tax_collector(EffectContext* context, void* x) {
+    (void) x;
+
+    battle_player(
+        battle_current(),
+        (Side) (uintptr_t) context->args[0]
+    )->cp += 5;
+
+    return true;
+}
+
+/// eff_glass_cannon
+///
+/// Glass Cannon: cascade meter refills fill to only half their value.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* refill amount to halve
+///
+/// Return: true, the halving always applies
+///
+static bool eff_glass_cannon(EffectContext* context, void* x) {
+    (void) context;
+
+    *(int*) x /= 2;
+
+    return true;
+}
+
+/// eff_iron_will
+///
+/// Iron Will: a quarter of the damage a side deals also strikes its own
+/// meter. The copy on the receiver's list knows the dealer is its enemy.
+///
+/// Params:
+/// - context -> args[0] the receiving side this copy serves
+/// - x       -> int* meter damage the receiver is taking
+///
+/// Return: true when the dealer took recoil
+///
+static bool eff_iron_will(EffectContext* context, void* x) {
+    int recoil = *(int*) x * 25 / 100;
+
+    if (recoil <= 0) {
+        return false;
+    }
+
+    Side receiver = (Side) (uintptr_t) context->args[0];
+
+    battle_meter_gain(battle_current(), battle_enemy(receiver), -recoil);
+
+    return true;
+}
+
+/// eff_mirror
+///
+/// Mirror: a quarter of the damage a side deals heals its own meter. The
+/// copy on the receiver's list knows the dealer is its enemy.
+///
+/// Params:
+/// - context -> args[0] the receiving side this copy serves
+/// - x       -> int* meter damage the receiver is taking
+///
+/// Return: true when the dealer was healed
+///
+static bool eff_mirror(EffectContext* context, void* x) {
+    int heal = *(int*) x * 25 / 100;
+
+    if (heal <= 0) {
+        return false;
+    }
+
+    Side receiver = (Side) (uintptr_t) context->args[0];
+
+    battle_meter_gain(battle_current(), battle_enemy(receiver), heal);
+
+    return true;
+}
+
+/// eff_overflow
+///
+/// Overflow: a piece flipped to a side gains thirty value, swelling that
+/// side's meter maximum. The copy on the gaining side's list fires.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> PieceInfo* that just flipped
+///
+/// Return: true, the bonus always applies
+///
+static bool eff_overflow(EffectContext* context, void* x) {
+    (void) context;
+
+    ((PieceInfo*) x)->piece->value += 30;
+
+    return true;
+}
+
+/// eff_rich_hand
+///
+/// Rich Hand: draw four cards per turn.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* draw count to set
+///
+/// Return: true, the count always applies
+///
+static bool eff_rich_hand(EffectContext* context, void* x) {
+    (void) context;
+
+    *(int*) x = 4;
+
+    return true;
+}
+
+/// eff_sparse_hand
+///
+/// Sparse Hand: draw two cards per turn.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* draw count to set
+///
+/// Return: true, the count always applies
+///
+static bool eff_sparse_hand(EffectContext* context, void* x) {
+    (void) context;
+
+    *(int*) x = 2;
+
+    return true;
+}
+
+/// eff_kingdom_purity
+///
+/// Kingdom Purity: only cards native to the region being fought in may be
+/// drawn; kingdomless universal cards always pass to pad a short pool.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> bool* draw eligibility to veto
+///
+/// Return: true when a foreign card was blocked
+///
+static bool eff_kingdom_purity(EffectContext* context, void* x) {
+    (void) context;
+
+    BattleState* battle = battle_current();
+    Card*        card   = battle_subject_card();
+
+    if (!battle->node || !battle->node->kingdom || !card) {
+        return false;
+    }
+
+    if (card->kingdom == KINGDOM_NONE ||
+        card->kingdom == battle->node->kingdom->id) {
+        return false;
+    }
+
+    *(bool*) x = false;
+
+    return true;
+}
+
+const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT] = {
+    [MODIFIER_LEAN_TIMES] = {
+        .name    = "Lean Times",
+        .desc    = "Both sides start with 20 less cp.",
+        .id      = MODIFIER_LEAN_TIMES,
+        .effects = {{
+            .func      = eff_lean_times,
+            .name      = "Lean Times",
+            .trigger   = ON_BATTLE_START,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_WINDFALL] = {
+        .name    = "Windfall",
+        .desc    = "Both sides start with 30 more cp.",
+        .id      = MODIFIER_WINDFALL,
+        .effects = {{
+            .func      = eff_windfall,
+            .name      = "Windfall",
+            .trigger   = ON_BATTLE_START,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_OPEN_MARKET] = {
+        .name    = "Open Market",
+        .desc    = "All pieces cost 50% this battle.",
+        .id      = MODIFIER_OPEN_MARKET,
+        .effects = {{
+            .func      = eff_open_market,
+            .name      = "Open Market",
+            .trigger   = QUERY_PIECE_CP_COST_BUY,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_DEVALUED_CURRENCY] = {
+        .name    = "Devalued Currency",
+        .desc    = "All card sell values are halved.",
+        .id      = MODIFIER_DEVALUED_CURRENCY,
+        .effects = {{
+            .func      = eff_devalued,
+            .name      = "Devalued Currency",
+            .trigger   = QUERY_CARD_SELL_COST,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_TAX_COLLECTOR] = {
+        .name    = "Tax Collector",
+        .desc    = "+5 cp on top of each card sold.",
+        .id      = MODIFIER_TAX_COLLECTOR,
+        .effects = {{
+            .func      = eff_tax_collector,
+            .name      = "Tax Collector",
+            .trigger   = ON_CARD_SELL,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_GLASS_CANNON] = {
+        .name    = "Glass Cannon",
+        .desc    = "Both meters refill at only 50% of value.",
+        .id      = MODIFIER_GLASS_CANNON,
+        .effects = {{
+            .func      = eff_glass_cannon,
+            .name      = "Glass Cannon",
+            .trigger   = QUERY_METER_REFILL,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_BLOODBATH] = {
+        .name = "Bloodbath",
+        .desc = "Each flip triggers 2 pieces instead of 1.",
+        .id   = MODIFIER_BLOODBATH,
+    },
+    [MODIFIER_IRON_WILL] = {
+        .name    = "Iron Will",
+        .desc    = "Damage you deal hits your own meter at 25%.",
+        .id      = MODIFIER_IRON_WILL,
+        .effects = {{
+            .func      = eff_iron_will,
+            .name      = "Iron Will",
+            .trigger   = QUERY_METER_DAMAGE_TAKEN,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_OVERFLOW] = {
+        .name    = "Overflow",
+        .desc    = "A flipped piece you gain gets +30 value.",
+        .id      = MODIFIER_OVERFLOW,
+        .effects = {{
+            .func      = eff_overflow,
+            .name      = "Overflow",
+            .trigger   = ON_PIECE_FLIP,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_MIRROR] = {
+        .name    = "Mirror",
+        .desc    = "Damage you deal heals your own meter at 25%.",
+        .id      = MODIFIER_MIRROR,
+        .effects = {{
+            .func      = eff_mirror,
+            .name      = "Mirror",
+            .trigger   = QUERY_METER_DAMAGE_TAKEN,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_RICH_HAND] = {
+        .name    = "Rich Hand",
+        .desc    = "Draw 4 cards per turn.",
+        .id      = MODIFIER_RICH_HAND,
+        .effects = {{
+            .func      = eff_rich_hand,
+            .name      = "Rich Hand",
+            .trigger   = QUERY_CARD_DRAW_COUNT,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_SPARSE_HAND] = {
+        .name    = "Sparse Hand",
+        .desc    = "Draw 2 cards per turn.",
+        .id      = MODIFIER_SPARSE_HAND,
+        .effects = {{
+            .func      = eff_sparse_hand,
+            .name      = "Sparse Hand",
+            .trigger   = QUERY_CARD_DRAW_COUNT,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_KINGDOM_PURITY] = {
+        .name    = "Kingdom Purity",
+        .desc    = "Only cards of the region being fought in are drawn.",
+        .id      = MODIFIER_KINGDOM_PURITY,
+        .effects = {{
+            .func      = eff_kingdom_purity,
+            .name      = "Kingdom Purity",
+            .trigger   = QUERY_CARD_CAN_DRAW,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [MODIFIER_LUCKY_STRIKE] = {
+        .name = "Lucky Strike",
+        .desc = "First card drawn each turn is the highest tier available.",
+        .id   = MODIFIER_LUCKY_STRIKE,
+    },
+    [MODIFIER_FOG_OF_WAR] = {
+        .name = "Fog of War",
+        .desc = "Enemy values are hidden off squares you attack.",
+        .id   = MODIFIER_FOG_OF_WAR,
+    },
+    [MODIFIER_DENSE_TERRAIN] = {
+        .name = "Dense Terrain",
+        .desc = "20% of squares are missing, revealed at start.",
+        .id   = MODIFIER_DENSE_TERRAIN,
+    },
+    [MODIFIER_EXTENDED_FRONT] = {
+        .name = "Extended Front",
+        .desc = "Board is 2 columns wider.",
+        .id   = MODIFIER_EXTENDED_FRONT,
+    },
+    [MODIFIER_COMPRESSED] = {
+        .name = "Compressed",
+        .desc = "Board is 2 columns narrower.",
+        .id   = MODIFIER_COMPRESSED,
+    },
+};
+
 const ChainPenalty   CHAIN_REGISTRY[CHAIN_PENALTY_COUNT] = {};
 
 const Piece* const   PIECE_REGISTRY[PIECE_COUNT]         = {
