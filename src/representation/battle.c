@@ -1465,6 +1465,120 @@ static void battle_walk_run(BattleState* battle) {
     }
 }
 
+static const PieceID KINGDOM_BASIC[KINGDOM_COUNT] = {
+    [KINGDOM_LONGWEI]   = PIECE_BING,
+    [KINGDOM_KEWARANI]  = PIECE_MEDEQ,
+    [KINGDOM_ZARQAN]    = PIECE_WAZIR,
+    [KINGDOM_HARUSHIMA] = PIECE_FUHYO,
+    [KINGDOM_CAELAN]    = PIECE_PAWN,
+};
+
+/// battle_free_army
+///
+/// Spawns count free pieces of one type on random empty squares in a
+/// side's own half, the enemy reinforcements that pressure, chains, and
+/// elite nodes grant. Occupied and void squares are skipped; a bounded
+/// retry keeps a crowded board from looping forever.
+///
+/// Params:
+/// - battle -> battle to place pieces in
+/// - side   -> side receiving the pieces
+/// - id     -> piece type to spawn
+/// - count  -> number of pieces to place
+///
+static void battle_free_army(
+    BattleState* battle,
+    Side         side,
+    PieceID      id,
+    size_t       count
+) {
+    if (id == PIECE_NONE) {
+        return;
+    }
+
+    int8_t height = battle->board.height;
+    int8_t low    = side == SIDE_BLACK ? 0 : (int8_t) (height / 2);
+    int8_t high   = side == SIDE_BLACK ? (int8_t) (height / 2) : height;
+
+    for (size_t placed = 0; placed < count; placed++) {
+        for (int attempt = 0; attempt < 64; attempt++) {
+            int8_t x = (int8_t) (rand_r(&BATTLE_RNG) % battle->board.width);
+            int8_t y = (int8_t) (low + rand_r(&BATTLE_RNG) % (high - low));
+
+            if (battle_spawn(battle, id, (Square) {x, y}, side)) {
+                break;
+            }
+        }
+    }
+}
+
+/// battle_setup_armies
+///
+/// Grants the enemy its free starting reinforcements and attaches the
+/// region's chain penalty to the human seat. The reinforcement count is
+/// Vorath's pressure plus the Silver chain, the elite node, and the
+/// liberation trial bonuses; the pieces are the region kingdom's basic
+/// infantry. Runs before the meters compute so the extra pieces fold into
+/// the enemy's starting maximum.
+///
+/// Params:
+/// - battle -> battle being set up
+///
+static void battle_setup_armies(BattleState* battle) {
+    MapNode* node = battle->node;
+
+    if (!node || !node->kingdom) {
+        return;
+    }
+
+    KingdomID      kingdom = node->kingdom->id;
+    ChainPenaltyID level   = node->kingdom->chain
+        ? (ChainPenaltyID) (node->kingdom->chain - CHAIN_REGISTRY)
+        : CHAIN_NONE;
+
+    size_t count = run_pressure(BATTLE_ENGINE->run, kingdom);
+
+    if (level >= CHAIN_SILVER) {
+        count++;
+    }
+
+    if (node->type == MAP_NODE_ELITE) {
+        count++;
+    }
+
+    if (node->type == MAP_NODE_LIBERATION) {
+        count += 2;
+    }
+
+    battle_free_army(
+        battle,
+        battle_enemy(HUMAN_SIDE),
+        KINGDOM_BASIC[kingdom],
+        count
+    );
+
+    if (level < CHAIN_BRONZE) {
+        return;
+    }
+
+    const ChainPenalty* chain = &CHAIN_REGISTRY[CHAIN_BRONZE];
+
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        if (!chain->effects[slot].func) {
+            continue;
+        }
+
+        Effect* attached = effect_attach(
+            &battle_player(battle, HUMAN_SIDE)->effects,
+            &chain->effects[slot]
+        );
+
+        if (attached) {
+            attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
+        }
+    }
+}
+
 /// battle_walk_modifiers
 ///
 /// Attaches the battle modifier's effects to both seats, one copy each,
@@ -1599,6 +1713,7 @@ void battle_begin(EngineState* engine, MapNode* node) {
 
     battle_walk_run(battle);
     battle_walk_modifiers(battle);
+    battle_setup_armies(battle);
 
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);

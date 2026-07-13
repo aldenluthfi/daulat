@@ -1068,13 +1068,31 @@ fresh profile. Saving only outside SCREEN_BATTLE (battles never saved).
      biases the first draw to the highest tier under Lucky Strike. Iron
      Will/Mirror dealer-side reactions are thus resolved. Verified: 15-
      check modifier harness + all regressions 0 failures, 80-col clean.
+   - SLICE 4 DONE 2026-07-13 (enemy armies: pressure, chains, free pieces).
+     run.c run_pressure now counts completed maps in OTHER kingdoms (+1
+     free enemy piece each). universal.c CHAIN_REGISTRY populated: Bronze
+     is an ON_BATTLE_START effect dropping the human's cp by 10 (attached
+     to the human seat), Silver/Gold carry name/desc only. battle.c
+     battle_setup_armies (called in battle_begin before meters) spawns the
+     enemy's free reinforcements = pressure + Silver chain (level >=
+     SILVER, cumulative) + elite node + liberation node (+2), as the
+     region kingdom's basic infantry (KINGDOM_BASIC table: Bing/Medeq/
+     Wazir/Fuhyo/Pawn) on random empty squares in the enemy's half via
+     battle_free_army, and attaches the Bronze cp penalty when the region
+     chain is at Bronze or above. Deferred within this area: Vorath-counter
+     enemy meter +20 baseline (needs a meter-bonus seam) and the Liberation
+     Trial's kingdom-only draw + node injection. Verified: 9-check armies
+     harness (plain 0, elite 1, Silver 1 + -10 cp, Bronze -10 cp only,
+     pressure counts other-kingdom completed maps) + all regressions 0
+     failures, 80-col clean.
    - REMAINING slices: kingdom innate bodies (5, incl. Double Time
      pricing rewrite via QUERY_PIECE_CP_COST_BUY); events (~26, run.c
-     dispatch); board traits; pressure free pieces + chain silver/elite/
-     liberation/Traitor's Gambit setup; difficulties; masteries (engine
-     finalize + M2 cards + M3 params); challenges; the run/screen-level
-     relics (Librarian's/Deep Hand/Master's/Eagle Eye/Surveyor's/Fortified
-     Line); Fog of War value masking (screen.c display).
+     dispatch); board traits (10, geometry-heavy); liberation trial +
+     Vorath-counter meter +20; difficulties; masteries (engine finalize +
+     M2 cards + M3 params); challenges (incl. Traitor's Gambit enemy
+     placement); the run/screen-level relics (Librarian's/Deep Hand/
+     Master's/Eagle Eye/Surveyor's/Fortified Line); Fog of War value
+     masking (screen.c display).
 7. **Overseers + Vorath + AI.** 5 overseer setups, vorath_setup, 4
    remaining archetypes + fallbacks, ai_plan/Divination. Verify:
    overseer entry shows bespoke army; full seeded run end-to-end.
@@ -1108,7 +1126,12 @@ adjacent last turn" as "currently adjacent to a friendly piece" (no
 per-turn move history yet); Crusade resolves its Knight's three attacks
 as value x3 to the enemy meter; Reforge's "next turn" discount is a mark
 active until used (TURNS_2 approximation of the turn boundary); draws
-sample with replacement (duplicate cards in a hand allowed).
+sample with replacement (duplicate cards in a hand allowed). Phase 6
+army interpretations (GDD names counts, not piece types): free enemy
+reinforcements from pressure / Silver chain / elite / liberation all
+spawn as the region kingdom's basic infantry (the pawn-analog: Bing /
+Medeq / Wazir / Fuhyo / Pawn) on random empty squares in the enemy's own
+half; chain penalties stack by level (Silver keeps Bronze's -10 cp).
 
 ## 12. Risks
 

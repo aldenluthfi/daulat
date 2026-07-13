@@ -1148,10 +1148,28 @@ void run_relic_pick(EngineState* engine, RelicID relic) {
 /// Return: pressure level for the kingdom
 ///
 size_t run_pressure(RunState* run, KingdomID kingdom) {
-    (void) run;
-    (void) kingdom;
+    size_t pressure = 0;
 
-    return 0;
+    for (size_t other = 0; other < KINGDOM_COUNT; other++) {
+        if (other == (size_t) kingdom) {
+            continue;
+        }
+
+        KingdomState* state   = &run->kingdoms[other];
+        MapState*     maps[3] = {
+            state->town_map,
+            state->province_map,
+            state->country_map,
+        };
+
+        for (size_t tier = 0; tier < 3; tier++) {
+            if (maps[tier] && map_complete(maps[tier])) {
+                pressure++;
+            }
+        }
+    }
+
+    return pressure;
 }
 
 /// run_enter_vorath

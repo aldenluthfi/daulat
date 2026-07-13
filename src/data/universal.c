@@ -1008,7 +1008,61 @@ const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT] = {
     },
 };
 
-const ChainPenalty   CHAIN_REGISTRY[CHAIN_PENALTY_COUNT] = {};
+/*----------------------------------------------------------------------------*\
+                                 CHAIN PENALTIES
+\*----------------------------------------------------------------------------*/
+
+/// eff_bronze_chain
+///
+/// Bronze Chain: the player opens a battle in the chained region with ten
+/// less currency.
+///
+/// Params:
+/// - context -> args[0] the human side this penalty serves
+/// - x       -> unused battle node
+///
+/// Return: true, the deduction always applies
+///
+static bool eff_bronze_chain(EffectContext* context, void* x) {
+    (void) x;
+
+    PlayerState* player = battle_player(
+        battle_current(),
+        (Side) (uintptr_t) context->args[0]
+    );
+
+    player->cp -= 10;
+
+    if (player->cp < 0) {
+        player->cp = 0;
+    }
+
+    return true;
+}
+
+const ChainPenalty CHAIN_REGISTRY[CHAIN_PENALTY_COUNT] = {
+    [CHAIN_BRONZE] = {
+        .name    = "Bronze",
+        .desc    = "Battles in this region start with -10 cp.",
+        .id      = CHAIN_BRONZE,
+        .effects = {{
+            .func      = eff_bronze_chain,
+            .name      = "Bronze Chain",
+            .trigger   = ON_BATTLE_START,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    [CHAIN_SILVER] = {
+        .name = "Silver",
+        .desc = "Enemy gets +1 free starting piece in this region.",
+        .id   = CHAIN_SILVER,
+    },
+    [CHAIN_GOLD] = {
+        .name = "Gold",
+        .desc = "Figurehead Subjugated: the track locks.",
+        .id   = CHAIN_GOLD,
+    },
+};
 
 const Piece* const   PIECE_REGISTRY[PIECE_COUNT]         = {
     [PIECE_KING]             = &UNIVERSAL_PIECES[0],
