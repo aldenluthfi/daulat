@@ -900,10 +900,23 @@ bool run_select_node(EngineState* engine, size_t index) {
     switch (node->type) {
     case MAP_NODE_ARCHIVE:
         run->pieces[node->content] = true;
-        node->cleared              = true;
-        PENDING_NODE               = nullptr;
 
         protocol_emit("log recipe result=%d", node->content);
+
+        if (run->relics[RELIC_MASTERS_NOTES]) {
+            for (PieceID id = 0; id < PIECE_COUNT; id++) {
+                if (battle_is_recipe_result(id) && !run->pieces[id]) {
+                    run->pieces[id] = true;
+
+                    protocol_emit("log recipe result=%d", id);
+                    break;
+                }
+            }
+        }
+
+        node->cleared = true;
+        PENDING_NODE  = nullptr;
+
         run_emit_map(engine);
         break;
 

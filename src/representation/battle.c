@@ -775,6 +775,26 @@ static int battle_price(
 ///
 /// Return: true when the purchase was performed
 ///
+/// battle_is_recipe_result
+///
+/// Reports whether a piece is a combination result, which are never sold
+/// in the shop and are the pieces an Archive node reveals.
+///
+/// Params:
+/// - id -> piece to test
+///
+/// Return: true when the piece appears as a recipe result
+///
+bool battle_is_recipe_result(PieceID id) {
+    for (size_t i = 0; COMBO_RESULTS[i] != PIECE_NONE; i++) {
+        if (COMBO_RESULTS[i] == id) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool battle_buy(BattleState* battle, PieceID id, Square at) {
     const Piece* template = PIECE_REGISTRY[id];
 
@@ -782,10 +802,8 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
         return false;
     }
 
-    for (size_t i = 0; COMBO_RESULTS[i] != PIECE_NONE; i++) {
-        if (COMBO_RESULTS[i] == id) {
-            return false;
-        }
+    if (battle_is_recipe_result(id)) {
+        return false;
     }
 
     if (ACTING_SIDE == HUMAN_SIDE && !BATTLE_ENGINE->run->pieces[id]) {
