@@ -1007,7 +1007,73 @@ const Card ZARQAN_CARDS[] = {
     },
 };
 
-const BoardTrait ZARQAN_TRAITS[] = {{}};
+/// eff_sandstorm
+///
+/// Sandstorm: on even turns a slider may move at most three squares. Move
+/// entries farther than Chebyshev three from the subject are dropped from
+/// the list in place. Bent movers are MOVE_SPECIAL and exempt.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> Square* move list to prune
+///
+/// Return: true when the list was pruned
+///
+static bool eff_sandstorm(EffectContext* context, void* x) {
+    (void) context;
+
+    BattleState* battle  = battle_current();
+    PieceInfo*   subject = battle_subject();
+
+    if (!subject || subject->piece->class != MOVE_SLIDER ||
+        battle->turn % 2 != 0) {
+        return false;
+    }
+
+    Square* moves   = x;
+    size_t  write   = 0;
+    bool    pruned  = false;
+
+    for (size_t read = 0; !(moves[read].x == -1 && moves[read].y == -1);
+         read++) {
+        int dx = moves[read].x - subject->square.x;
+        int dy = moves[read].y - subject->square.y;
+
+        dx     = dx < 0 ? -dx : dx;
+        dy     = dy < 0 ? -dy : dy;
+
+        if ((dx > 3 || dy > 3)) {
+            pruned = true;
+            continue;
+        }
+
+        moves[write] = moves[read];
+        write++;
+    }
+
+    moves[write] = SQUARE_END;
+
+    return pruned;
+}
+
+const BoardTrait ZARQAN_TRAITS[] = {
+    {
+        .name      = "Sandstorm",
+        .desc      = "On even turns, all sliders move at most 3 squares.",
+        .id        = BOARD_TRAIT_SANDSTORM,
+        .effects   = {{
+            .func      = eff_sandstorm,
+            .name      = "Sandstorm",
+            .trigger   = QUERY_PIECE_MOVES,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+    {
+        .name = "Mirage",
+        .desc = "5% of squares cannot be entered, marked when revealed.",
+        .id   = BOARD_TRAIT_MIRAGE,
+    },
+};
 
 /*----------------------------------------------------------------------------*\
                               KINGDOM MECHANICS

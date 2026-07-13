@@ -1367,7 +1367,77 @@ const Card LONGWEI_CARDS[] = {
     },
 };
 
-const BoardTrait LONGWEI_TRAITS[] = {{}};
+/// eff_palace
+///
+/// The Palace: the king cannot leave a three-by-three zone. The zone
+/// centres on the king's starting square, captured lazily on the first
+/// fire; move entries outside the box are dropped from the list.
+///
+/// Params:
+/// - context -> args[1] captured center x + 1, args[2] center y + 1
+/// - x       -> Square* king move list to prune
+///
+/// Return: true when the list was pruned
+///
+static bool eff_palace(EffectContext* context, void* x) {
+    PieceInfo* subject = battle_subject();
+
+    if (!subject || subject->piece->id != PIECE_KING) {
+        return false;
+    }
+
+    if (!context->args[1]) {
+        context->args[1] = (void*) (uintptr_t) (subject->square.x + 1);
+        context->args[2] = (void*) (uintptr_t) (subject->square.y + 1);
+    }
+
+    int cx = (int) (uintptr_t) context->args[1] - 1;
+    int cy = (int) (uintptr_t) context->args[2] - 1;
+
+    Square* moves  = x;
+    size_t  write  = 0;
+    bool    pruned = false;
+
+    for (size_t read = 0; !(moves[read].x == -1 && moves[read].y == -1);
+         read++) {
+        int dx = moves[read].x - cx;
+        int dy = moves[read].y - cy;
+
+        dx     = dx < 0 ? -dx : dx;
+        dy     = dy < 0 ? -dy : dy;
+
+        if (dx > 1 || dy > 1) {
+            pruned = true;
+            continue;
+        }
+
+        moves[write] = moves[read];
+        write++;
+    }
+
+    moves[write] = SQUARE_END;
+
+    return pruned;
+}
+
+const BoardTrait LONGWEI_TRAITS[] = {
+    {
+        .name = "River Crossing",
+        .desc = "A row bisects the board; Xiang cannot cross it.",
+        .id   = BOARD_TRAIT_RIVER_CROSSING,
+    },
+    {
+        .name      = "The Palace",
+        .desc      = "A 3x3 zone near the king. The king cannot leave it.",
+        .id        = BOARD_TRAIT_THE_PALACE,
+        .effects   = {{
+            .func      = eff_palace,
+            .name      = "The Palace",
+            .trigger   = QUERY_PIECE_MOVES,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
+    },
+};
 
 /*----------------------------------------------------------------------------*\
                               KINGDOM MECHANICS

@@ -1771,22 +1771,18 @@ static void battle_walk_modifiers(BattleState* battle) {
     }
 }
 
-/// battle_dense_terrain
+/// battle_scatter_voids
 ///
-/// Marks a fifth of the board as missing squares for the Dense Terrain
-/// modifier, skipping any cell already holding a piece so the kings and
-/// other placed pieces keep their squares.
+/// Marks a percentage of the board as missing squares, skipping any cell
+/// already holding a piece so placed pieces keep their squares. Backs the
+/// Dense Terrain modifier and the Mirage and Island Chain traits.
 ///
 /// Params:
-/// - battle -> battle whose board gains voids
+/// - battle  -> battle whose board gains voids
+/// - percent -> share of squares to void
 ///
-static void battle_dense_terrain(BattleState* battle) {
-    if (!battle->modifier ||
-        battle->modifier->id != MODIFIER_DENSE_TERRAIN) {
-        return;
-    }
-
-    int voids = battle->board.width * battle->board.height * 20 / 100;
+static void battle_scatter_voids(BattleState* battle, int percent) {
+    int voids = battle->board.width * battle->board.height * percent / 100;
 
     for (int placed = 0; placed < voids; placed++) {
         int8_t x     = (int8_t) (rand_r(&BATTLE_RNG) % battle->board.width);
@@ -1799,6 +1795,67 @@ static void battle_dense_terrain(BattleState* battle) {
         }
 
         battle->board.piece_board[index] = (PieceInfo*) &VOID_CELL;
+    }
+}
+
+/// battle_terrain
+///
+/// Applies the board's missing-square terrain from the modifier and trait:
+/// Dense Terrain voids a fifth, Mirage a twentieth, Island Chain a tenth.
+///
+/// Params:
+/// - battle -> battle whose board gains voids
+///
+static void battle_terrain(BattleState* battle) {
+    if (battle->modifier &&
+        battle->modifier->id == MODIFIER_DENSE_TERRAIN) {
+        battle_scatter_voids(battle, 20);
+    }
+
+    if (!battle->board.trait) {
+        return;
+    }
+
+    if (battle->board.trait->id == BOARD_TRAIT_MIRAGE) {
+        battle_scatter_voids(battle, 5);
+    }
+
+    if (battle->board.trait->id == BOARD_TRAIT_ISLAND_CHAIN) {
+        battle_scatter_voids(battle, 10);
+    }
+}
+
+/// battle_walk_traits
+///
+/// Attaches the board trait's effects to both seats, one copy each, so
+/// every copy fires only for its own side. Runs before the meters compute
+/// so a value-editing trait folds into the starting maxima.
+///
+/// Params:
+/// - battle -> battle being set up
+///
+static void battle_walk_traits(BattleState* battle) {
+    if (!battle->board.trait) {
+        return;
+    }
+
+    Side sides[2] = {SIDE_WHITE, SIDE_BLACK};
+
+    for (size_t seat = 0; seat < 2; seat++) {
+        for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+            if (!battle->board.trait->effects[slot].func) {
+                continue;
+            }
+
+            Effect* attached = effect_attach(
+                &battle_player(battle, sides[seat])->effects,
+                &battle->board.trait->effects[slot]
+            );
+
+            if (attached) {
+                attached->context->args[0] = (void*) (uintptr_t) sides[seat];
+            }
+        }
     }
 }
 
@@ -1834,6 +1891,7 @@ void battle_begin(EngineState* engine, MapNode* node) {
 
     battle->node          = node;
     battle->modifier      = node ? node->modifier : nullptr;
+    battle->board.trait   = node ? node->trait : nullptr;
 
     int8_t width          = size;
 
@@ -1864,13 +1922,14 @@ void battle_begin(EngineState* engine, MapNode* node) {
     );
     battle_spawn(battle, PIECE_KING, (Square) {center, 0}, SIDE_BLACK);
 
-    battle_dense_terrain(battle);
+    battle_terrain(battle);
 
     battle->white.cp    = 20;
     battle->black.cp    = 20;
 
     battle_walk_run(battle);
     battle_walk_modifiers(battle);
+    battle_walk_traits(battle);
     battle_setup_armies(battle);
     battle_walk_innates(battle);
     battle_walk_synergies(battle);

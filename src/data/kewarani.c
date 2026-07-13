@@ -777,7 +777,18 @@ const Card KEWARANI_CARDS[] = {
     },
 };
 
-const BoardTrait KEWARANI_TRAITS[] = {{}};
+const BoardTrait KEWARANI_TRAITS[] = {
+    {
+        .name = "Trade Route",
+        .desc = "A diagonal path grants pieces on it +1 movement.",
+        .id   = BOARD_TRAIT_TRADE_ROUTE,
+    },
+    {
+        .name = "Contested Market",
+        .desc = "Each turn a neutral Kewarani piece appears to be claimed.",
+        .id   = BOARD_TRAIT_CONTESTED_MARKET,
+    },
+};
 
 /*----------------------------------------------------------------------------*\
                               KINGDOM MECHANICS
