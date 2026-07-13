@@ -1085,14 +1085,49 @@ fresh profile. Saving only outside SCREEN_BATTLE (battles never saved).
      harness (plain 0, elite 1, Silver 1 + -10 cp, Bronze -10 cp only,
      pressure counts other-kingdom completed maps) + all regressions 0
      failures, 80-col clean.
-   - REMAINING slices: kingdom innate bodies (5, incl. Double Time
-     pricing rewrite via QUERY_PIECE_CP_COST_BUY); events (~26, run.c
-     dispatch); board traits (10, geometry-heavy); liberation trial +
-     Vorath-counter meter +20; difficulties; masteries (engine finalize +
-     M2 cards + M3 params); challenges (incl. Traitor's Gambit enemy
-     placement); the run/screen-level relics (Librarian's/Deep Hand/
-     Master's/Eagle Eye/Surveyor's/Fortified Line); Fog of War value
-     masking (screen.c display).
+   - SLICE 5 DONE 2026-07-13 (kingdom innates + difficulties). Bulwark
+     (Longwei, QUERY_PIECE_DAMAGE_TAKEN adjacency reduction, M3 60%),
+     Conqueror's Reward (Caelan, ON_PIECE_FLIP damager value +50/60%),
+     Double Time (Kewarani, embeds eff_double_move on current + bought
+     pieces; pricing downside deferred), Royal Substitution (Zarqan,
+     appends king square to Zarqan moves for swap; once/free relaxed),
+     Reclaim M3 cost-20 (Harushima). battle_walk_innates + run_innate_ready
+     (province/mastery gate). Difficulties: Bound +2 pressure, Shackled
+     Bronze -25, Enslaved gives the enemy the region innate.
+   - SLICE 6 DONE 2026-07-13 (synergies, challenges, Fortified Line,
+     Vorath meter). SYNERGY_REGISTRY (5) attached when fighting the
+     lore-adjacent region: Pao +10, Kewarani -10 cp, Ziraafa/Talliya +5,
+     Harushima->Caelan draw, Sultan's Gold +10. battle_buy_piece register
+     added (routine) so piece-type buy pricing works; battle_draw exposed.
+     Fortified Line relic (+5 for unmoved pieces via MARK_MOVED). Challenge
+     guards: Pacifist buy cap 20, Solo Vanguard single non-king, Traitor's
+     Gambit 3 enemy pieces in the human half. Vorath counter lifts the
+     enemy opening meter (+20 per 2 losses, clamped).
+   - SLICE 7 DONE 2026-07-13 (events, run-scoped bonuses). run_value_bonus
+     / run_cost_bonus derive permanent piece value adds and buy discounts
+     from chosen events (stored in run->events, no new fields), folded
+     into battle_spawn (human only) and battle_price. run_event_choose
+     applies the Vorath-counter reductions (12-entry table) and Desert
+     Crossing chain removal. Deferred (need pending-cp storage / screen
+     flow): +cp-next-battle, remove-1-card, relic-choice presentation,
+     skip-node, reveal, elite-battle event variants.
+   - SLICE 8 DONE 2026-07-13 (board traits). TRAIT_REGISTRY (10); node->
+     trait on 50% of in-region battles. Effect traits attached to both
+     seats: Castle Corners + Siege Trench (QUERY_PIECE_CAN_FLIP immunity),
+     Sandstorm (even-turn slider cap 3). Structural: Mirage 5% voids,
+     Island Chain checkered middle columns. River Crossing / The Palace /
+     Trade Route / Contested Market / Fog Coast carry name+desc, mechanics
+     pending (king-confine storage, piece-specific rules, neutral spawns,
+     +1-move geometry, display masking).
+   - REMAINING (mostly header/screen/timer-blocked): M2 mastery cards (5,
+     need CARD_REGISTRY entries + unlock + bodies); run/screen relics
+     Librarian's/Deep Hand (draw peek/bonus), Master's Notes (archive 2),
+     Eagle Eye/Surveyor's (display/reveal); Double Time pricing downside;
+     the 5 name-only traits' mechanics; liberation trial node injection +
+     kingdom-only draw; the deferred event effects; Daily Conquest seed /
+     Blind Draft / Clockwork / Fog of War masking (screen.c + timer).
+     Several need user-owned RunState fields (pending cp, once-counters,
+     per-kingdom value/cost caches) or the screen display layer.
 7. **Overseers + Vorath + AI.** 5 overseer setups, vorath_setup, 4
    remaining archetypes + fallbacks, ai_plan/Divination. Verify:
    overseer entry shows bespoke army; full seeded run end-to-end.
