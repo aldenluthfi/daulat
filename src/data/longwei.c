@@ -739,24 +739,50 @@ static bool eff_sideways_grant(EffectContext* context, void* x) {
                                  CARD EFFECTS
 \*----------------------------------------------------------------------------*/
 
-/// eff_river_wade
+/// eff_river_wade_targets
 ///
-/// Immediate play effect granting a targeted pawn a permanent sideways
-/// step for the rest of the battle.
+/// River Wade targeting: advertises every friendly pawn grade piece.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one pawn was offered
+///
+static bool eff_river_wade_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && piece_is_pawn(p->piece->id);
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_river_wade_pick
+///
+/// River Wade resolution: grants the chosen pawn a permanent sideways step
+/// for the rest of the battle.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the sideways step was granted
 ///
-static bool eff_river_wade(EffectContext* context, void* x) {
-    (void) x;
+static bool eff_river_wade_pick(EffectContext* context, void* x) {
+    (void) context;
 
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
 
-    if (!target || !piece_is_pawn(target->piece->id)) {
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
+
+    if (!piece || !piece_is_pawn(piece->piece->id)) {
         return false;
     }
 
@@ -767,7 +793,7 @@ static bool eff_river_wade(EffectContext* context, void* x) {
         .lasts_for = ENTIRE_BATTLE,
     };
 
-    return piece_embed_effect(target, &grant) != nullptr;
+    return piece_embed_effect(piece, &grant) != nullptr;
 }
 
 /// eff_charge
@@ -830,25 +856,51 @@ static bool eff_charge(EffectContext* context, void* x) {
     return pushed > 0;
 }
 
-/// eff_charge_play
+/// eff_charge_targets
 ///
-/// Immediate play effect attaching the Charge jump to a targeted piece for
-/// its next move this turn.
+/// Charge targeting: advertises every friendly slider, the only pieces the
+/// jump helps.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one slider was offered
+///
+static bool eff_charge_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && p->piece->class == MOVE_SLIDER;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_charge_pick
+///
+/// Charge resolution: attaches the Charge jump to the chosen piece for its
+/// next move this turn.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the charge was attached
 ///
-static bool eff_charge_play(EffectContext* context, void* x) {
-    (void) x;
-
-    BattleState* battle = battle_current();
+static bool eff_charge_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
+    BattleState* battle = battle_current();
 
-    if (!target || target->side != side) {
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
+
+    if (!piece || piece->side != side ||
+        piece->piece->class != MOVE_SLIDER) {
         return false;
     }
 
@@ -863,7 +915,7 @@ static bool eff_charge_play(EffectContext* context, void* x) {
                                      &charge);
 
     if (attached) {
-        attached->context->args[1] = target;
+        attached->context->args[1] = piece;
     }
 
     return attached != nullptr;
@@ -947,23 +999,48 @@ static bool eff_divination(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_cannon_volley
+/// eff_cannon_volley_targets
 ///
-/// Immediate play effect dealing a targeted Pao's value to every enemy on
+/// Cannon Volley targeting: advertises every friendly Pao as a square
+/// target.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one Pao was offered
+///
+static bool eff_cannon_volley_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && p->piece->id == PIECE_PAO;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_cannon_volley_pick
+///
+/// Cannon Volley resolution: deals the chosen Pao's value to every enemy on
 /// its row and column, ignoring screens.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], Pao square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the volley resolved
 ///
-static bool eff_cannon_volley(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_cannon_volley_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   pao    = battle_at(battle, card_square(context->args[1]));
+
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* pao = battle_at(battle, card_target_at(target->value));
 
     if (!pao || pao->side != side || pao->piece->id != PIECE_PAO) {
         return false;
@@ -983,7 +1060,7 @@ static bool eff_cannon_volley(EffectContext* context, void* x) {
         }
     }
 
-    battle_player(battle, battle_enemy(side))->meter -= total;
+    battle_damage(battle, battle_enemy(side), total);
 
     return true;
 }
@@ -1085,25 +1162,50 @@ static bool eff_mingzhu_seal(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_mingzhu
+/// eff_mingzhu_targets
 ///
-/// Mingzhu's Seal: one enemy piece cannot move for three turns. Attaches
-/// the seal to the enemy side's list keyed on the targeted piece.
+/// Mingzhu's Seal targeting: advertises every enemy piece, the king
+/// included, per the GDD "target 1 enemy piece".
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one enemy was offered
+///
+static bool eff_mingzhu_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side != side && p->side != SIDE_NEUTRAL;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_mingzhu_pick
+///
+/// Mingzhu's Seal resolution: one enemy piece cannot move for three turns.
+/// Attaches the seal to the target's own side list keyed on the piece.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when a piece was sealed
 ///
-static bool eff_mingzhu(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_mingzhu_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
 
-    if (!target || target->side == side) {
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
+
+    if (!piece || piece->side == side) {
         return false;
     }
 
@@ -1115,34 +1217,59 @@ static bool eff_mingzhu(EffectContext* context, void* x) {
     };
 
     Effect* attached = effect_attach(
-        &battle_player(battle, target->side)->effects,
+        &battle_player(battle, piece->side)->effects,
         &seal
     );
 
     if (attached) {
-        attached->context->args[1] = target;
+        attached->context->args[1] = piece;
     }
 
     return attached != nullptr;
 }
 
-/// eff_mandate
+/// eff_mandate_targets
 ///
-/// Immediate play effect removing one of the playing side's pieces and
-/// dealing three times its value to the enemy meter.
+/// Mandate targeting: advertises every friendly non-king piece as a square
+/// target.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_mandate_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && p->piece->id != PIECE_KING;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_mandate_pick
+///
+/// Mandate resolution: removes the chosen friendly piece and deals three
+/// times its value to the enemy meter.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the piece was spent
 ///
-static bool eff_mandate(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_mandate_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   piece  = battle_at(battle, card_square(context->args[1]));
+
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
 
     if (!piece || piece->side != side || piece->piece->id == PIECE_KING) {
         return false;
@@ -1151,7 +1278,7 @@ static bool eff_mandate(EffectContext* context, void* x) {
     int dmg = battle_value(battle, piece, nullptr) * 3;
 
     battle_remove(battle, piece);
-    battle_player(battle, battle_enemy(side))->meter -= dmg;
+    battle_damage(battle, battle_enemy(side), dmg);
 
     return true;
 }
@@ -1325,9 +1452,13 @@ const Piece LONGWEI_PIECES[] = {
 const Card LONGWEI_CARDS[] = {
     {
         .effects =
-            {{.func      = eff_river_wade,
+            {{.func      = eff_river_wade_targets,
               .name      = "River Wade",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_river_wade_pick,
+              .name      = "River Wade",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "River Wade",
         .desc      = "Target pawn permanently gains a sideways step this "
@@ -1340,9 +1471,13 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_charge_play,
+            {{.func      = eff_charge_targets,
               .name      = "Charge",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_charge_pick,
+              .name      = "Charge",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Charge",
         .desc      = "Target slider may pass through one occupied square "
@@ -1385,9 +1520,13 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_cannon_volley,
+            {{.func      = eff_cannon_volley_targets,
               .name      = "Cannon Volley",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_cannon_volley_pick,
+              .name      = "Cannon Volley",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Cannon Volley",
         .desc      = "Target Pao attacks every enemy on its row and column "
@@ -1414,9 +1553,13 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_mandate,
+            {{.func      = eff_mandate_targets,
               .name      = "Mandate",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_mandate_pick,
+              .name      = "Mandate",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Mandate",
         .desc      = "Remove one of your pieces. Deal damage to enemy "
@@ -1429,9 +1572,13 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_mingzhu,
+            {{.func      = eff_mingzhu_targets,
               .name      = "Mingzhu's Seal",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = ENTIRE_BATTLE},
+             {.func      = eff_mingzhu_pick,
+              .name      = "Mingzhu's Seal",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = ENTIRE_BATTLE}},
         .name      = "Mingzhu's Seal",
         .desc      = "Target 1 enemy piece. It cannot move for 3 turns.",
@@ -1496,11 +1643,111 @@ static bool eff_palace(EffectContext* context, void* x) {
     return pruned;
 }
 
+/// eff_river_crossing
+///
+/// River Crossing: a Xiang cannot cross the river that bisects the board.
+/// Move entries carrying it to the far half are dropped from the list.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> Square* Xiang move list to prune
+///
+/// Return: true when the list was pruned
+///
+static bool eff_river_crossing(EffectContext* context, void* x) {
+    (void) context;
+
+    PieceInfo* subject = battle_subject();
+
+    if (!subject || subject->piece->id != PIECE_XIANG) {
+        return false;
+    }
+
+    int8_t  river  = (int8_t) (battle_current()->board.height / 2);
+    bool    near   = subject->square.y >= river;
+    Square* moves  = x;
+    size_t  write  = 0;
+    bool    pruned = false;
+
+    for (size_t read = 0; !(moves[read].x == -1 && moves[read].y == -1);
+         read++) {
+        if ((moves[read].y >= river) != near) {
+            pruned = true;
+            continue;
+        }
+
+        moves[write] = moves[read];
+        write++;
+    }
+
+    moves[write] = SQUARE_END;
+
+    return pruned;
+}
+
+/// eff_river_bing
+///
+/// River Crossing: a Bing that steps across the river earns a permanent
+/// sideways step, the same grant River Wade gives, once.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> PieceInfo* the piece that just moved
+///
+/// Return: true when the sideways step was granted
+///
+static bool eff_river_bing(EffectContext* context, void* x) {
+    (void) context;
+
+    PieceInfo* piece = x;
+
+    if (piece->piece->id != PIECE_BING) {
+        return false;
+    }
+
+    int8_t river = (int8_t) (battle_current()->board.height / 2);
+    Square from  = battle_move_from();
+
+    if ((from.y >= river) == (piece->square.y >= river)) {
+        return false;
+    }
+
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        if (piece->piece->effects[slot].func == eff_sideways_grant) {
+            return false;
+        }
+    }
+
+    static const Effect grant = {
+        .func      = eff_sideways_grant,
+        .name      = "River Crossing",
+        .trigger   = QUERY_PIECE_MOVES,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    return piece_embed_effect(piece, &grant) != nullptr;
+}
+
 const BoardTrait LONGWEI_TRAITS[] = {
     {
-        .name = "River Crossing",
-        .desc = "A row bisects the board; Xiang cannot cross it.",
-        .id   = BOARD_TRAIT_RIVER_CROSSING,
+        .name    = "River Crossing",
+        .desc    = "A river bisects the board; Xiang cannot cross, a Bing "
+                   "gains a sideways step on crossing.",
+        .id      = BOARD_TRAIT_RIVER_CROSSING,
+        .effects = {
+            {
+                .func      = eff_river_crossing,
+                .name      = "River Crossing",
+                .trigger   = QUERY_PIECE_MOVES,
+                .lasts_for = ENTIRE_BATTLE,
+            },
+            {
+                .func      = eff_river_bing,
+                .name      = "River Crossing",
+                .trigger   = ON_PIECE_MOVE,
+                .lasts_for = ENTIRE_BATTLE,
+            },
+        },
     },
     {
         .name      = "The Palace",

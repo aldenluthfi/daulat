@@ -551,135 +551,174 @@ static bool defended_by_bishop(BattleState* battle, PieceInfo* target) {
     return false;
 }
 
-/// eff_castling
+/// eff_castling_targets
 ///
-/// Immediate play effect swapping the playing side's king with a chosen
+/// Advertises every friendly Rook for Castling.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one Rook was offered
+///
+static bool eff_castling_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && p->piece->id == PIECE_ROOK;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_castling_pick
+///
+/// Castling resolution: swaps the playing side's king with the chosen
 /// friendly rook.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], rook square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the swap was performed
 ///
-static bool eff_castling(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_castling_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   king   = battle_find_king(battle, side);
-    PieceInfo*   rook   = battle_at(battle, card_square(context->args[1]));
 
-    if (!king || !rook || rook->side != side || rook->piece->id != PIECE_ROOK) {
+    if (target->kind != TARGET_PIECE) {
         return false;
     }
 
-    Square ksq                                    = king->square;
-    Square rsq                                    = rook->square;
+    PieceInfo* king = battle_find_king(battle, side);
+    PieceInfo* rook = battle_at(battle, card_target_at(target->value));
 
-    battle->board.piece_board[rsq.y * 20 + rsq.x] = king;
-    battle->board.piece_board[ksq.y * 20 + ksq.x] = rook;
+    if (!king || !rook || rook->side != side ||
+        rook->piece->id != PIECE_ROOK) {
+        return false;
+    }
 
-    king->square                                  = rsq;
-    rook->square                                  = ksq;
+    battle_swap(battle, king, rook);
 
     return true;
 }
 
-/// eff_queens_gambit
+/// eff_queens_gambit_targets
 ///
-/// Immediate play effect sacrificing one of the playing side's pawns; the
-/// three bonus cards are drawn by the battle play pipeline.
+/// Advertises every friendly Pawn as a square target for Queen's Gambit.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], pawn square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one Pawn was offered
+///
+static bool eff_queens_gambit_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && piece_is_pawn(p->piece->id);
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_queens_gambit_pick
+///
+/// Queen's Gambit resolution: sacrifices the chosen pawn and draws three
+/// bonus cards, which fire ON_CARDS_DRAWN so draw modifiers compose onto
+/// them.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when a pawn was sacrificed
 ///
-static bool eff_queens_gambit(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_queens_gambit_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   pawn   = battle_at(battle, card_square(context->args[1]));
 
-    if (!pawn || pawn->side != side || pawn->piece->id != PIECE_PAWN) {
-        pawn = nullptr;
-
-        for (size_t index = 0; index < MAX_BOARD_SIZE && !pawn; index++) {
-            PieceInfo* cell = battle->board.piece_board[index];
-
-            if (cell && cell != &VOID_CELL && cell->side == side &&
-                cell->piece->id == PIECE_PAWN) {
-                pawn = cell;
-            }
-        }
+    if (target->kind != TARGET_PIECE) {
+        return false;
     }
 
-    if (!pawn) {
+    PieceInfo* pawn = battle_at(battle, card_target_at(target->value));
+
+    if (!pawn || pawn->side != side || pawn->piece->id != PIECE_PAWN) {
         return false;
     }
 
     battle_remove(battle, pawn);
+    battle_draw(battle, side, 3);
 
     return true;
 }
 
 /// eff_vengeance
 ///
-/// Immediate play effect dealing twice an enemy piece's value to the enemy
-/// meter when it stands adjacent to one of the playing side's pieces.
+/// Vengeance: deals twice its value in meter damage for every enemy piece
+/// that moved to a square adjacent to one of the playing side's pieces on
+/// the previous turn. The GDD names no choice, so it is automatic, not a
+/// targeting card; the moved-adjacent-last-turn condition is the selector.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
+/// - context -> beneficiary side in args[0]
 /// - x       -> played card, unused
 ///
-/// Return: true when the damage was dealt
+/// Return: true when any vengeance damage was dealt
 ///
 static bool eff_vengeance(EffectContext* context, void* x) {
     (void) x;
 
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
+    int          total  = 0;
 
-    if (!target || target->side == side || target->piece->id == PIECE_KING) {
-        return false;
-    }
+    for (int8_t y = 0; y < battle->board.height; y++) {
+        for (int8_t vx = 0; vx < battle->board.width; vx++) {
+            PieceInfo* target = battle_at(battle, (Square) {vx, y});
 
-    bool adjacent = false;
+            if (!target || !target->piece || target->side == side ||
+                target->side == SIDE_NEUTRAL ||
+                target->piece->id == PIECE_KING) {
+                continue;
+            }
 
-    for (int8_t dy = -1; dy <= 1 && !adjacent; dy++) {
-        for (int8_t dx = -1; dx <= 1 && !adjacent; dx++) {
-            Square spot = {
-                (int8_t) (target->square.x + dx),
-                (int8_t) (target->square.y + dy)
-            };
+            size_t moved = battle_piece_move_turn(target);
 
-            PieceInfo* neighbor = battle_at(battle, spot);
+            if (moved + 1 != battle->turn) {
+                continue;
+            }
 
-            if ((dx || dy) && neighbor && neighbor->side == side) {
-                adjacent = true;
+            bool adjacent = false;
+
+            for (int8_t dy = -1; dy <= 1 && !adjacent; dy++) {
+                for (int8_t dx = -1; dx <= 1 && !adjacent; dx++) {
+                    PieceInfo* near = battle_at(battle, (Square) {
+                        (int8_t) (vx + dx),
+                        (int8_t) (y + dy),
+                    });
+
+                    if ((dx || dy) && near && near->side == side) {
+                        adjacent = true;
+                    }
+                }
+            }
+
+            if (adjacent) {
+                total += battle_value(battle, target, nullptr) * 2;
             }
         }
     }
 
-    if (!adjacent) {
+    if (total == 0) {
         return false;
     }
 
-    if (!effect_find_mark(
-            &battle_player(battle, target->side)->effects,
-            MARK_MOVED,
-            target
-        )) {
-        return false;
-    }
-
-    int dmg = battle_value(battle, target, nullptr) * 2;
-
-    battle_damage(battle, battle_enemy(side), dmg);
+    battle_damage(battle, battle_enemy(side), total);
 
     return true;
 }
@@ -736,23 +775,46 @@ static bool eff_cathedral(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_coronation
+/// eff_coronation_targets
 ///
-/// Immediate play effect promoting one of the playing side's pawns to a
-/// Queen in place.
+/// Advertises every friendly Pawn as a square target for Coronation.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], pawn square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one Pawn was offered
+///
+static bool eff_coronation_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && piece_is_pawn(p->piece->id);
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_coronation_pick
+///
+/// Coronation resolution: promotes the chosen pawn to a Queen in place.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when a pawn was promoted
 ///
-static bool eff_coronation(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_coronation_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   pawn   = battle_at(battle, card_square(context->args[1]));
+
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* pawn = battle_at(battle, card_target_at(target->value));
 
     if (!pawn || pawn->side != side || pawn->piece->id != PIECE_PAWN) {
         return false;
@@ -766,26 +828,51 @@ static bool eff_coronation(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_crusade
+/// eff_crusade_targets
 ///
-/// Immediate play effect: a chosen Knight makes three consecutive leaps
+/// Advertises every friendly Knight as a square target for Crusade.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one Knight was offered
+///
+static bool eff_crusade_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && p->piece->id == PIECE_KNIGHT;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_crusade_pick
+///
+/// Crusade resolution: the chosen Knight makes three consecutive leaps
 /// toward the enemy king through battle_lunge, resolving its coverage on
 /// each landing so each hop attacks from a real square.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], knight square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the knight made its charge
 ///
-static bool eff_crusade(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_crusade_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   knight = battle_at(battle, card_square(context->args[1]));
 
-    if (!knight || knight->side != side || knight->piece->id != PIECE_KNIGHT) {
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* knight = battle_at(battle, card_target_at(target->value));
+
+    if (!knight || knight->side != side ||
+        knight->piece->id != PIECE_KNIGHT) {
         return false;
     }
 
@@ -1031,9 +1118,13 @@ const Piece CAELAN_PIECES[] = {
 const Card CAELAN_CARDS[] = {
     {
         .effects =
-            {{.func      = eff_castling,
+            {{.func      = eff_castling_targets,
               .name      = "Castling",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_castling_pick,
+              .name      = "Castling",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Castling",
         .desc      = "Your king and one of your Rooks swap positions.",
@@ -1045,9 +1136,13 @@ const Card CAELAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_queens_gambit,
+            {{.func      = eff_queens_gambit_targets,
               .name      = "Queen's Gambit",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_queens_gambit_pick,
+              .name      = "Queen's Gambit",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Queen's Gambit",
         .desc      = "Sacrifice a pawn. Draw 3 additional cards "
@@ -1104,9 +1199,13 @@ const Card CAELAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_coronation,
+            {{.func      = eff_coronation_targets,
               .name      = "Coronation",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_coronation_pick,
+              .name      = "Coronation",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Coronation",
         .desc      = "Promote a pawn to Queen in place.",
@@ -1118,9 +1217,13 @@ const Card CAELAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_crusade,
+            {{.func      = eff_crusade_targets,
               .name      = "Crusade",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_crusade_pick,
+              .name      = "Crusade",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Crusade",
         .desc      = "Target Knight makes 3 consecutive attacks this "

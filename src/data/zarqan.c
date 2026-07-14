@@ -560,57 +560,125 @@ static bool eff_pillage(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_royal_decoy
+/// eff_royal_decoy_first
 ///
-/// Immediate play effect swapping the positions of two friendly pieces.
+/// Advertises every friendly piece as the first swap target for Royal
+/// Decoy.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], two squares in args[1..2]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_royal_decoy_first(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_royal_decoy_second
+///
+/// Advertises every friendly piece other than the first pick as the second
+/// swap target for Royal Decoy.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_royal_decoy_second(EffectContext* context, void* x) {
+    Side   side  = (Side) (uintptr_t) context->args[0];
+    Square first = card_target_at(battle_pending_picks()[0].value);
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side &&
+               !(p->square.x == first.x && p->square.y == first.y);
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_royal_decoy_pick
+///
+/// Royal Decoy resolution: swaps the positions of the two chosen friendly
+/// pieces.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* pick list, first and second pieces
 ///
 /// Return: true when the swap was performed
 ///
-static bool eff_royal_decoy(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_royal_decoy_pick(EffectContext* context, void* x) {
+    CardTarget*  picks  = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   first  = battle_at(battle, card_square(context->args[1]));
-    PieceInfo*   second = battle_at(battle, card_square(context->args[2]));
+
+    if (picks[0].kind != TARGET_PIECE || picks[1].kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* first  = battle_at(battle, card_target_at(picks[0].value));
+    PieceInfo* second = battle_at(battle, card_target_at(picks[1].value));
 
     if (!first || !second || first == second || first->side != side ||
         second->side != side) {
         return false;
     }
 
-    Square fsq                                    = first->square;
-    Square ssq                                    = second->square;
-
-    battle->board.piece_board[ssq.y * 20 + ssq.x] = first;
-    battle->board.piece_board[fsq.y * 20 + fsq.x] = second;
-
-    first->square                                 = ssq;
-    second->square                                = fsq;
+    battle_swap(battle, first, second);
 
     return true;
 }
 
-/// eff_bazaar
+/// eff_bazaar_targets
 ///
-/// Immediate play effect selling a friendly piece for 150% of its value.
+/// Bazaar targeting: advertises every friendly non-king piece as a square
+/// target.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_bazaar_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && p->piece->id != PIECE_KING;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_bazaar_pick
+///
+/// Bazaar resolution: sells the chosen friendly piece for 150% of its
+/// value.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the piece was sold
 ///
-static bool eff_bazaar(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_bazaar_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   piece  = battle_at(battle, card_square(context->args[1]));
+
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
 
     if (!piece || piece->side != side || piece->piece->id == PIECE_KING) {
         return false;
@@ -663,26 +731,77 @@ static bool eff_steppe_riders(EffectContext* context, void* x) {
     return granted;
 }
 
-/// eff_ambition
+/// eff_copy_piece_targets
 ///
-/// Immediate play effect letting a targeted piece copy another piece's
-/// movement pattern this turn.
+/// Advertises every friendly piece as the piece to receive a copied move,
+/// the first step shared by Ambition and Conquest.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1],
-///              copied piece id (+1000) in args[2]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_copy_piece_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_copy_type_targets
+///
+/// Advertises every registered piece identity as the movement to copy, the
+/// second step shared by Ambition and Conquest.
+///
+/// Params:
+/// - context -> beneficiary side in args[0], unused
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one identity was offered
+///
+static bool eff_copy_type_targets(EffectContext* context, void* x) {
+    (void) context;
+
+    BattleState* battle = battle_current();
+    Square       tsq    = card_target_at(battle_pending_picks()[0].value);
+
+    card_targets_piece_type(x, ^bool(const Piece* pc) {
+        PieceInfo* target = battle_at(battle, tsq);
+
+        return battle_piece_unlocked(pc->id) &&
+               (!target || target->piece->id != pc->id);
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_ambition_pick
+///
+/// Ambition resolution: the chosen piece copies the chosen identity's
+/// movement pattern for this turn.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* pick list, piece square then piece type
 ///
 /// Return: true when the copy was attached
 ///
-static bool eff_ambition(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_ambition_pick(EffectContext* context, void* x) {
+    CardTarget*  picks  = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
-    long         raw    = (long) (uintptr_t) context->args[2];
-    PieceID      copied = (PieceID) (raw >= 1000 ? raw - 1000 : raw);
+
+    if (picks[0].kind != TARGET_PIECE ||
+        picks[1].kind != TARGET_PIECE_TYPE) {
+        return false;
+    }
+
+    PieceInfo* target = battle_at(battle, card_target_at(picks[0].value));
+    PieceID    copied = (PieceID) picks[1].value;
 
     if (!target || target->side != side || copied >= PIECE_COUNT ||
         !PIECE_REGISTRY[copied]) {
@@ -694,24 +813,51 @@ static bool eff_ambition(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_citadel
+/// eff_citadel_targets
 ///
-/// Immediate play effect making a targeted piece immobile and immune for
-/// two turns.
+/// Citadel targeting: advertises every piece on the board, either side, as
+/// a square target.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0], unused
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_citadel_targets(EffectContext* context, void* x) {
+    (void) context;
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == SIDE_WHITE || p->side == SIDE_BLACK;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_citadel_pick
+///
+/// Citadel resolution: makes the chosen piece immobile and immune for two
+/// turns by attaching veto gates to its own side's list.
+///
+/// Params:
+/// - context -> beneficiary side in args[0], unused
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the citadel was attached
 ///
-static bool eff_citadel(EffectContext* context, void* x) {
-    (void) x;
+static bool eff_citadel_pick(EffectContext* context, void* x) {
+    (void) context;
 
+    CardTarget*  chosen = x;
     BattleState* battle = battle_current();
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
 
-    if (!target) {
+    if (chosen->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* target = battle_at(battle, card_target_at(chosen->value));
+
+    if (!target || !target->piece) {
         return false;
     }
 
@@ -739,26 +885,30 @@ static bool eff_citadel(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_conquest
+/// eff_conquest_pick
 ///
-/// Immediate play effect permanently adopting another piece's movement
-/// pattern onto a target for the rest of the battle.
+/// Conquest resolution: the chosen piece permanently adopts the chosen
+/// identity's movement pattern for the rest of the battle. Shares the two
+/// query steps with Ambition.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1],
-///              copied piece id (+1000) in args[2]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* pick list, piece square then piece type
 ///
 /// Return: true when the adoption was attached
 ///
-static bool eff_conquest(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_conquest_pick(EffectContext* context, void* x) {
+    CardTarget*  picks  = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
-    long         raw    = (long) (uintptr_t) context->args[2];
-    PieceID      copied = (PieceID) (raw >= 1000 ? raw - 1000 : raw);
+
+    if (picks[0].kind != TARGET_PIECE ||
+        picks[1].kind != TARGET_PIECE_TYPE) {
+        return false;
+    }
+
+    PieceInfo* target = battle_at(battle, card_target_at(picks[0].value));
+    PieceID    copied = (PieceID) picks[1].value;
 
     if (!target || target->side != side || copied >= PIECE_COUNT ||
         !PIECE_REGISTRY[copied]) {
@@ -1003,9 +1153,17 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_royal_decoy,
+            {{.func      = eff_royal_decoy_first,
               .name      = "Royal Decoy",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_royal_decoy_second,
+              .name      = "Royal Decoy",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_royal_decoy_pick,
+              .name      = "Royal Decoy",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Royal Decoy",
         .desc      = "Swap positions of any 2 of your pieces.",
@@ -1017,9 +1175,13 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_bazaar,
+            {{.func      = eff_bazaar_targets,
               .name      = "Bazaar",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_bazaar_pick,
+              .name      = "Bazaar",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Bazaar",
         .desc      = "Sell one of your pieces for 150% of its value.",
@@ -1046,9 +1208,17 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_ambition,
+            {{.func      = eff_copy_piece_targets,
               .name      = "Ambition",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_copy_type_targets,
+              .name      = "Ambition",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_ambition_pick,
+              .name      = "Ambition",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Ambition",
         .desc      = "Target piece copies any other piece's movement "
@@ -1061,9 +1231,13 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_citadel,
+            {{.func      = eff_citadel_targets,
               .name      = "Citadel",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_citadel_pick,
+              .name      = "Citadel",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Citadel",
         .desc      = "Target piece becomes immobile and immune for 2 "
@@ -1076,9 +1250,17 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_conquest,
+            {{.func      = eff_copy_piece_targets,
               .name      = "Conquest",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_copy_type_targets,
+              .name      = "Conquest",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_conquest_pick,
+              .name      = "Conquest",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Conquest",
         .desc      = "Target piece permanently adopts any other piece's "
@@ -1155,6 +1337,25 @@ static bool eff_sandstorm(EffectContext* context, void* x) {
     return pruned;
 }
 
+/// eff_mirage
+///
+/// Mirage: a twentieth of the board's squares are voided at build.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> unused built board
+///
+/// Return: true, the scatter always applies
+///
+static bool eff_mirage(EffectContext* context, void* x) {
+    (void) context;
+    (void) x;
+
+    battle_scatter_voids(battle_current(), 5);
+
+    return true;
+}
+
 const BoardTrait ZARQAN_TRAITS[] = {
     {
         .name      = "Sandstorm",
@@ -1171,6 +1372,12 @@ const BoardTrait ZARQAN_TRAITS[] = {
         .name = "Mirage",
         .desc = "5% of squares cannot be entered, marked when revealed.",
         .id   = BOARD_TRAIT_MIRAGE,
+        .effects = {{
+            .func      = eff_mirage,
+            .name      = "Mirage",
+            .trigger   = ON_BOARD_BUILD,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
 };
 

@@ -585,30 +585,56 @@ static bool eff_bushido_strike(EffectContext* context, void* x) {
     Side         side   = (Side) (uintptr_t) context->args[0];
     int          dmg    = battle_value(battle, target, nullptr) * 2;
 
-    battle_player(battle, battle_enemy(side))->meter -= dmg;
-    context->args[3]                              = (void*) 1;
+    battle_damage(battle, battle_enemy(side), dmg);
+    context->args[3] = (void*) 1;
 
     return true;
 }
 
-/// eff_ronin
+/// eff_ronin_targets
 ///
-/// Immediate play effect attaching the Ronin refund to a targeted piece.
+/// Ronin targeting: advertises every friendly non-king piece, the pieces
+/// that can flip.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_ronin_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && p->piece->id != PIECE_KING;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_ronin_pick
+///
+/// Ronin resolution: attaches the Ronin refund to the chosen friendly
+/// piece.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the refund was attached
 ///
-static bool eff_ronin(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_ronin_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
 
-    if (!target || target->side != side) {
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
+
+    if (!piece || piece->side != side) {
         return false;
     }
 
@@ -624,30 +650,56 @@ static bool eff_ronin(EffectContext* context, void* x) {
 
     if (attached) {
         attached->context->args[0] = (void*) (uintptr_t) side;
-        attached->context->args[1] = target;
+        attached->context->args[1] = piece;
     }
 
     return attached != nullptr;
 }
 
-/// eff_bushido
+/// eff_bushido_targets
 ///
-/// Immediate play effect attaching the Bushido strike to a targeted piece.
+/// Bushido targeting: advertises every friendly piece as a square target
+/// for the strike attachment.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_bushido_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && p->piece->id != PIECE_KING;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_bushido_pick
+///
+/// Bushido resolution: attaches the Bushido strike to the chosen friendly
+/// piece.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the strike was attached
 ///
-static bool eff_bushido(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_bushido_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
 
-    if (!target || target->side != side) {
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
+
+    if (!piece || piece->side != side) {
         return false;
     }
 
@@ -663,196 +715,348 @@ static bool eff_bushido(EffectContext* context, void* x) {
 
     if (attached) {
         attached->context->args[0] = (void*) (uintptr_t) side;
-        attached->context->args[1] = target;
+        attached->context->args[1] = piece;
     }
 
     return attached != nullptr;
 }
 
-/// eff_resurrection
+/// eff_resurrection_targets
 ///
-/// Immediate play effect reclaiming a flipped enemy piece to the playing
-/// side for free.
+/// Resurrection targeting: advertises every flipped enemy piece, the ones
+/// the GDD lets you reclaim.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_resurrection_targets(EffectContext* context, void* x) {
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    BattleState* battle = battle_current();
+
+    card_targets_piece(x, battle, ^bool(const PieceInfo* p) {
+        return p->side != side && p->side != SIDE_NEUTRAL &&
+               battle_piece_flips(battle, (PieceInfo*) p) > 0;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_resurrection_pick
+///
+/// Resurrection resolution: reclaims the chosen flipped enemy piece to the
+/// playing side for free.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the piece was reclaimed
 ///
-static bool eff_resurrection(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_resurrection_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
 
-    if (!target || target->side == side || target->piece->id == PIECE_KING) {
+    if (target->kind != TARGET_PIECE) {
         return false;
     }
 
-    battle_flip(battle, target);
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
+
+    if (!piece || piece->side == side || piece->side == SIDE_NEUTRAL ||
+        battle_piece_flips(battle, piece) == 0) {
+        return false;
+    }
+
+    battle_flip(battle, piece);
 
     return true;
 }
 
-/// eff_gold_standard
+/// eff_gold_standard_targets
 ///
-/// Immediate play effect making a targeted piece move like a Kinsho this
-/// turn.
+/// Gold Standard targeting: advertises every friendly piece as a square
+/// target.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_gold_standard_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_gold_standard_pick
+///
+/// Gold Standard resolution: makes the chosen friendly piece move like a
+/// Kinsho this turn.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the pattern was applied
 ///
-static bool eff_gold_standard(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_gold_standard_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
 
-    if (!target || target->side != side) {
+    if (target->kind != TARGET_PIECE) {
         return false;
     }
 
-    piece_adopt_move(battle, target, PIECE_KINSHO, TURNS_1, true);
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
+
+    if (!piece || piece->side != side) {
+        return false;
+    }
+
+    piece_adopt_move(battle, piece, PIECE_KINSHO, TURNS_1, true);
 
     return true;
 }
 
-/// eff_promotion
+/// eff_promotion_targets
 ///
-/// Immediate play effect permanently adding Ginsho movement to a targeted
+/// Promotion targeting: advertises every friendly piece as a square
+/// target.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_promotion_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_promotion_pick
+///
+/// Promotion resolution: permanently adds Ginsho movement to the chosen
 /// piece for the rest of the battle.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the pattern was applied
 ///
-static bool eff_promotion(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_promotion_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
 
-    if (!target || target->side != side) {
+    if (target->kind != TARGET_PIECE) {
         return false;
     }
 
-    piece_adopt_move(battle, target, PIECE_GINSHO, ENTIRE_BATTLE, false);
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
+
+    if (!piece || piece->side != side) {
+        return false;
+    }
+
+    piece_adopt_move(battle, piece, PIECE_GINSHO, ENTIRE_BATTLE, false);
 
     return true;
 }
 
-/// spawn_fuhyo
+/// eff_dual_drop_first
 ///
-/// Spawns a friendly Fuhyo on the first empty square around the owner's
-/// king, used by Dual Drop to fill missing reclaims.
+/// Dual Drop first pick, dynamic: offers each flipped enemy piece to
+/// reclaim, or, when none are on the board, empty squares to drop a free
+/// Fuhyo onto, so the card always has a legal target.
 ///
 /// Params:
-/// - battle -> battle to spawn into
-/// - side   -> owning side
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
 ///
-/// Return: true when a Fuhyo was placed
+/// Return: true, the board always offers a piece or an empty square
 ///
-static bool spawn_fuhyo(BattleState* battle, Side side) {
-    PieceInfo* king = battle_find_king(battle, side);
+static bool eff_dual_drop_first(EffectContext* context, void* x) {
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    BattleState* battle = battle_current();
 
-    if (!king) {
-        return false;
+    card_targets_piece(x, battle, ^bool(const PieceInfo* p) {
+        return p->side != side && p->side != SIDE_NEUTRAL &&
+               battle_piece_flips(battle, (PieceInfo*) p) > 0;
+    });
+
+    if (card_target_count(x) == 0) {
+        card_targets_square(x, battle, ^bool(Square sq) {
+            return !battle_at(battle, sq);
+        });
     }
 
-    for (int8_t dy = -1; dy <= 1; dy++) {
-        for (int8_t dx = -1; dx <= 1; dx++) {
-            Square spot = {
-                (int8_t) (king->square.x + dx),
-                (int8_t) (king->square.y + dy),
-            };
-
-            if ((dx || dy) && battle_in_bounds(battle, spot) &&
-                !battle_at(battle, spot) &&
-                battle_spawn(battle, PIECE_FUHYO, spot, side)) {
-                return true;
-            }
-        }
-    }
-
-    return false;
+    return card_target_count(x) > 0;
 }
 
-/// eff_dual_drop
+/// eff_dual_drop_second
 ///
-/// Immediate play effect reclaiming up to two flipped pieces, filling any
-/// shortfall with free Fuhyo drops.
+/// Dual Drop second pick, dynamic: offers each remaining flipped enemy
+/// piece other than the first reclaim, or empty squares for the Fuhyo when
+/// none remain.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], two squares in args[1..2]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true, the second slot is always fillable
+///
+static bool eff_dual_drop_second(EffectContext* context, void* x) {
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    BattleState* battle = battle_current();
+    CardTarget   first  = battle_pending_picks()[0];
+    Square       fsq    = card_target_at(first.value);
+
+    card_targets_piece(x, battle, ^bool(const PieceInfo* p) {
+        if (p->side == side || p->side == SIDE_NEUTRAL ||
+            battle_piece_flips(battle, (PieceInfo*) p) == 0) {
+            return false;
+        }
+
+        return first.kind != TARGET_PIECE ||
+               !(p->square.x == fsq.x && p->square.y == fsq.y);
+    });
+
+    if (card_target_count(x) == 0) {
+        card_targets_square(x, battle, ^bool(Square sq) {
+            return !battle_at(battle, sq);
+        });
+    }
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_dual_drop_pick
+///
+/// Dual Drop resolution: for each of the two picks, flips a chosen flipped
+/// enemy piece back to the playing side, or drops a free Fuhyo on a chosen
+/// empty square.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* pick list, up to two pieces or squares
 ///
 /// Return: true, the drop always resolves
 ///
-static bool eff_dual_drop(EffectContext* context, void* x) {
-    (void) x;
-
-    BattleState* battle   = battle_current();
-    Side         side     = (Side) (uintptr_t) context->args[0];
-    void*        packed[] = {context->args[1], context->args[2]};
+static bool eff_dual_drop_pick(EffectContext* context, void* x) {
+    CardTarget*  picks  = x;
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
 
     for (size_t i = 0; i < 2; i++) {
-        PieceInfo* target = battle_at(battle, card_square(packed[i]));
+        if (picks[i].kind == TARGET_PIECE) {
+            PieceInfo* target =
+                battle_at(battle, card_target_at(picks[i].value));
 
-        if (target && target->side != side &&
-            target->piece->id != PIECE_KING) {
-            battle_flip(battle, target);
-        } else {
-            spawn_fuhyo(battle, side);
+            if (target && target->side != side &&
+                target->side != SIDE_NEUTRAL &&
+                battle_piece_flips(battle, target) > 0) {
+                battle_flip(battle, target);
+            }
+        } else if (picks[i].kind == TARGET_SQUARE) {
+            battle_spawn(battle, PIECE_FUHYO,
+                         card_target_at(picks[i].value), side);
         }
     }
 
     return true;
 }
 
-/// eff_force_drop
+/// eff_force_drop_type_targets
 ///
-/// Immediate play effect placing any unlocked piece of value up to fifty
-/// on an empty square for free.
+/// Advertises every unlocked identity of value up to fifty as the piece to
+/// place, the first step of Force Drop.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], piece id (+1000) in args[1],
-///              destination square in args[2]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0], unused
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one identity was offered
+///
+static bool eff_force_drop_type_targets(EffectContext* context, void* x) {
+    (void) context;
+
+    card_targets_piece_type(x, ^bool(const Piece* pc) {
+        return battle_piece_unlocked(pc->id) && pc->value <= 50;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_force_drop_dest_targets
+///
+/// Advertises every unoccupied square as the drop destination, the second
+/// step of Force Drop.
+///
+/// Params:
+/// - context -> beneficiary side in args[0], unused
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one square was offered
+///
+static bool eff_force_drop_dest_targets(EffectContext* context, void* x) {
+    (void) context;
+
+    BattleState* battle = battle_current();
+
+    card_targets_square(x, battle, ^bool(Square square) {
+        return !battle_at(battle, square);
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_force_drop_pick
+///
+/// Force Drop resolution: places the chosen piece on the chosen empty
+/// square for free, per the GDD nothing more (no meter gain).
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* pick list, piece type then destination
 ///
 /// Return: true when the piece was placed
 ///
-static bool eff_force_drop(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_force_drop_pick(EffectContext* context, void* x) {
+    CardTarget*  picks  = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    long         raw    = (long) (uintptr_t) context->args[1];
-    PieceID      id     = (PieceID) (raw >= 1000 ? raw - 1000 : raw);
-    Square       dest   = card_square(context->args[2]);
+
+    if (picks[0].kind != TARGET_PIECE_TYPE ||
+        picks[1].kind != TARGET_SQUARE) {
+        return false;
+    }
+
+    PieceID id   = (PieceID) picks[0].value;
+    Square  dest = card_target_at(picks[1].value);
 
     if (id >= PIECE_COUNT || !PIECE_REGISTRY[id] ||
         PIECE_REGISTRY[id]->value > 50) {
         return false;
     }
 
-    PieceInfo* placed = battle_spawn(battle, id, dest, side);
-
-    if (!placed) {
-        return false;
-    }
-
-    battle_player(battle, side)->meter += battle_value(battle, placed, nullptr);
-
-    return true;
+    return battle_spawn(battle, id, dest, side) != nullptr;
 }
 
 /// eff_tomohito
@@ -1046,9 +1250,13 @@ const Piece HARUSHIMA_PIECES[] = {
 const Card HARUSHIMA_CARDS[] = {
     {
         .effects =
-            {{.func      = eff_ronin,
+            {{.func      = eff_ronin_targets,
               .name      = "Ronin",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_ronin_pick,
+              .name      = "Ronin",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Ronin",
         .desc      = "Next time the targeted piece flips, refund its full "
@@ -1061,9 +1269,13 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_resurrection,
+            {{.func      = eff_resurrection_targets,
               .name      = "Resurrection",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_resurrection_pick,
+              .name      = "Resurrection",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Resurrection",
         .desc      = "Reclaim any flipped piece on the board to your "
@@ -1076,9 +1288,13 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_gold_standard,
+            {{.func      = eff_gold_standard_targets,
               .name      = "Gold Standard",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_gold_standard_pick,
+              .name      = "Gold Standard",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Gold Standard",
         .desc      = "Target piece moves like a Kinsho this turn only.",
@@ -1090,9 +1306,13 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_promotion,
+            {{.func      = eff_promotion_targets,
               .name      = "Promotion",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_promotion_pick,
+              .name      = "Promotion",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Promotion",
         .desc      = "Target piece permanently gains Ginsho movement this "
@@ -1105,9 +1325,17 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_dual_drop,
+            {{.func      = eff_dual_drop_first,
               .name      = "Dual Drop",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_dual_drop_second,
+              .name      = "Dual Drop",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_dual_drop_pick,
+              .name      = "Dual Drop",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Dual Drop",
         .desc      = "Reclaim up to 2 flipped pieces; place free Fuhyo for "
@@ -1120,9 +1348,17 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_force_drop,
+            {{.func      = eff_force_drop_type_targets,
               .name      = "Force Drop",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_force_drop_dest_targets,
+              .name      = "Force Drop",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_force_drop_pick,
+              .name      = "Force Drop",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Force Drop",
         .desc      = "Place any unlocked piece of value up to 50 on any "
@@ -1135,9 +1371,13 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_bushido,
+            {{.func      = eff_bushido_targets,
               .name      = "Bushido",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_bushido_pick,
+              .name      = "Bushido",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Bushido",
         .desc      = "When the targeted piece flips, deal its value x2 to "
@@ -1165,16 +1405,91 @@ const Card HARUSHIMA_CARDS[] = {
     },
 };
 
+/// eff_island_chain
+///
+/// Island Chain: a tenth of the board's squares are voided at build.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> unused built board
+///
+/// Return: true, the scatter always applies
+///
+static bool eff_island_chain(EffectContext* context, void* x) {
+    (void) context;
+    (void) x;
+
+    battle_scatter_voids(battle_current(), 10);
+
+    return true;
+}
+
+/// eff_fog_coast
+///
+/// Fog Coast: an enemy piece on one of the three rows farthest from the
+/// human is hidden from the board until it has moved. The human's home row
+/// is the bottom when white and the top when black, so the far rows sit on
+/// the enemy's edge.
+///
+/// Params:
+/// - context -> args[0] human side
+/// - x       -> Board* whose visible flags are cleared
+///
+/// Return: true when at least one enemy piece was hidden
+///
+static bool eff_fog_coast(EffectContext* context, void* x) {
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    Board*       board  = x;
+
+    bool         hid    = false;
+
+    for (int row = 0; row < 3; row++) {
+        int8_t y = side == SIDE_WHITE
+                       ? (int8_t) row
+                       : (int8_t) (battle->board.height - 1 - row);
+
+        for (int8_t x0 = 0; x0 < battle->board.width; x0++) {
+            size_t     index = (size_t) (y * 20 + x0);
+            PieceInfo* piece = battle_at(battle, (Square) {x0, y});
+
+            if (!piece || piece == &VOID_CELL ||
+                piece->side == side || piece->side == SIDE_NEUTRAL) {
+                continue;
+            }
+
+            if (battle_piece_moves(battle, piece) == 0) {
+                board->visible[index] = false;
+                hid                   = true;
+            }
+        }
+    }
+
+    return hid;
+}
+
 const BoardTrait HARUSHIMA_TRAITS[] = {
     {
         .name = "Fog Coast",
-        .desc = "The 3 farthest rows hide enemy values until they move.",
+        .desc = "The 3 farthest rows hide enemy pieces until they move.",
         .id   = BOARD_TRAIT_FOG_COAST,
+        .effects = {{
+            .func      = eff_fog_coast,
+            .name      = "Fog Coast",
+            .trigger   = QUERY_BOARD_STATE,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     {
         .name = "Island Chain",
         .desc = "Checkered gaps in the middle columns force routing.",
         .id   = BOARD_TRAIT_ISLAND_CHAIN,
+        .effects = {{
+            .func      = eff_island_chain,
+            .name      = "Island Chain",
+            .trigger   = ON_BOARD_BUILD,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
 };
 

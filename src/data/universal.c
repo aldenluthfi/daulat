@@ -120,23 +120,47 @@ static bool eff_last_stand(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_sacrifice
+/// eff_sacrifice_targets
 ///
-/// Immediate play effect removing one of the playing side's pieces and
-/// gaining twice its value as meter.
+/// Sacrifice targeting: advertises every friendly non-king piece.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_sacrifice_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && p->piece->id != PIECE_KING;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_sacrifice_pick
+///
+/// Sacrifice resolution: removes the chosen friendly piece and gains twice
+/// its value as meter.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when a piece was sacrificed
 ///
-static bool eff_sacrifice(EffectContext* context, void* x) {
-    (void) x;
-
-    BattleState* battle = battle_current();
+static bool eff_sacrifice_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   piece  = battle_at(battle, card_square(context->args[1]));
+    BattleState* battle = battle_current();
+
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
 
     if (!piece || piece->side != side || piece->piece->id == PIECE_KING) {
         return false;
@@ -150,16 +174,91 @@ static bool eff_sacrifice(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_reforge_cost
+///
+/// The purchase-cost half of Reforge's discount mark: while the mark is
+/// live and unspent, the marked piece type costs thirty percent less to buy
+/// on the flip turn or the turn after.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> int* purchase cost
+///
+/// Return: true when the discount applied
+///
+static bool eff_reforge_cost(EffectContext* context, void* x) {
+    const Piece* buy = battle_buy_piece();
+
+    if (!buy) {
+        return false;
+    }
+
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    Effect*      mark   = effect_find_mark(
+        &battle_player(battle, side)->effects,
+        CARD_REFORGE,
+        (void*) (uintptr_t) side
+    );
+
+    if (!mark || mark->context->args[3] ||
+        (PieceID) (uintptr_t) mark->context->args[2] != buy->id ||
+        battle->turn > (size_t) (uintptr_t) mark->context->args[4] + 1) {
+        return false;
+    }
+
+    *(int*) x = *(int*) x * 70 / 100;
+
+    return true;
+}
+
+/// eff_reforge_buy
+///
+/// The consume half of Reforge's discount mark: buying the marked piece type
+/// spends the discount so only the first purchase benefits.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> PieceInfo* just bought
+///
+/// Return: true when the discount was spent
+///
+static bool eff_reforge_buy(EffectContext* context, void* x) {
+    PieceInfo*   piece  = x;
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+
+    if (piece->side != side) {
+        return false;
+    }
+
+    Effect* mark = effect_find_mark(
+        &battle_player(battle, side)->effects,
+        CARD_REFORGE,
+        (void*) (uintptr_t) side
+    );
+
+    if (!mark || mark->context->args[3] ||
+        (PieceID) (uintptr_t) mark->context->args[2] != piece->piece->id) {
+        return false;
+    }
+
+    mark->context->args[3] = (void*) 1;
+
+    return true;
+}
+
 /// eff_reforge
 ///
 /// One-shot observer that, when a piece of the playing side flips away,
-/// attaches a mark discounting the next purchase of that piece type.
+/// attaches a discount mark plus its cost and consume effects. The mark
+/// records the flipped type, the flip turn, and a spent flag.
 ///
 /// Params:
 /// - context -> beneficiary side in args[0], spent flag in args[3]
 /// - x       -> flip candidate pointer
 ///
-/// Return: true when the discount mark was attached
+/// Return: true when the discount was attached
 ///
 static bool eff_reforge(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
@@ -170,18 +269,45 @@ static bool eff_reforge(EffectContext* context, void* x) {
         return false;
     }
 
+    LinkedList* list = &battle_player(battle, side)->effects;
+
     Effect mark = {
         .func      = eff_noop,
         .trigger   = ON_TURN_START,
-        .lasts_for = TURNS_2
+        .lasts_for = TURNS_2,
     };
-    Effect* attached =
-        effect_attach(&battle_player(battle, side)->effects, &mark);
+    Effect cost = {
+        .func      = eff_reforge_cost,
+        .name      = "Reforge",
+        .trigger   = QUERY_PIECE_CP_COST_BUY,
+        .lasts_for = TURNS_2,
+    };
+    Effect consume = {
+        .func      = eff_reforge_buy,
+        .name      = "Reforge",
+        .trigger   = ON_PIECE_BUY,
+        .lasts_for = TURNS_2,
+    };
+
+    Effect* attached = effect_attach(list, &mark);
 
     if (attached) {
+        attached->context->args[0] = (void*) (uintptr_t) side;
         attached->context->args[1] = (void*) (uintptr_t) CARD_REFORGE;
         attached->context->args[2] = (void*) (uintptr_t) (*slot)->piece->id;
         attached->context->args[4] = (void*) (uintptr_t) battle->turn;
+    }
+
+    Effect* cost_effect = effect_attach(list, &cost);
+
+    if (cost_effect) {
+        cost_effect->context->args[0] = (void*) (uintptr_t) side;
+    }
+
+    Effect* consume_effect = effect_attach(list, &consume);
+
+    if (consume_effect) {
+        consume_effect->context->args[0] = (void*) (uintptr_t) side;
     }
 
     context->args[3] = (void*) 1;
@@ -189,19 +315,181 @@ static bool eff_reforge(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_mercy
+/// eff_pawn_storm_action
 ///
-/// Redirects the playing side's next flip onto a chosen piece, later
-/// uses overriding earlier ones by attaching after them.
+/// The action-cost half of Pawn Storm: the first three pawn buys this turn
+/// cost no action. Reads the shared counter mark.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1],
-///              spent flag in args[3]
+/// - context -> beneficiary side in args[0]
+/// - x       -> int* action cost
+///
+/// Return: true when the action cost was waived
+///
+static bool eff_pawn_storm_action(EffectContext* context, void* x) {
+    const Piece* buy = battle_buy_piece();
+
+    if (!buy || !piece_is_pawn(buy->id)) {
+        return false;
+    }
+
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    Effect*      mark   = effect_find_mark(
+        &battle_player(battle, side)->effects,
+        CARD_PAWN_STORM,
+        (void*) (uintptr_t) side
+    );
+
+    if (!mark || (uintptr_t) mark->context->args[2] >= 3) {
+        return false;
+    }
+
+    *(int*) x = 0;
+
+    return true;
+}
+
+/// eff_pawn_storm_cost
+///
+/// The purchase-cost half of Pawn Storm: the third pawn this turn is free.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> int* purchase cost
+///
+/// Return: true when the pawn was made free
+///
+static bool eff_pawn_storm_cost(EffectContext* context, void* x) {
+    const Piece* buy = battle_buy_piece();
+
+    if (!buy || !piece_is_pawn(buy->id)) {
+        return false;
+    }
+
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    Effect*      mark   = effect_find_mark(
+        &battle_player(battle, side)->effects,
+        CARD_PAWN_STORM,
+        (void*) (uintptr_t) side
+    );
+
+    if (!mark || (uintptr_t) mark->context->args[2] != 2) {
+        return false;
+    }
+
+    *(int*) x = 0;
+
+    return true;
+}
+
+/// eff_pawn_storm_buy
+///
+/// The counting half of Pawn Storm: each pawn actually bought bumps the
+/// shared counter, up to three.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> PieceInfo* just bought
+///
+/// Return: true when the counter was bumped
+///
+static bool eff_pawn_storm_buy(EffectContext* context, void* x) {
+    PieceInfo*   piece  = x;
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+
+    if (piece->side != side || !piece_is_pawn(piece->piece->id)) {
+        return false;
+    }
+
+    Effect* mark = effect_find_mark(
+        &battle_player(battle, side)->effects,
+        CARD_PAWN_STORM,
+        (void*) (uintptr_t) side
+    );
+
+    if (!mark || (uintptr_t) mark->context->args[2] >= 3) {
+        return false;
+    }
+
+    mark->context->args[2] =
+        (void*) ((uintptr_t) mark->context->args[2] + 1);
+
+    return true;
+}
+
+/// eff_pawn_storm
+///
+/// Pawn Storm setup: on play, attaches the shared counter mark plus the
+/// action-cost, purchase-cost, and counting effects, all lasting this turn.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> unused played card
+///
+/// Return: true always
+///
+static bool eff_pawn_storm(EffectContext* context, void* x) {
+    (void) x;
+
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    LinkedList*  list   = &battle_player(battle, side)->effects;
+
+    Effect mark = {
+        .func      = eff_noop,
+        .trigger   = ON_TURN_START,
+        .lasts_for = TURNS_1,
+    };
+
+    Effect* attached = effect_attach(list, &mark);
+
+    if (attached) {
+        attached->context->args[0] = (void*) (uintptr_t) side;
+        attached->context->args[1] = (void*) (uintptr_t) CARD_PAWN_STORM;
+    }
+
+    Effect parts[] = {
+        {.func      = eff_pawn_storm_action,
+         .name      = "Pawn Storm",
+         .trigger   = QUERY_PIECE_ACTION_COST_BUY,
+         .lasts_for = TURNS_1},
+        {.func      = eff_pawn_storm_cost,
+         .name      = "Pawn Storm",
+         .trigger   = QUERY_PIECE_CP_COST_BUY,
+         .lasts_for = TURNS_1},
+        {.func      = eff_pawn_storm_buy,
+         .name      = "Pawn Storm",
+         .trigger   = ON_PIECE_BUY,
+         .lasts_for = TURNS_1},
+    };
+
+    for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); i++) {
+        Effect* part = effect_attach(list, &parts[i]);
+
+        if (part) {
+            part->context->args[0] = (void*) (uintptr_t) side;
+        }
+    }
+
+    return true;
+}
+
+/// eff_mercy_redirect
+///
+/// The observer Mercy attaches: redirects the playing side's next flip onto
+/// the chosen piece, later plays overriding earlier ones by attaching after
+/// them. args[1] holds the chosen square, args[3] the spent flag.
+///
+/// Params:
+/// - context -> beneficiary side in args[0], square in args[1], spent [3]
 /// - x       -> flip candidate pointer to redirect
 ///
 /// Return: true when the flip was redirected
 ///
-static bool eff_mercy(EffectContext* context, void* x) {
+static bool eff_mercy_redirect(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
     PieceInfo**  slot   = x;
@@ -210,7 +498,8 @@ static bool eff_mercy(EffectContext* context, void* x) {
         return false;
     }
 
-    PieceInfo* target = battle_at(battle, card_square(context->args[1]));
+    int        square = (int) (uintptr_t) context->args[1];
+    PieceInfo* target = battle_at(battle, card_target_at(square));
 
     if (!target || target->side != side || target->piece->id == PIECE_KING) {
         return false;
@@ -220,6 +509,65 @@ static bool eff_mercy(EffectContext* context, void* x) {
     context->args[3] = (void*) 1;
 
     return true;
+}
+
+/// eff_mercy_targets
+///
+/// Mercy targeting: advertises every friendly non-king piece as the flip to
+/// protect next.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_mercy_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side && p->piece->id != PIECE_KING;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_mercy_pick
+///
+/// Mercy resolution: attaches the redirect observer bound to the chosen
+/// square, so the playing side's next flip lands there.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
+///
+/// Return: true when the observer attached
+///
+static bool eff_mercy_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    BattleState* battle = battle_current();
+
+    if (target->kind != TARGET_PIECE) {
+        return false;
+    }
+
+    static const Effect redirect = {
+        .func      = eff_mercy_redirect,
+        .name      = "Mercy",
+        .trigger   = ON_PIECE_FLIP_PRE,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    Effect* attached =
+        effect_attach(&battle_player(battle, side)->effects, &redirect);
+
+    if (attached) {
+        attached->context->args[0] = (void*) (uintptr_t) side;
+        attached->context->args[1] = (void*) (uintptr_t) target->value;
+    }
+
+    return attached != nullptr;
 }
 
 /// eff_bloodletting
@@ -307,28 +655,53 @@ static bool eff_spite(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_chain_break
+/// eff_chain_break_targets
 ///
-/// Immediate play effect force-flipping one chosen enemy piece.
+/// Chain Break targeting: advertises every enemy non-king piece.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_chain_break_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side != side && p->side != SIDE_NEUTRAL &&
+               p->piece->id != PIECE_KING;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_chain_break_pick
+///
+/// Chain Break resolution: force-flips the chosen enemy piece.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when an enemy piece was flipped
 ///
-static bool eff_chain_break(EffectContext* context, void* x) {
-    (void) x;
-
-    BattleState* battle = battle_current();
+static bool eff_chain_break_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
+    BattleState* battle = battle_current();
 
-    if (!target || target->side == side || target->piece->id == PIECE_KING) {
+    if (target->kind != TARGET_PIECE) {
         return false;
     }
 
-    battle_flip(battle, target);
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
+
+    if (!piece || piece->side == side || piece->piece->id == PIECE_KING) {
+        return false;
+    }
+
+    battle_flip(battle, piece);
 
     return true;
 }
@@ -403,9 +776,9 @@ const Piece UNIVERSAL_PIECES[] = {
 const Card UNIVERSAL_CARDS[] = {
     {
         .effects =
-            {{.func      = eff_noop,
+            {{.func      = eff_pawn_storm,
               .name      = "Pawn Storm",
-              .trigger   = ON_TURN_START,
+              .trigger   = ON_CARD_PLAY,
               .lasts_for = TURNS_1}},
         .name      = "Pawn Storm",
         .desc      = "Buy up to 3 pawns this turn without action cost; "
@@ -461,9 +834,13 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_sacrifice,
+            {{.func      = eff_sacrifice_targets,
               .name      = "Sacrifice",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_sacrifice_pick,
+              .name      = "Sacrifice",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Sacrifice",
         .desc      = "Remove one of your pieces. Gain its value x2 as "
@@ -491,10 +868,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_mercy,
+            {{.func      = eff_mercy_targets,
               .name      = "Mercy",
-              .trigger   = ON_PIECE_FLIP_PRE,
-              .lasts_for = ENTIRE_BATTLE}},
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_mercy_pick,
+              .name      = "Mercy",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Mercy",
         .desc      = "Target which piece flips next, overriding earlier "
                      "uses.",
@@ -551,9 +932,13 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_chain_break,
+            {{.func      = eff_chain_break_targets,
               .name      = "Chain Break",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_chain_break_pick,
+              .name      = "Chain Break",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Chain Break",
         .desc      = "Force-flip one enemy piece of your choice.",
@@ -843,6 +1228,192 @@ static bool eff_kingdom_purity(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_lucky_strike
+///
+/// Lucky Strike: once per turn, the first drawn card becomes a random card
+/// of the highest tier in the available draw pool. args[1] stamps the turn
+/// already served as turn + 1, since a zeroed slot means untouched.
+///
+/// Params:
+/// - context -> args[0] beneficiary side, args[1] last served turn + 1
+/// - x       -> Card** hand whose first slot is rewritten
+///
+/// Return: true when the first card was promoted
+///
+static bool eff_lucky_strike(EffectContext* context, void* x) {
+    BattleState* battle = battle_current();
+    size_t       turn   = battle->turn;
+
+    if ((size_t) (uintptr_t) context->args[1] == turn + 1) {
+        return false;
+    }
+
+    Side   side = (Side) (uintptr_t) context->args[0];
+    CardID pool[CARD_COUNT];
+    size_t size = battle_draw_pool(battle, side, pool);
+
+    if (size == 0) {
+        return false;
+    }
+
+    UnlockTier best = CARD_REGISTRY[pool[0]]->tier;
+
+    for (size_t i = 1; i < size; i++) {
+        if (CARD_REGISTRY[pool[i]]->tier > best) {
+            best = CARD_REGISTRY[pool[i]]->tier;
+        }
+    }
+
+    CardID top[CARD_COUNT];
+    size_t count = 0;
+
+    for (size_t i = 0; i < size; i++) {
+        if (CARD_REGISTRY[pool[i]]->tier == best) {
+            top[count] = pool[i];
+            count++;
+        }
+    }
+
+    Card** hand = x;
+
+    hand[0] = (Card*) CARD_REGISTRY[top[battle_rand() % count]];
+    context->args[1] = (void*) (uintptr_t) (turn + 1);
+
+    return true;
+}
+
+/// eff_extended_front
+///
+/// Extended Front: the board is built two columns wider.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> Square* board dimension {width, height} in {x, y}
+///
+/// Return: true, the widening always applies
+///
+static bool eff_extended_front(EffectContext* context, void* x) {
+    (void) context;
+
+    ((Square*) x)->x += 2;
+
+    return true;
+}
+
+/// eff_compressed
+///
+/// Compressed: the board is built two columns narrower.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> Square* board dimension {width, height} in {x, y}
+///
+/// Return: true, the narrowing always applies
+///
+static bool eff_compressed(EffectContext* context, void* x) {
+    (void) context;
+
+    ((Square*) x)->x -= 2;
+
+    return true;
+}
+
+/// eff_dense_terrain
+///
+/// Dense Terrain: a fifth of the board's squares are voided at build.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> unused built board
+///
+/// Return: true, the scatter always applies
+///
+static bool eff_dense_terrain(EffectContext* context, void* x) {
+    (void) context;
+    (void) x;
+
+    battle_scatter_voids(battle_current(), 20);
+
+    return true;
+}
+
+/// eff_bloodbath
+///
+/// Bloodbath: an emptied meter flips two pieces instead of one. Adds one to
+/// the flip count the cascade queries.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* flip count for this meter empty
+///
+/// Return: true always
+///
+static bool eff_bloodbath(EffectContext* context, void* x) {
+    (void) context;
+
+    *(int*) x += 1;
+
+    return true;
+}
+
+/// eff_fog_of_war
+///
+/// Fog of War: an enemy piece is hidden from the board unless it stands on
+/// a square the human currently attacks. Builds the human attack coverage,
+/// then hides every enemy piece off that coverage.
+///
+/// Params:
+/// - context -> args[0] human side
+/// - x       -> Board* whose visible flags are cleared
+///
+/// Return: true when at least one enemy piece was hidden
+///
+static bool eff_fog_of_war(EffectContext* context, void* x) {
+    BattleState* battle  = battle_current();
+    Side         side    = (Side) (uintptr_t) context->args[0];
+    Board*       board   = x;
+
+    bool attacked[MAX_BOARD_SIZE] = {};
+
+    for (int8_t y = 0; y < battle->board.height; y++) {
+        for (int8_t x0 = 0; x0 < battle->board.width; x0++) {
+            PieceInfo* piece = battle_at(battle, (Square) {x0, y});
+
+            if (!piece || piece == &VOID_CELL || piece->side != side) {
+                continue;
+            }
+
+            Square* coverage = battle_attacks(battle, piece);
+
+            for (size_t i = 0;
+                 !(coverage[i].x == -1 && coverage[i].y == -1); i++) {
+                attacked[coverage[i].y * 20 + coverage[i].x] = true;
+            }
+        }
+    }
+
+    bool hid = false;
+
+    for (int8_t y = 0; y < battle->board.height; y++) {
+        for (int8_t x0 = 0; x0 < battle->board.width; x0++) {
+            size_t     index = (size_t) (y * 20 + x0);
+            PieceInfo* piece = battle_at(battle, (Square) {x0, y});
+
+            if (!piece || piece == &VOID_CELL ||
+                piece->side == side || piece->side == SIDE_NEUTRAL) {
+                continue;
+            }
+
+            if (!attacked[index]) {
+                board->visible[index] = false;
+                hid                   = true;
+            }
+        }
+    }
+
+    return hid;
+}
+
 const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT] = {
     [MODIFIER_LEAN_TIMES] = {
         .name    = "Lean Times",
@@ -914,6 +1485,12 @@ const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT] = {
         .name = "Bloodbath",
         .desc = "Each flip triggers 2 pieces instead of 1.",
         .id   = MODIFIER_BLOODBATH,
+        .effects = {{
+            .func      = eff_bloodbath,
+            .name      = "Bloodbath",
+            .trigger   = QUERY_FLIP_COUNT,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     [MODIFIER_IRON_WILL] = {
         .name    = "Iron Will",
@@ -982,29 +1559,59 @@ const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT] = {
         }},
     },
     [MODIFIER_LUCKY_STRIKE] = {
-        .name = "Lucky Strike",
-        .desc = "First card drawn each turn is the highest tier available.",
-        .id   = MODIFIER_LUCKY_STRIKE,
+        .name    = "Lucky Strike",
+        .desc    = "First card drawn each turn is the highest tier available.",
+        .id      = MODIFIER_LUCKY_STRIKE,
+        .effects = {{
+            .func      = eff_lucky_strike,
+            .name      = "Lucky Strike",
+            .trigger   = ON_CARDS_DRAWN,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     [MODIFIER_FOG_OF_WAR] = {
         .name = "Fog of War",
-        .desc = "Enemy values are hidden off squares you attack.",
+        .desc = "Enemy pieces are hidden off squares you attack.",
         .id   = MODIFIER_FOG_OF_WAR,
+        .effects = {{
+            .func      = eff_fog_of_war,
+            .name      = "Fog of War",
+            .trigger   = QUERY_BOARD_STATE,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     [MODIFIER_DENSE_TERRAIN] = {
         .name = "Dense Terrain",
         .desc = "20% of squares are missing, revealed at start.",
         .id   = MODIFIER_DENSE_TERRAIN,
+        .effects = {{
+            .func      = eff_dense_terrain,
+            .name      = "Dense Terrain",
+            .trigger   = ON_BOARD_BUILD,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     [MODIFIER_EXTENDED_FRONT] = {
         .name = "Extended Front",
         .desc = "Board is 2 columns wider.",
         .id   = MODIFIER_EXTENDED_FRONT,
+        .effects = {{
+            .func      = eff_extended_front,
+            .name      = "Extended Front",
+            .trigger   = QUERY_BOARD_DIMENSION,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     [MODIFIER_COMPRESSED] = {
         .name = "Compressed",
         .desc = "Board is 2 columns narrower.",
         .id   = MODIFIER_COMPRESSED,
+        .effects = {{
+            .func      = eff_compressed,
+            .name      = "Compressed",
+            .trigger   = QUERY_BOARD_DIMENSION,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
 };
 
@@ -1042,6 +1649,25 @@ static bool eff_bronze_chain(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_silver_chain
+///
+/// Silver Chain: the enemy fields one extra free piece in the chained
+/// region. Adds one to the reinforcement count the setup queries.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* enemy reinforcement count
+///
+/// Return: true always
+///
+static bool eff_silver_chain(EffectContext* context, void* x) {
+    (void) context;
+
+    *(int*) x += 1;
+
+    return true;
+}
+
 const ChainPenalty CHAIN_REGISTRY[CHAIN_PENALTY_COUNT] = {
     [CHAIN_BRONZE] = {
         .name    = "Bronze",
@@ -1055,9 +1681,15 @@ const ChainPenalty CHAIN_REGISTRY[CHAIN_PENALTY_COUNT] = {
         }},
     },
     [CHAIN_SILVER] = {
-        .name = "Silver",
-        .desc = "Enemy gets +1 free starting piece in this region.",
-        .id   = CHAIN_SILVER,
+        .name    = "Silver",
+        .desc    = "Enemy gets +1 free starting piece in this region.",
+        .id      = CHAIN_SILVER,
+        .effects = {{
+            .func      = eff_silver_chain,
+            .name      = "Silver Chain",
+            .trigger   = QUERY_ENEMY_ARMY_COUNT,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     [CHAIN_GOLD] = {
         .name = "Gold",

@@ -399,29 +399,62 @@ static bool eff_march(EffectContext* context, void* x) {
     return moved;
 }
 
-/// eff_double_time
+/// eff_double_time_targets
 ///
-/// Immediate play effect granting a targeted piece one additional move
-/// this turn.
+/// Double Time targeting: advertises every friendly piece as a square
+/// target for the extra move.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], target square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_double_time_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_double_time_pick
+///
+/// Double Time resolution: grants the chosen friendly piece one additional
+/// move this turn, or a second additional move (a third move) when it is a
+/// Kewarani piece already carrying the active Double Time innate.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square
 ///
 /// Return: true when the extra move was granted
 ///
-static bool eff_double_time(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_double_time_pick(EffectContext* context, void* x) {
+    CardTarget*  target = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   target = battle_at(battle, card_square(context->args[1]));
 
-    if (!target || target->side != side) {
+    if (target->kind != TARGET_PIECE) {
         return false;
     }
 
-    piece_grant_free_move(target, "Extra Move");
+    PieceInfo* piece = battle_at(battle, card_target_at(target->value));
+
+    if (!piece || piece->side != side) {
+        return false;
+    }
+
+    piece_grant_free_move(piece, "Extra Move");
+
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        if (piece->piece->effects[slot].func == eff_double_move) {
+            piece_grant_free_move(piece, "Extra Move");
+            break;
+        }
+    }
 
     return true;
 }
@@ -448,24 +481,52 @@ static bool eff_salt_road(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_caravan
+/// eff_caravan_targets
 ///
-/// Immediate play effect advancing every friendly piece on the target file
-/// one square forward when the square ahead is empty.
+/// Caravan targeting: advertises the squares of friendly pieces; the effect
+/// takes the chosen square's file as the line to advance.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], file square in args[1]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one square was offered
+///
+static bool eff_caravan_targets(EffectContext* context, void* x) {
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    BattleState* battle = battle_current();
+
+    card_targets_square(x, battle, ^bool(Square square) {
+        PieceInfo* cell = battle_at(battle, square);
+
+        return cell && cell->piece && cell->side == side;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_caravan_pick
+///
+/// Caravan resolution: advances every friendly piece on the chosen file one
+/// square forward when the square ahead is empty.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* chosen square, its file the line to advance
 ///
 /// Return: true when at least one piece advanced
 ///
-static bool eff_caravan(EffectContext* context, void* x) {
-    (void) x;
+static bool eff_caravan_pick(EffectContext* context, void* x) {
+    CardTarget* target = x;
+
+    if (target->kind != TARGET_SQUARE) {
+        return false;
+    }
 
     BattleState* battle  = battle_current();
     Side         side    = (Side) (uintptr_t) context->args[0];
     int8_t       forward = side == SIDE_BLACK ? 1 : -1;
-    int8_t       file    = card_square(context->args[1]).x;
+    int8_t       file    = card_target_at(target->value).x;
     bool         moved   = false;
 
     for (int8_t y = 0; y < battle->board.height; y++) {
@@ -549,25 +610,72 @@ static bool eff_selassie(EffectContext* context, void* x) {
     return granted;
 }
 
-/// eff_hajj
+/// eff_hajj_piece_targets
 ///
-/// Immediate play effect teleporting a targeted friendly piece to any
+/// Advertises every friendly piece as the piece to teleport, the first
+/// step of Hajj.
+///
+/// Params:
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one target was offered
+///
+static bool eff_hajj_piece_targets(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
+        return p->side == side;
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_hajj_dest_targets
+///
+/// Advertises every unoccupied square as the teleport destination, the
+/// second step of Hajj.
+///
+/// Params:
+/// - context -> beneficiary side in args[0], unused
+/// - x       -> CardTarget* list to append to
+///
+/// Return: true when at least one square was offered
+///
+static bool eff_hajj_dest_targets(EffectContext* context, void* x) {
+    (void) context;
+
+    BattleState* battle = battle_current();
+
+    card_targets_square(x, battle, ^bool(Square square) {
+        return !battle_at(battle, square);
+    });
+
+    return card_target_count(x) > 0;
+}
+
+/// eff_hajj_pick
+///
+/// Hajj resolution: teleports the chosen friendly piece onto the chosen
 /// unoccupied square.
 ///
 /// Params:
-/// - context -> beneficiary side in args[0], piece square in args[1],
-///              destination square in args[2]
-/// - x       -> played card, unused
+/// - context -> beneficiary side in args[0]
+/// - x       -> CardTarget* pick list, piece square then destination
 ///
 /// Return: true when the teleport was performed
 ///
-static bool eff_hajj(EffectContext* context, void* x) {
-    (void) x;
-
+static bool eff_hajj_pick(EffectContext* context, void* x) {
+    CardTarget*  picks  = x;
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
-    PieceInfo*   piece  = battle_at(battle, card_square(context->args[1]));
-    Square       dest   = card_square(context->args[2]);
+
+    if (picks[0].kind != TARGET_PIECE || picks[1].kind != TARGET_SQUARE) {
+        return false;
+    }
+
+    PieceInfo* piece = battle_at(battle, card_target_at(picks[0].value));
+    Square     dest  = card_target_at(picks[1].value);
 
     if (!piece || piece->side != side || !battle_in_bounds(battle, dest) ||
         battle_at(battle, dest)) {
@@ -740,9 +848,13 @@ const Card KEWARANI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_double_time,
+            {{.func      = eff_double_time_targets,
               .name      = "Double Time",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_double_time_pick,
+              .name      = "Double Time",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Double Time",
         .desc      = "Target piece makes one additional move this turn.",
@@ -769,9 +881,13 @@ const Card KEWARANI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_caravan,
+            {{.func      = eff_caravan_targets,
               .name      = "Caravan",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_caravan_pick,
+              .name      = "Caravan",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Caravan",
         .desc      = "All pieces on a file move 1 square forward together, "
@@ -798,9 +914,17 @@ const Card KEWARANI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_hajj,
+            {{.func      = eff_hajj_piece_targets,
               .name      = "Hajj",
-              .trigger   = ON_CARD_PLAY,
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_hajj_dest_targets,
+              .name      = "Hajj",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_hajj_pick,
+              .name      = "Hajj",
+              .trigger   = ON_CARD_TARGET_SELECTED,
               .lasts_for = TURNS_1}},
         .name      = "Hajj",
         .desc      = "Target piece teleports to any unoccupied square. "
@@ -828,16 +952,149 @@ const Card KEWARANI_CARDS[] = {
     },
 };
 
+/// eff_trade_route
+///
+/// Trade Route: a piece standing on the board's main diagonal gains one
+/// extra square of movement in every direction, appended as the empty
+/// king-adjacent squares (movement only, so no new attacks).
+///
+/// Params:
+/// - context -> unused
+/// - x       -> move list, extended through the shared scratch
+///
+/// Return: true when at least one extra square was added
+///
+static bool eff_trade_route(EffectContext* context, void* x) {
+    (void) context;
+    (void) x;
+
+    PieceInfo* self = battle_subject();
+
+    if (!self || self->square.x != self->square.y) {
+        return false;
+    }
+
+    BattleState* battle = battle_current();
+    size_t       pushed = 0;
+
+    for (int8_t dy = -1; dy <= 1; dy++) {
+        for (int8_t dx = -1; dx <= 1; dx++) {
+            Square step = {
+                (int8_t) (self->square.x + dx),
+                (int8_t) (self->square.y + dy)
+            };
+
+            if ((dx || dy) && battle_in_bounds(battle, step) &&
+                !battle_at(battle, step)) {
+                mg_push(step);
+                pushed++;
+            }
+        }
+    }
+
+    mg_end();
+
+    return pushed > 0;
+}
+
+/// eff_contested_market
+///
+/// Contested Market: at the start of a side's turn, first resolves each
+/// neutral market piece — a side that holds its square claims it, a
+/// contested square lets it vanish — then spawns a fresh random Kewarani
+/// Town piece as neutral on a random contested empty square, to be claimed
+/// or lost next turn.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> turn number, unused
+///
+/// Return: true when a piece was claimed, removed, or spawned
+///
+static bool eff_contested_market(EffectContext* context, void* x) {
+    (void) context;
+    (void) x;
+
+    BattleState* battle = battle_current();
+    bool         acted  = false;
+
+    for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
+        PieceInfo* cell = battle->board.piece_board[index];
+
+        if (!cell || cell == &VOID_CELL || cell->side != SIDE_NEUTRAL) {
+            continue;
+        }
+
+        Side owner = battle_territory(battle, cell->square);
+
+        if (owner == SIDE_NEUTRAL) {
+            battle_remove(battle, cell);
+        } else {
+            cell->side = owner;
+        }
+
+        acted = true;
+    }
+
+    PieceID pool[PIECE_COUNT];
+    size_t  pool_count = 0;
+
+    for (size_t id = 0; id < PIECE_COUNT; id++) {
+        const Piece* piece = PIECE_REGISTRY[id];
+
+        if (piece && piece->kingdom == KINGDOM_KEWARANI &&
+            piece->tier == TIER_TOWN) {
+            pool[pool_count++] = (PieceID) id;
+        }
+    }
+
+    Square contested[MAX_BOARD_SIZE];
+    size_t contested_count = 0;
+
+    for (int8_t y = 0; y < battle->board.height; y++) {
+        for (int8_t col = 0; col < battle->board.width; col++) {
+            Square square = {col, y};
+
+            if (battle_in_bounds(battle, square) &&
+                !battle_at(battle, square) &&
+                battle_territory(battle, square) == SIDE_NEUTRAL) {
+                contested[contested_count++] = square;
+            }
+        }
+    }
+
+    if (pool_count == 0 || contested_count == 0) {
+        return acted;
+    }
+
+    PieceID id     = pool[battle_rand() % pool_count];
+    Square  square = contested[battle_rand() % contested_count];
+
+    return battle_spawn(battle, id, square, SIDE_NEUTRAL) || acted;
+}
+
 const BoardTrait KEWARANI_TRAITS[] = {
     {
-        .name = "Trade Route",
-        .desc = "A diagonal path grants pieces on it +1 movement.",
-        .id   = BOARD_TRAIT_TRADE_ROUTE,
+        .name    = "Trade Route",
+        .desc    = "A diagonal path grants pieces on it +1 movement.",
+        .id      = BOARD_TRAIT_TRADE_ROUTE,
+        .effects = {{
+            .func      = eff_trade_route,
+            .name      = "Trade Route",
+            .trigger   = QUERY_PIECE_MOVES,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     {
-        .name = "Contested Market",
-        .desc = "Each turn a neutral Kewarani piece appears to be claimed.",
-        .id   = BOARD_TRAIT_CONTESTED_MARKET,
+        .name    = "Contested Market",
+        .desc    = "Each turn a neutral Kewarani piece appears to be claimed.",
+        .id      = BOARD_TRAIT_CONTESTED_MARKET,
+        .effects = {{
+            .func      = eff_contested_market,
+            .name      = "Contested Market",
+            .trigger   = ON_TURN_START,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
 };
 

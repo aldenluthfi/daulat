@@ -153,8 +153,9 @@ static bool eff_war_chest(EffectContext* context, void* x) {
 
 /// eff_soul_shard
 ///
-/// Soul Shard: gaining a flipped piece adds thirty to the meter. Lives in
-/// the enemy list so it fires when an enemy piece flips to the human.
+/// Soul Shard: gaining a flipped piece adds thirty to the meter. Lives on
+/// the human seat; ON_PIECE_FLIP fires the gaining side's list, so it runs
+/// only when a piece flips onto the human side.
 ///
 /// Params:
 /// - context -> args[0] beneficiary side
@@ -469,10 +470,67 @@ static bool eff_forward_command(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_eagle_eye
+///
+/// Eagle Eye: nothing hides pieces from the board. As a board-state effect
+/// itself it runs on every board read, resets the whole view to visible,
+/// and swaps every OTHER QUERY_BOARD_STATE effect's func for eff_noop — on
+/// the human seat and on every piece — so any blinder, including one
+/// attached mid-battle, is neutralised the next read. It skips itself.
+/// Naming no item (it filters by trigger) keeps the engine agnostic and,
+/// resetting the view up front, makes fire order irrelevant.
+///
+/// Params:
+/// - context -> args[0] human side
+/// - x       -> Board* whose visible flags are all set
+///
+/// Return: true, the reveal always applies
+///
+static bool eff_eagle_eye(EffectContext* context, void* x) {
+    Board*       board  = x;
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+
+    for (size_t cell = 0; cell < MAX_BOARD_SIZE; cell++) {
+        board->visible[cell] = true;
+    }
+
+    LinkedList* list = &battle_player(battle, side)->effects;
+
+    for (LLNode* node = list->head; node; node = node->next) {
+        Effect* effect = node->data;
+
+        if (effect->trigger == QUERY_BOARD_STATE &&
+            effect->func != eff_eagle_eye) {
+            effect->func = eff_noop;
+        }
+    }
+
+    for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
+        PieceInfo* piece = battle->board.piece_board[index];
+
+        if (!piece || piece == &VOID_CELL) {
+            continue;
+        }
+
+        for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+            Effect* effect = &piece->piece->effects[slot];
+
+            if (effect->trigger == QUERY_BOARD_STATE &&
+                effect->func != eff_eagle_eye) {
+                effect->func = eff_noop;
+            }
+        }
+    }
+
+    return true;
+}
+
 /// eff_fortified_line
 ///
 /// Fortified Line: a piece that did not move this turn deals five extra
-/// damage. The MARK_MOVED stamp records the last turn a piece moved.
+/// damage. Reads the piece's last-move turn stamp and compares it to the
+/// current turn, so no per-turn reset of move counts is needed.
 ///
 /// Params:
 /// - context -> args[0] beneficiary side
@@ -493,14 +551,7 @@ static bool eff_fortified_line(EffectContext* context, void* x) {
         return false;
     }
 
-    Effect* moved = effect_find_mark(
-        &battle_player(battle, side)->effects,
-        MARK_MOVED,
-        subject
-    );
-
-    if (moved &&
-        (size_t) (uintptr_t) moved->context->args[2] == battle->turn) {
+    if (battle_piece_move_turn(subject) == battle->turn) {
         return false;
     }
 
@@ -777,8 +828,14 @@ const Relic RELIC_REGISTRY[RELIC_COUNT] = {
     },
     [RELIC_EAGLE_EYE] = {
         .name = "Eagle Eye",
-        .desc = "Enemy piece values are always visible.",
+        .desc = "Enemy pieces are always visible.",
         .id   = RELIC_EAGLE_EYE,
+        .effects = {{
+            .func      = eff_eagle_eye,
+            .name      = "Eagle Eye",
+            .trigger   = QUERY_BOARD_STATE,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     [RELIC_SURVEYORS_MAP] = {
         .name = "Surveyor's Map",

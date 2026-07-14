@@ -22,6 +22,7 @@ static PieceInfo*    VICTIM;
 static Card*         SUBJECT_CARD;
 static const Piece*  BUY_PIECE;
 static Square        MOVE_FROM = {-1, -1};
+static Square        OWNER_SQUARE = {-1, -1};
 static PieceInfo**   DAMAGERS;
 
 static EngineState*  BATTLE_ENGINE;
@@ -30,6 +31,11 @@ static Side          ACTING_SIDE;
 static unsigned int  BATTLE_RNG;
 static PieceInfo*    FLIPPED_PIECE;
 static PieceInfo*    DAMAGER_LIST[MAX_BOARD_SIZE + 1];
+
+#define MARK_MOVED     ((uintptr_t) 1)
+#define MARK_FLIPPED   ((uintptr_t) 2)
+#define TURN_LAST_MOVE ((uintptr_t) 3)
+#define TURN_LAST_FLIP ((uintptr_t) 4)
 
 static const PieceID COMBO_RESULTS[] = {
     PIECE_SANG,
@@ -78,6 +84,14 @@ static int        KINGDOM_PLAYS[KINGDOM_COUNT];
 
 static PieceInfo* REAP_LIST[2 * MAX_BOARD_SIZE];
 static size_t     REAP_COUNT;
+
+static Card*      PENDING_CARD;
+static Side       PENDING_SIDE;
+static CardTarget PENDING_TARGETS[MAX_BOARD_SIZE + 1];
+static size_t     PENDING_TARGET_COUNT;
+static CardTarget PENDING_PICKS[MAX_EFFECT_COUNT + 1];
+static size_t     PENDING_STEP;
+static size_t     PENDING_STEP_COUNT;
 
 /// battle_reap
 ///
@@ -166,6 +180,17 @@ Square battle_move_from(void) {
     return MOVE_FROM;
 }
 
+/// battle_owner_square
+///
+/// Returns the square whose owner the current QUERY_SQUARE_OWNER firing is
+/// resolving, so an effect can condition on which square it edits.
+///
+/// Return: the queried square, SQUARE_END outside QUERY_SQUARE_OWNER
+///
+Square battle_owner_square(void) {
+    return OWNER_SQUARE;
+}
+
 /// battle_damagers
 ///
 /// Returns the null-terminated list of pieces that dealt damage in the
@@ -224,6 +249,60 @@ PlayerState* battle_player(BattleState* battle, Side side) {
 ///
 Side battle_enemy(Side side) {
     return side == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
+}
+
+/// battle_rand
+///
+/// Draws the next value from the battle's deterministic RNG stream, the
+/// shared source for every randomised effect.
+///
+/// Return: a pseudo-random unsigned int
+///
+unsigned int battle_rand(void) {
+    return (unsigned int) rand_r(&BATTLE_RNG);
+}
+
+/// battle_draw_pool
+///
+/// Builds the side's eligible draw pool into out: every unlocked,
+/// registered card that passes QUERY_CARD_CAN_DRAW. The subject-card and
+/// battle registers are saved and restored so the build is side-effect
+/// free for callers firing mid-effect.
+///
+/// Params:
+/// - battle -> battle whose run gates the pool
+/// - side   -> side the draw eligibility fires for
+/// - out    -> CARD_COUNT-sized buffer receiving the eligible ids
+///
+/// Return: the number of eligible cards written to out
+///
+size_t battle_draw_pool(BattleState* battle, Side side, CardID* out) {
+    BattleState* saved_battle = CURRENT_BATTLE;
+    Card*        saved_card   = SUBJECT_CARD;
+    size_t       count        = 0;
+
+    CURRENT_BATTLE            = battle;
+
+    for (CardID id = 0; id < CARD_COUNT; id++) {
+        if (!BATTLE_ENGINE->run->cards[id] || !CARD_REGISTRY[id]) {
+            continue;
+        }
+
+        bool can     = true;
+
+        SUBJECT_CARD = (Card*) CARD_REGISTRY[id];
+        effect_fire(battle, side, QUERY_CARD_CAN_DRAW, &can);
+
+        if (can) {
+            out[count] = id;
+            count++;
+        }
+    }
+
+    SUBJECT_CARD   = saved_card;
+    CURRENT_BATTLE = saved_battle;
+
+    return count;
 }
 
 /// battle_find_king
@@ -294,23 +373,8 @@ void battle_draw(BattleState* battle, Side side, size_t count) {
     CURRENT_BATTLE            = battle;
 
     CardID pool[CARD_COUNT];
-    size_t pool_size = 0;
-
-    for (CardID id = 0; id < CARD_COUNT; id++) {
-        if (!BATTLE_ENGINE->run->cards[id] || !CARD_REGISTRY[id]) {
-            continue;
-        }
-
-        bool can     = true;
-
-        SUBJECT_CARD = (Card*) CARD_REGISTRY[id];
-        effect_fire(battle, side, QUERY_CARD_CAN_DRAW, &can);
-
-        if (can) {
-            pool[pool_size] = id;
-            pool_size++;
-        }
-    }
+    size_t pool_size = battle_draw_pool(battle, side, pool);
+    bool   drew      = false;
 
     for (size_t drawn = 0; drawn < count && pool_size > 0; drawn++) {
         size_t slot = 0;
@@ -323,20 +387,14 @@ void battle_draw(BattleState* battle, Side side, size_t count) {
             break;
         }
 
-        CardID pick = pool[(size_t) rand_r(&BATTLE_RNG) % pool_size];
-
-        if (drawn == 0 && battle->modifier &&
-            battle->modifier->id == MODIFIER_LUCKY_STRIKE) {
-            pick = pool[0];
-
-            for (size_t p = 1; p < pool_size; p++) {
-                if (CARD_REGISTRY[pool[p]]->tier > CARD_REGISTRY[pick]->tier) {
-                    pick = pool[p];
-                }
-            }
-        }
+        CardID pick        = pool[(size_t) rand_r(&BATTLE_RNG) % pool_size];
 
         player->hand[slot] = (Card*) CARD_REGISTRY[pick];
+        drew               = true;
+    }
+
+    if (drew) {
+        effect_fire(battle, side, ON_CARDS_DRAWN, player->hand);
     }
 
     SUBJECT_CARD   = saved_card;
@@ -500,6 +558,142 @@ PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at, Side side) {
     return info;
 }
 
+/// piece_mark
+///
+/// Reads a piece's magic counter mark for a tag: a noop mark carrying the
+/// tag in args[1] and the value in args[2]. Backs the move and flip
+/// counters and their last-turn stamps.
+///
+/// Params:
+/// - piece -> piece to read
+/// - tag   -> magic tag (MARK_MOVED, MARK_FLIPPED, TURN_LAST_MOVE, ...)
+///
+/// Return: the stored value, zero when the mark is absent
+///
+static int piece_mark(PieceInfo* piece, uintptr_t tag) {
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        Effect* effect = &piece->piece->effects[slot];
+
+        if (effect->func == eff_noop && effect->context &&
+            (uintptr_t) effect->context->args[1] == tag) {
+            return (int) (uintptr_t) effect->context->args[2];
+        }
+    }
+
+    return 0;
+}
+
+/// piece_mark_set
+///
+/// Stores a value on a piece's magic counter mark for a tag, embedding the
+/// noop mark on first use. battle_move and battle_flip stamp the counts and
+/// last-turn marks through it.
+///
+/// Params:
+/// - piece -> piece to stamp
+/// - tag   -> magic tag
+/// - value -> value to store
+///
+static void piece_mark_set(PieceInfo* piece, uintptr_t tag, int value) {
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        Effect* effect = &piece->piece->effects[slot];
+
+        if (effect->func == eff_noop && effect->context &&
+            (uintptr_t) effect->context->args[1] == tag) {
+            effect->context->args[2] = (void*) (uintptr_t) value;
+
+            return;
+        }
+    }
+
+    Effect mark = {
+        .func      = eff_noop,
+        .trigger   = ON_BATTLE_START,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    Effect* embedded = piece_embed_effect(piece, &mark);
+
+    if (embedded) {
+        embedded->context->args[1] = (void*) tag;
+        embedded->context->args[2] = (void*) (uintptr_t) value;
+    }
+}
+
+/// battle_piece_move_turn
+///
+/// Returns the turn on which a piece last moved, zero when it never moved,
+/// from its TURN_LAST_MOVE mark. Consumers needing "moved this turn" or
+/// "moved last turn" compare it to battle->turn.
+///
+/// Params:
+/// - piece -> piece to query
+///
+/// Return: the piece's last-move turn, zero when it never moved
+///
+size_t battle_piece_move_turn(PieceInfo* piece) {
+    return (size_t) piece_mark(piece, TURN_LAST_MOVE);
+}
+
+/// battle_piece_flip_turn
+///
+/// Returns the turn on which a piece last flipped, zero when it never
+/// flipped, from its TURN_LAST_FLIP mark.
+///
+/// Params:
+/// - piece -> piece to query
+///
+/// Return: the piece's last-flip turn, zero when it never flipped
+///
+size_t battle_piece_flip_turn(PieceInfo* piece) {
+    return (size_t) piece_mark(piece, TURN_LAST_FLIP);
+}
+
+/// battle_piece_moves
+///
+/// Returns how many times a piece has moved this battle: the base is its
+/// MARK_MOVED mark, then QUERY_PIECE_HAS_MOVED fires so effects may adjust.
+///
+/// Params:
+/// - battle -> battle the piece lives in
+/// - piece  -> piece to query
+///
+/// Return: the piece's move count
+///
+int battle_piece_moves(BattleState* battle, PieceInfo* piece) {
+    PieceInfo* saved = SUBJECT;
+    int        count = piece_mark(piece, MARK_MOVED);
+
+    SUBJECT = piece;
+    effect_fire(battle, piece->side, QUERY_PIECE_HAS_MOVED, &count);
+    SUBJECT = saved;
+
+    return count;
+}
+
+/// battle_piece_flips
+///
+/// Returns how many times a piece has flipped this battle: the base is its
+/// MARK_FLIPPED mark, then QUERY_PIECE_HAS_FLIPPED fires so effects may
+/// adjust.
+///
+/// Params:
+/// - battle -> battle the piece lives in
+/// - piece  -> piece to query
+///
+/// Return: the piece's flip count
+///
+int battle_piece_flips(BattleState* battle, PieceInfo* piece) {
+    PieceInfo* saved = SUBJECT;
+    int        count = piece_mark(piece, MARK_FLIPPED);
+
+    SUBJECT = piece;
+    effect_fire(battle, piece->side, QUERY_PIECE_HAS_FLIPPED, &count);
+    SUBJECT = saved;
+
+    return count;
+}
+
 /// battle_flip
 ///
 /// Flips a piece to the opposing side, firing ON_PIECE_FLIP_PRE before
@@ -533,6 +727,8 @@ void battle_flip(BattleState* battle, PieceInfo* piece) {
             pick->square.y
         );
 
+        piece_mark_set(pick, MARK_FLIPPED, piece_mark(pick, MARK_FLIPPED) + 1);
+        piece_mark_set(pick, TURN_LAST_FLIP, (int) battle->turn);
         effect_fire(battle, pick->side, ON_PIECE_FLIP, pick);
     }
 
@@ -654,26 +850,8 @@ bool battle_move(BattleState* battle, Square from, Square to) {
     effect_fire(battle, ACTING_SIDE, ON_PIECE_MOVE, piece);
     MOVE_FROM      = SQUARE_END;
 
-    Effect* moved  = effect_find_mark(&player->effects, MARK_MOVED, piece);
-
-    if (moved) {
-        moved->context->args[2] = (void*) (uintptr_t) battle->turn;
-    } else {
-        Effect mark = {
-            .func      = eff_noop,
-            .name      = "Moved",
-            .trigger   = ON_TURN_START,
-            .lasts_for = TURNS_2,
-        };
-
-        Effect* stamp = effect_attach(&player->effects, &mark);
-
-        if (stamp) {
-            stamp->context->args[0] = piece;
-            stamp->context->args[1] = (void*) (uintptr_t) MARK_MOVED;
-            stamp->context->args[2] = (void*) (uintptr_t) battle->turn;
-        }
-    }
+    piece_mark_set(piece, MARK_MOVED, piece_mark(piece, MARK_MOVED) + 1);
+    piece_mark_set(piece, TURN_LAST_MOVE, (int) battle->turn);
 
     CURRENT_BATTLE = nullptr;
     SUBJECT        = nullptr;
@@ -795,6 +973,21 @@ bool battle_is_recipe_result(PieceID id) {
     return false;
 }
 
+/// battle_piece_unlocked
+///
+/// Reports whether the run has unlocked a piece identity, exposing the
+/// battle.c-private run pointer so card effects can offer only unlocked
+/// identities without naming the engine.
+///
+/// Params:
+/// - id -> piece identity to test
+///
+/// Return: true when the run has unlocked the identity
+///
+bool battle_piece_unlocked(PieceID id) {
+    return id < PIECE_COUNT && BATTLE_ENGINE->run->pieces[id];
+}
+
 bool battle_buy(BattleState* battle, PieceID id, Square at) {
     const Piece* template = PIECE_REGISTRY[id];
 
@@ -827,28 +1020,6 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
     BUY_PIECE      = nullptr;
     CURRENT_BATTLE = nullptr;
 
-    Effect* storm =
-        effect_find_mark(&player->effects, CARD_PAWN_STORM, nullptr);
-
-    if (storm && id == PIECE_PAWN && (uintptr_t) storm->context->args[2] > 0) {
-        action_cost = 0;
-
-        if ((uintptr_t) storm->context->args[2] == 1) {
-            cost = 0;
-        }
-    }
-
-    Effect* reforge = effect_find_mark(&player->effects, CARD_REFORGE, nullptr);
-
-    bool reforge_ok =
-        reforge && !reforge->context->args[3] &&
-        (PieceID) (uintptr_t) reforge->context->args[2] == id &&
-        battle->turn <= (size_t) (uintptr_t) reforge->context->args[4] + 1;
-
-    if (reforge_ok) {
-        cost = cost * 70 / 100;
-    }
-
     if (player->cp < cost || player->actions < action_cost) {
         return false;
     }
@@ -862,15 +1033,6 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
     player->cp      -= cost;
     player->actions -= action_cost;
     player->meter   += battle_value(battle, piece, nullptr);
-
-    if (storm && id == PIECE_PAWN && (uintptr_t) storm->context->args[2] > 0) {
-        storm->context->args[2] =
-            (void*) ((uintptr_t) storm->context->args[2] - 1);
-    }
-
-    if (reforge_ok) {
-        reforge->context->args[3] = (void*) 1;
-    }
 
     CURRENT_BATTLE = battle;
     effect_fire(battle, ACTING_SIDE, ON_PIECE_BUY, piece);
@@ -962,22 +1124,125 @@ bool battle_combine(BattleState* battle, Square a, Square b) {
     return true;
 }
 
-/// battle_play
+/// battle_card_step_count
 ///
-/// Plays a card from the hand, paying its queried play cost, running its
-/// immediate effects and attaching its durational ones, then fires
-/// ON_CARD_PLAY and advances the same-kingdom combo chain. The a and b
-/// targets are encoded per the card's documentation.
+/// Counts a card's QUERY_CARD_TARGETS effect slots, the number of target
+/// selection steps the two-step play flow must gather before resolving.
 ///
 /// Params:
-/// - battle -> battle to act in
-/// - hand   -> hand index of the card to play
-/// - a      -> first encoded target, card specific
-/// - b      -> second encoded target, card specific
+/// - card -> card to test
 ///
-/// Return: true when the card was played
+/// Return: the number of target steps, zero when the card needs no target
 ///
-bool battle_play(BattleState* battle, size_t hand, long a, long b) {
+static size_t battle_card_step_count(const Card* card) {
+    size_t count = 0;
+
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        if (card->effects[slot].func &&
+            card->effects[slot].trigger == QUERY_CARD_TARGETS) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+/// battle_build_step
+///
+/// Fills PENDING_TARGETS with the legal targets for one selection step by
+/// firing the step-th QUERY_CARD_TARGETS effect. That effect may read the
+/// picks already gathered through battle_pending_picks.
+///
+/// Params:
+/// - card -> targeting card
+/// - step -> zero based ordinal among the QUERY_CARD_TARGETS slots
+/// - side -> acting side, passed to the effect as args[0]
+///
+/// Return: the number of legal targets advertised for the step
+///
+static size_t battle_build_step(Card* card, size_t step, Side side) {
+    PENDING_TARGETS[0].kind = TARGET_NONE;
+
+    size_t ordinal = 0;
+
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        const Effect* effect = &card->effects[slot];
+
+        if (!effect->func || effect->trigger != QUERY_CARD_TARGETS) {
+            continue;
+        }
+
+        if (ordinal++ != step) {
+            continue;
+        }
+
+        EffectContext ctx = {};
+
+        ctx.args[0]          = (void*) (uintptr_t) side;
+
+        effect->func(&ctx, PENDING_TARGETS);
+        break;
+    }
+
+    size_t count = 0;
+
+    while (PENDING_TARGETS[count].kind != TARGET_NONE) {
+        count++;
+    }
+
+    return count;
+}
+
+/// battle_emit_targets
+///
+/// Emits the current PENDING_TARGETS list on the protocol so the caller can
+/// pick one by index, shared by play and each further selection step.
+///
+/// Params:
+/// - count -> number of live targets in PENDING_TARGETS
+///
+static void battle_emit_targets(size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        protocol_emit(
+            "target i=%zu kind=%d value=%d",
+            i,
+            PENDING_TARGETS[i].kind,
+            PENDING_TARGETS[i].value
+        );
+    }
+}
+
+/// battle_pending_picks
+///
+/// Exposes the TARGET_NONE terminated list of targets chosen so far for the
+/// parked card, so a later step's QUERY_CARD_TARGETS effect can exclude or
+/// build on earlier picks.
+///
+/// Return: the pending picks list
+///
+const CardTarget* battle_pending_picks(void) {
+    return PENDING_PICKS;
+}
+
+/// battle_card_can_play
+///
+/// Reports whether the hand card is playable now: it exists, its queried
+/// play cost is affordable, no QUERY_CARD_CAN_PLAY effect vetoes it, and
+/// every selection step it needs offers a target. Steps are dry-run in
+/// order, greedily recording the first target of each so a later step that
+/// builds on an earlier pick sees one; a step that offers nothing makes the
+/// card unplayable, so the play never parks on a dead step. The pending
+/// target state is saved and restored so an in-progress selection is
+/// untouched. The protocol calls this to flag unplayable cards; battle_play
+/// gates on it.
+///
+/// Params:
+/// - battle -> battle to test in
+/// - hand   -> hand index of the card
+///
+/// Return: true when the card can be played to completion
+///
+bool battle_card_can_play(BattleState* battle, size_t hand) {
     if (hand >= MAX_DRAWN_CARDS) {
         return false;
     }
@@ -989,16 +1254,85 @@ bool battle_play(BattleState* battle, size_t hand, long a, long b) {
         return false;
     }
 
+    int cost = card->play_cost;
+
+    CURRENT_BATTLE = battle;
+    SUBJECT_CARD   = card;
+    effect_fire(battle, ACTING_SIDE, QUERY_CARD_PLAY_COST, &cost);
+
+    bool   can   = player->cp >= cost;
+    size_t steps = battle_card_step_count(card);
+
+    if (can) {
+        effect_fire(battle, ACTING_SIDE, QUERY_CARD_CAN_PLAY, &can);
+    }
+
+    if (can && steps > 0) {
+        CardTarget saved_picks[MAX_EFFECT_COUNT + 1];
+        size_t     saved_count = PENDING_TARGET_COUNT;
+
+        for (size_t i = 0; i <= MAX_EFFECT_COUNT; i++) {
+            saved_picks[i] = PENDING_PICKS[i];
+        }
+
+        PENDING_PICKS[0] = (CardTarget) {TARGET_NONE, 0};
+
+        for (size_t step = 0; can && step < steps; step++) {
+            if (battle_build_step(card, step, ACTING_SIDE) == 0) {
+                can = false;
+                break;
+            }
+
+            PENDING_PICKS[step]     = PENDING_TARGETS[0];
+            PENDING_PICKS[step + 1] = (CardTarget) {TARGET_NONE, 0};
+        }
+
+        for (size_t i = 0; i <= MAX_EFFECT_COUNT; i++) {
+            PENDING_PICKS[i] = saved_picks[i];
+        }
+
+        PENDING_TARGET_COUNT = saved_count;
+    }
+
+    SUBJECT_CARD   = nullptr;
+    CURRENT_BATTLE = nullptr;
+
+    return can;
+}
+
+/// battle_play
+///
+/// Plays a card from the hand, paying its queried play cost, running its
+/// immediate effects and attaching its durational ones, then fires
+/// ON_CARD_PLAY and advances the same-kingdom combo chain. A card with one
+/// or more QUERY_CARD_TARGETS effects defers its resolution to
+/// battle_card_target, parking the card and emitting the first step's
+/// advertised targets.
+///
+/// Params:
+/// - battle -> battle to act in
+/// - hand   -> hand index of the card to play
+///
+/// Return: true when the card was played
+///
+bool battle_play(BattleState* battle, size_t hand) {
+    if (!battle_card_can_play(battle, hand)) {
+        return false;
+    }
+
+    PlayerState* player = battle_player(battle, ACTING_SIDE);
+    Card*        card   = player->hand[hand];
+
     int cost       = card->play_cost;
 
     CURRENT_BATTLE = battle;
     SUBJECT_CARD   = card;
     effect_fire(battle, ACTING_SIDE, QUERY_CARD_PLAY_COST, &cost);
 
-    if (player->cp < cost) {
-        SUBJECT_CARD   = nullptr;
-        CURRENT_BATTLE = nullptr;
-        return false;
+    size_t steps = battle_card_step_count(card);
+
+    if (steps > 0) {
+        PENDING_TARGET_COUNT = battle_build_step(card, 0, ACTING_SIDE);
     }
 
     player->cp -= cost;
@@ -1010,12 +1344,15 @@ bool battle_play(BattleState* battle, size_t hand, long a, long b) {
             continue;
         }
 
+        if (effect->trigger == QUERY_CARD_TARGETS ||
+            effect->trigger == ON_CARD_TARGET_SELECTED) {
+            continue;
+        }
+
         if (effect->trigger == ON_CARD_PLAY) {
             EffectContext ctx = {};
 
             ctx.args[0]       = (void*) (uintptr_t) ACTING_SIDE;
-            ctx.args[1]       = (void*) (uintptr_t) a;
-            ctx.args[2]       = (void*) (uintptr_t) b;
 
             if (effect->func(&ctx, card) && effect->name) {
                 protocol_emit(
@@ -1030,25 +1367,12 @@ bool battle_play(BattleState* battle, size_t hand, long a, long b) {
 
         Effect* attached = effect_attach(&player->effects, effect);
 
-        if (!attached) {
-            continue;
-        }
-
-        if (attached->func == eff_noop) {
-            attached->context->args[1] = (void*) (uintptr_t) card->id;
-            attached->context->args[2] = (void*) (uintptr_t) 3;
-        } else {
+        if (attached) {
             attached->context->args[0] = (void*) (uintptr_t) ACTING_SIDE;
-            attached->context->args[1] = (void*) (uintptr_t) a;
-            attached->context->args[2] = (void*) (uintptr_t) b;
         }
     }
 
     effect_fire(battle, ACTING_SIDE, ON_CARD_PLAY, card);
-
-    if (card->id == CARD_QUEENS_GAMBIT) {
-        battle_draw(battle, ACTING_SIDE, 3);
-    }
 
     if (card->kingdom < KINGDOM_COUNT) {
         KINGDOM_PLAYS[card->kingdom]++;
@@ -1067,8 +1391,89 @@ bool battle_play(BattleState* battle, size_t hand, long a, long b) {
 
     player->hand[hand] = nullptr;
 
+    if (steps > 0) {
+        PENDING_CARD          = card;
+        PENDING_SIDE          = ACTING_SIDE;
+        PENDING_STEP          = 0;
+        PENDING_STEP_COUNT    = steps;
+        PENDING_PICKS[0].kind = TARGET_NONE;
+
+        battle_emit_targets(PENDING_TARGET_COUNT);
+    }
+
     SUBJECT_CARD       = nullptr;
     CURRENT_BATTLE     = nullptr;
+
+    return true;
+}
+
+/// battle_card_target
+///
+/// Records one selection for a parked card. When more steps remain it builds
+/// and emits the next step's targets; when the last pick lands it fires the
+/// card's ON_CARD_TARGET_SELECTED effects with the whole TARGET_NONE
+/// terminated pick list, logging any that apply. The protocol selects by
+/// index into the list emitted for the current step.
+///
+/// Params:
+/// - battle -> battle to act in
+/// - index  -> index into the advertised target list of the current step
+///
+/// Return: true when the selection was accepted
+///
+bool battle_card_target(BattleState* battle, size_t index) {
+    if (!PENDING_CARD || index >= PENDING_TARGET_COUNT) {
+        return false;
+    }
+
+    Card* card = PENDING_CARD;
+    Side  side = PENDING_SIDE;
+
+    PENDING_PICKS[PENDING_STEP]     = PENDING_TARGETS[index];
+    PENDING_PICKS[PENDING_STEP + 1] = (CardTarget) {TARGET_NONE, 0};
+    PENDING_STEP++;
+
+    CURRENT_BATTLE = battle;
+    SUBJECT_CARD   = card;
+
+    while (PENDING_STEP < PENDING_STEP_COUNT) {
+        PENDING_TARGET_COUNT = battle_build_step(card, PENDING_STEP, side);
+
+        if (PENDING_TARGET_COUNT > 0) {
+            battle_emit_targets(PENDING_TARGET_COUNT);
+            SUBJECT_CARD   = nullptr;
+            CURRENT_BATTLE = nullptr;
+            return true;
+        }
+
+        PENDING_PICKS[PENDING_STEP]     = (CardTarget) {TARGET_NONE, 0};
+        PENDING_PICKS[PENDING_STEP + 1] = (CardTarget) {TARGET_NONE, 0};
+        PENDING_STEP++;
+    }
+
+    PENDING_CARD = nullptr;
+
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        const Effect* effect = &card->effects[slot];
+
+        if (!effect->func || effect->trigger != ON_CARD_TARGET_SELECTED) {
+            continue;
+        }
+
+        EffectContext ctx = {};
+
+        ctx.args[0]          = (void*) (uintptr_t) side;
+
+        if (effect->func(&ctx, PENDING_PICKS) && effect->name) {
+            protocol_emit(
+                "log effect name=\"%s\" trigger=ON_CARD_TARGET_SELECTED",
+                effect->name
+            );
+        }
+    }
+
+    SUBJECT_CARD   = nullptr;
+    CURRENT_BATTLE = nullptr;
 
     return true;
 }
@@ -1285,10 +1690,11 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
         PlayerState* gainer = battle_player(battle, gainer_side);
         int          max_before = battle_meter_max(battle, gainer_side);
 
-        int flips =
-            battle->modifier && battle->modifier->id == MODIFIER_BLOODBATH
-                ? 2
-                : 1;
+        int flips = 1;
+
+        CURRENT_BATTLE = battle;
+        effect_fire(battle, receiver, QUERY_FLIP_COUNT, &flips);
+        CURRENT_BATTLE = nullptr;
 
         PieceInfo* toggled[2];
         int        toggled_count = 0;
@@ -1527,11 +1933,9 @@ int battle_lunge(BattleState* battle, PieceInfo* piece, Square to) {
 
 /// battle_walk_run
 ///
-/// Attaches the run's held relics to the seats at battle start. Relics go
-/// on the human seat with the human as their beneficiary in args[0]; Soul
-/// Shard observes the enemy, so it attaches to the enemy list while still
-/// crediting the human. Runs before the meters are computed so value
-/// editing relics fold into the starting meter maxima.
+/// Attaches the run's held relics to the human seat at battle start with
+/// the human as their beneficiary in args[0]. Runs before the meters are
+/// computed so value editing relics fold into the starting meter maxima.
 ///
 /// Params:
 /// - battle -> battle being set up
@@ -1548,9 +1952,6 @@ static void battle_walk_run(BattleState* battle) {
             continue;
         }
 
-        Side list =
-            id == RELIC_SOUL_SHARD ? battle_enemy(HUMAN_SIDE) : HUMAN_SIDE;
-
         const Relic* relic = &RELIC_REGISTRY[id];
 
         for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
@@ -1559,7 +1960,7 @@ static void battle_walk_run(BattleState* battle) {
             }
 
             Effect* attached = effect_attach(
-                &battle_player(battle, list)->effects,
+                &battle_player(battle, HUMAN_SIDE)->effects,
                 &relic->effects[slot]
             );
 
@@ -1622,12 +2023,12 @@ static void battle_free_army(
 
 /// battle_setup_armies
 ///
-/// Grants the enemy its free starting reinforcements and attaches the
-/// region's chain penalty to the human seat. The reinforcement count is
-/// Vorath's pressure plus the Silver chain, the elite node, and the
-/// liberation trial bonuses; the pieces are the region kingdom's basic
-/// infantry. Runs before the meters compute so the extra pieces fold into
-/// the enemy's starting maximum.
+/// Attaches the region's cumulative chain penalties to the human seat, then
+/// grants the enemy its free starting reinforcements. The base count is
+/// Vorath's pressure plus the elite and liberation node bonuses; chain and
+/// difficulty penalties fold in through QUERY_ENEMY_ARMY_COUNT. The pieces
+/// are the region kingdom's basic infantry. Runs before the meters compute
+/// so the extra pieces fold into the enemy's starting maximum.
 ///
 /// Params:
 /// - battle -> battle being set up
@@ -1645,14 +2046,36 @@ static void battle_setup_armies(BattleState* battle) {
         : CHAIN_NONE;
 
     Difficulty difficulty = BATTLE_ENGINE->run->difficulty;
-    size_t     count      = run_pressure(BATTLE_ENGINE->run, kingdom);
+
+    for (ChainPenaltyID c = CHAIN_BRONZE; c <= level; c++) {
+        const ChainPenalty* chain = &CHAIN_REGISTRY[c];
+
+        for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+            if (!chain->effects[slot].func) {
+                continue;
+            }
+
+            Effect* attached = effect_attach(
+                &battle_player(battle, HUMAN_SIDE)->effects,
+                &chain->effects[slot]
+            );
+
+            if (attached) {
+                int penalty = difficulty >= DIFFICULTY_SHACKLED &&
+                              difficulty <= DIFFICULTY_ENSLAVED
+                    ? 25
+                    : 10;
+
+                attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
+                attached->context->args[1] = (void*) (uintptr_t) penalty;
+            }
+        }
+    }
+
+    int count = (int) run_pressure(BATTLE_ENGINE->run, kingdom);
 
     if (difficulty >= DIFFICULTY_BOUND && difficulty <= DIFFICULTY_ENSLAVED) {
         count += 2;
-    }
-
-    if (level >= CHAIN_SILVER) {
-        count++;
     }
 
     if (node->type == MAP_NODE_ELITE) {
@@ -1663,9 +2086,15 @@ static void battle_setup_armies(BattleState* battle) {
         count += 2;
     }
 
+    CURRENT_BATTLE = battle;
+    effect_fire(battle, HUMAN_SIDE, QUERY_ENEMY_ARMY_COUNT, &count);
+    CURRENT_BATTLE = nullptr;
+
     Side enemy = battle_enemy(HUMAN_SIDE);
 
-    battle_free_army(battle, enemy, enemy, KINGDOM_BASIC[kingdom], count);
+    battle_free_army(
+        battle, enemy, enemy, KINGDOM_BASIC[kingdom], (size_t) count
+    );
 
     if (BATTLE_ENGINE->run->challenge == CHALLENGE_THE_TRAITORS_GAMBIT) {
         battle_free_army(
@@ -1675,33 +2104,6 @@ static void battle_setup_armies(BattleState* battle) {
             KINGDOM_BASIC[kingdom],
             3
         );
-    }
-
-    if (level < CHAIN_BRONZE) {
-        return;
-    }
-
-    const ChainPenalty* chain = &CHAIN_REGISTRY[CHAIN_BRONZE];
-
-    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
-        if (!chain->effects[slot].func) {
-            continue;
-        }
-
-        Effect* attached = effect_attach(
-            &battle_player(battle, HUMAN_SIDE)->effects,
-            &chain->effects[slot]
-        );
-
-        if (attached) {
-            int penalty = difficulty >= DIFFICULTY_SHACKLED &&
-                          difficulty <= DIFFICULTY_ENSLAVED
-                ? 25
-                : 10;
-
-            attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
-            attached->context->args[1] = (void*) (uintptr_t) penalty;
-        }
     }
 }
 
@@ -1821,7 +2223,7 @@ static void battle_walk_modifiers(BattleState* battle) {
 /// - battle  -> battle whose board gains voids
 /// - percent -> share of squares to void
 ///
-static void battle_scatter_voids(BattleState* battle, int percent) {
+void battle_scatter_voids(BattleState* battle, int percent) {
     int voids = battle->board.width * battle->board.height * percent / 100;
 
     for (int placed = 0; placed < voids; placed++) {
@@ -1838,31 +2240,26 @@ static void battle_scatter_voids(BattleState* battle, int percent) {
     }
 }
 
-/// battle_terrain
+/// battle_board_view
 ///
-/// Applies the board's missing-square terrain from the modifier and trait:
-/// Dense Terrain voids a fifth, Mirage a twentieth, Island Chain a tenth.
+/// Refills the board's visible read for the human: every cell starts
+/// visible, then QUERY_BOARD_STATE lets the human's fog effects hide enemy
+/// pieces. Fired from the human's seat so only the human-side copies of
+/// battle-wide items act (Eagle Eye reveals and noops them if held).
 ///
 /// Params:
-/// - battle -> battle whose board gains voids
+/// - battle -> battle whose board view is refilled
 ///
-static void battle_terrain(BattleState* battle) {
-    if (battle->modifier &&
-        battle->modifier->id == MODIFIER_DENSE_TERRAIN) {
-        battle_scatter_voids(battle, 20);
+void battle_board_view(BattleState* battle) {
+    for (size_t cell = 0; cell < MAX_BOARD_SIZE; cell++) {
+        battle->board.visible[cell] = true;
     }
 
-    if (!battle->board.trait) {
-        return;
-    }
+    BattleState* saved = CURRENT_BATTLE;
 
-    if (battle->board.trait->id == BOARD_TRAIT_MIRAGE) {
-        battle_scatter_voids(battle, 5);
-    }
-
-    if (battle->board.trait->id == BOARD_TRAIT_ISLAND_CHAIN) {
-        battle_scatter_voids(battle, 10);
-    }
+    CURRENT_BATTLE = battle;
+    effect_fire(battle, HUMAN_SIDE, QUERY_BOARD_STATE, &battle->board);
+    CURRENT_BATTLE = saved;
 }
 
 /// battle_walk_traits
@@ -1933,17 +2330,7 @@ void battle_begin(EngineState* engine, MapNode* node) {
     battle->modifier      = node ? node->modifier : nullptr;
     battle->board.trait   = node ? node->trait : nullptr;
 
-    int8_t width          = size;
-
-    if (battle->modifier &&
-        battle->modifier->id == MODIFIER_EXTENDED_FRONT) {
-        width += 2;
-    } else if (battle->modifier &&
-               battle->modifier->id == MODIFIER_COMPRESSED) {
-        width -= 2;
-    }
-
-    battle->board.width   = width;
+    battle->board.width   = size;
     battle->board.height  = size;
     battle->turn          = 1;
     battle->white.effects = ll_init();
@@ -1951,6 +2338,21 @@ void battle_begin(EngineState* engine, MapNode* node) {
 
     BATTLE_RNG            = (unsigned int)
         rng_mix(engine->run->seed, engine->run->battles_fought + 1);
+
+    battle->white.cp    = 20;
+    battle->black.cp    = 20;
+
+    battle_walk_run(battle);
+    battle_walk_modifiers(battle);
+    battle_walk_traits(battle);
+
+    Square dimension = {battle->board.width, battle->board.height};
+
+    CURRENT_BATTLE   = battle;
+    effect_fire(battle, SIDE_WHITE, QUERY_BOARD_DIMENSION, &dimension);
+
+    battle->board.width  = dimension.x;
+    battle->board.height = dimension.y;
 
     int8_t center = (int8_t) (battle->board.width / 2);
 
@@ -1962,14 +2364,9 @@ void battle_begin(EngineState* engine, MapNode* node) {
     );
     battle_spawn(battle, PIECE_KING, (Square) {center, 0}, SIDE_BLACK);
 
-    battle_terrain(battle);
+    effect_fire(battle, SIDE_WHITE, ON_BOARD_BUILD, &battle->board);
+    CURRENT_BATTLE = nullptr;
 
-    battle->white.cp    = 20;
-    battle->black.cp    = 20;
-
-    battle_walk_run(battle);
-    battle_walk_modifiers(battle);
-    battle_walk_traits(battle);
     battle_setup_armies(battle);
     battle_walk_innates(battle);
     battle_walk_synergies(battle);
@@ -2248,7 +2645,8 @@ int battle_meter_max(BattleState* battle, Side side) {
 /// battle_territory
 ///
 /// Determines which side holds the square by Chebyshev distance to the
-/// nearest piece of each side. Neutral pieces hold no territory.
+/// nearest piece of each side (neutral pieces hold no territory), then
+/// fires QUERY_SQUARE_OWNER so effects may adjust the holder.
 ///
 /// Params:
 /// - battle -> battle to measure
@@ -2280,15 +2678,19 @@ Side battle_territory(BattleState* battle, Square square) {
         }
     }
 
-    if (nearest_white < nearest_black) {
-        return SIDE_WHITE;
-    }
+    Side owner = nearest_white < nearest_black   ? SIDE_WHITE
+                 : nearest_black < nearest_white ? SIDE_BLACK
+                                                 : SIDE_NEUTRAL;
 
-    if (nearest_black < nearest_white) {
-        return SIDE_BLACK;
-    }
+    BattleState* saved = CURRENT_BATTLE;
 
-    return SIDE_NEUTRAL;
+    CURRENT_BATTLE = battle;
+    OWNER_SQUARE   = square;
+    effect_fire(battle, SIDE_WHITE, QUERY_SQUARE_OWNER, &owner);
+    OWNER_SQUARE   = SQUARE_END;
+    CURRENT_BATTLE = saved;
+
+    return owner;
 }
 
 /// battle_at

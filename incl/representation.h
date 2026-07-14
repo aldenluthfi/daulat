@@ -24,6 +24,11 @@
 /// QUERY_CARD_PLAY_COST            x: int*        card play_cost
 /// QUERY_CARD_SELL_COST            x: int*        card sell_cost
 /// QUERY_CARD_CAN_DRAW             x: bool*       base true
+/// QUERY_CARD_CAN_PLAY             x: bool*       base true; effects veto
+///                                                by setting false
+/// QUERY_CARD_TARGETS              x: CardTarget* a targeting card fills
+///                                                its legal targets here,
+///                                                TARGET_NONE terminated
 /// QUERY_PIECE_ACTION_COST_MOVE    x: int*        base 1
 /// QUERY_PIECE_ACTION_COST_BUY     x: int*        base 1
 /// QUERY_PIECE_ACTION_COST_COMBINE x: int*        base 1
@@ -41,10 +46,32 @@
 ///                                                effective-value query
 /// QUERY_PIECE_DAMAGE_TAKEN        x: int*        post-offense damage;
 ///                                                subject is the victim
+/// QUERY_PIECE_HAS_MOVED           x: int*        subject's move count is
+///                                                added; base 0
+/// QUERY_PIECE_HAS_FLIPPED         x: int*        subject's flip count is
+///                                                added; base 0
 /// QUERY_METER_DAMAGE_TAKEN        x: int*        total resolve damage;
 ///                                                side is the receiver
 /// QUERY_METER_REFILL              x: int*        battle_meter_max result
+/// QUERY_FLIP_COUNT                x: int*        pieces flipped per meter
+///                                                empty; base 1, fired for
+///                                                the emptied side
 /// QUERY_CP_INCOME                 x: int*        base 10
+/// QUERY_ENEMY_ARMY_COUNT          x: int*        free enemy reinforcements;
+///                                                fired for the human seat,
+///                                                penalties add to the count
+/// QUERY_SQUARE_OWNER              x: Side*       holding side; base is the
+///                                                nearest-piece Chebyshev
+///                                                read (SIDE_NEUTRAL when
+///                                                contested); square via
+///                                                battle_owner_square()
+/// QUERY_BOARD_DIMENSION           x: Square*     board {width, height} in
+///                                                {x, y}, edited in place
+/// QUERY_BOARD_STATE               x: Board*      board.visible is the human's
+///                                                per-cell piece read; fog
+///                                                effects hide enemy pieces
+/// ON_BOARD_BUILD                  x: Board*      the built board; effects
+///                                                scatter voids onto it
 /// ON_PIECE_FLIP_PRE               x: PieceInfo** pre-toggle; mutate *x
 ///                                                to redirect the flip or
 ///                                                set nullptr to consume
@@ -59,6 +86,11 @@
 /// ON_PIECE_COMBINE                x: PieceInfo*  combination result
 /// ON_CARD_PLAY                    x: Card*       card just played
 /// ON_CARD_SELL                    x: Card*       card just sold
+/// ON_CARDS_DRAWN                  x: Card**       the hand just filled;
+///                                                effects rewrite drawn
+///                                                cards in place
+/// ON_CARD_TARGET_SELECTED         x: CardTarget* the chosen target; the
+///                                                card resolves against it
 /// ON_TURN_START                   x: uintptr_t   current turn number
 /// ON_TURN_END                     x: uintptr_t   current turn number
 /// ON_BATTLE_START                 x: MapNode*    battle location node
@@ -69,6 +101,8 @@ enum EffectTrigger {
     QUERY_CARD_PLAY_COST,
     QUERY_CARD_SELL_COST,
     QUERY_CARD_CAN_DRAW,
+    QUERY_CARD_CAN_PLAY,
+    QUERY_CARD_TARGETS,
 
     QUERY_PIECE_ACTION_COST_MOVE,
     QUERY_PIECE_ACTION_COST_BUY,
@@ -87,10 +121,20 @@ enum EffectTrigger {
     QUERY_PIECE_DAMAGE_DEALT,
     QUERY_PIECE_DAMAGE_TAKEN,
 
+    QUERY_PIECE_HAS_MOVED,
+    QUERY_PIECE_HAS_FLIPPED,
+
     QUERY_METER_DAMAGE_TAKEN,
     QUERY_METER_REFILL,
+    QUERY_FLIP_COUNT,
 
     QUERY_CP_INCOME,
+    QUERY_ENEMY_ARMY_COUNT,
+    QUERY_SQUARE_OWNER,
+
+    QUERY_BOARD_DIMENSION,
+    QUERY_BOARD_STATE,
+    ON_BOARD_BUILD,
 
     ON_PIECE_FLIP_PRE,
     ON_PIECE_FLIP,
@@ -101,6 +145,8 @@ enum EffectTrigger {
 
     ON_CARD_PLAY,
     ON_CARD_SELL,
+    ON_CARDS_DRAWN,
+    ON_CARD_TARGET_SELECTED,
 
     ON_TURN_START,
     ON_TURN_END,
@@ -310,6 +356,23 @@ enum UnlockTier {
     TIER_PROVINCE,
     TIER_COUNTRY,
     TIER_MASTERY,
+};
+
+/// TargetKind
+///
+/// Kinds of target a card can advertise through QUERY_CARD_TARGETS.
+/// TARGET_PIECE and TARGET_SQUARE both carry a board square in value
+/// (y * 20 + x); the effect derives whatever it needs from it (a file is
+/// the square's column). TARGET_NONE terminates a target list. New kinds
+/// extend the enum without touching the protocol, which only relays a
+/// chosen index.
+///
+enum TargetKind {
+    TARGET_PIECE,
+    TARGET_SQUARE,
+    TARGET_CARD,
+    TARGET_PIECE_TYPE,
+    TARGET_NONE,
 };
 
 /*----------------------------------------------------------------------------*\
@@ -709,7 +772,9 @@ struct Effect {
 /// Represents the game board with its cells and trait. Cells are indexed
 /// y * 20 + x regardless of the active width. A cell holds the live piece
 /// occupying it, nullptr when empty, or &VOID_CELL when the square does
-/// not exist on this board.
+/// not exist on this board. visible is the human's per-cell piece read,
+/// reset all-true and refilled by QUERY_BOARD_STATE on each board emit; fog
+/// effects clear a cell to hide the enemy piece on it (it renders as empty).
 ///
 struct Board {
     PieceInfo*  piece_board[MAX_BOARD_SIZE];
@@ -717,6 +782,8 @@ struct Board {
 
     int8_t      width;
     int8_t      height;
+
+    bool        visible[MAX_BOARD_SIZE];
 };
 
 /// Square
@@ -792,6 +859,17 @@ struct Card {
 
     int        play_cost;
     int        sell_cost;
+};
+
+/// CardTarget
+///
+/// One legal target a card advertises through QUERY_CARD_TARGETS: a kind
+/// and an int value read per kind (TARGET_PIECE and TARGET_SQUARE =
+/// y * 20 + x, TARGET_CARD = hand slot, TARGET_PIECE_TYPE = PieceID).
+///
+struct CardTarget {
+    TargetKind kind;
+    int        value;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -1033,14 +1111,6 @@ void    effect_clear(LinkedList* list);
 bool    eff_noop(EffectContext* context, void* x);
 Effect* effect_find_mark(LinkedList* list, uintptr_t tag, void* subject);
 
-/// MARK_MOVED
-///
-/// Mark tag stamped by battle_move onto the acting side's list, keyed to
-/// the moved piece, recording that the piece moved recently. Read through
-/// effect_find_mark; its tag range sits clear of the CardID tags.
-///
-#define MARK_MOVED ((uintptr_t) 0x4D4F5645)
-
 /*----------------------------------------------------------------------------*\
                                     BATTLE.C
 \*----------------------------------------------------------------------------*/
@@ -1059,7 +1129,15 @@ void                   battle_concede(BattleState* battle);
 bool                   battle_move(BattleState* battle, Square from, Square to);
 bool                   battle_buy(BattleState* battle, PieceID id, Square at);
 bool                   battle_combine(BattleState* battle, Square a, Square b);
-bool    battle_play(BattleState* battle, size_t hand, long a, long b);
+bool    battle_play(BattleState* battle, size_t hand);
+bool    battle_card_can_play(BattleState* battle, size_t hand);
+bool    battle_card_target(BattleState* battle, size_t index);
+const CardTarget* battle_pending_picks(void);
+bool    battle_piece_unlocked(PieceID id);
+int     battle_piece_moves(BattleState* battle, PieceInfo* piece);
+int     battle_piece_flips(BattleState* battle, PieceInfo* piece);
+size_t  battle_piece_move_turn(PieceInfo* piece);
+size_t  battle_piece_flip_turn(PieceInfo* piece);
 bool    battle_sell(BattleState* battle, size_t hand);
 bool    battle_reclaim(BattleState* battle, Square at);
 void    battle_end_turn(BattleState* battle);
@@ -1076,6 +1154,8 @@ bool       battle_is_recipe_result(PieceID id);
 void       battle_flip(BattleState* battle, PieceInfo* piece);
 void       battle_swap(BattleState* battle, PieceInfo* a, PieceInfo* b);
 void       battle_remove(BattleState* battle, PieceInfo* piece);
+void       battle_scatter_voids(BattleState* battle, int percent);
+void       battle_board_view(BattleState* battle);
 
 /// Battle state accessors
 ///
@@ -1087,6 +1167,32 @@ PlayerState* battle_player(BattleState* battle, Side side);
 Side         battle_enemy(Side side);
 PieceInfo*   battle_find_king(BattleState* battle, Side side);
 void         battle_meter_gain(BattleState* battle, Side side, int amount);
+
+/// battle_rand
+///
+/// Draws the next value from the battle's deterministic RNG stream, the
+/// shared source for every randomised effect so a battle stays reproducible
+/// from its seed.
+///
+/// Return: a pseudo-random unsigned int
+///
+unsigned int battle_rand(void);
+
+/// battle_draw_pool
+///
+/// Builds the side's eligible draw pool into out (sized CARD_COUNT): every
+/// unlocked, registered card that passes QUERY_CARD_CAN_DRAW. Shared by
+/// battle_draw and by effects that need the same available set, such as
+/// Lucky Strike.
+///
+/// Params:
+/// - battle -> battle whose run gates the pool
+/// - side   -> side the draw eligibility fires for
+/// - out    -> CARD_COUNT-sized buffer receiving the eligible ids
+///
+/// Return: the number of eligible cards written to out
+///
+size_t battle_draw_pool(BattleState* battle, Side side, CardID* out);
 
 /// Direct damage and single-piece strike
 ///
@@ -1114,6 +1220,7 @@ PieceInfo*          battle_victim(void);
 Card*               battle_subject_card(void);
 const Piece*        battle_buy_piece(void);
 Square              battle_move_from(void);
+Square              battle_owner_square(void);
 PieceInfo**         battle_damagers(void);
 void                battle_draw(BattleState* battle, Side side, size_t count);
 
@@ -1204,6 +1311,25 @@ void     piece_adopt_move(
 ///
 uintptr_t card_pack(Square square);
 Square    card_square(void* packed);
+
+/// Card targeting list helpers
+///
+/// A QUERY_CARD_TARGETS effect advertises legal targets by pushing them
+/// onto a TARGET_NONE terminated CardTarget list; card_target_at decodes a
+/// TARGET_PIECE or TARGET_SQUARE value an ON_CARD_TARGET_SELECTED effect
+/// receives. There is exactly one enumerator per target category; the card
+/// passes an inline block deciding which pieces, squares, or identities it
+/// accepts, so every filter lives at the card with no named helper.
+///
+size_t    card_target_count(const CardTarget* list);
+void      card_target_push(CardTarget* list, TargetKind kind, int value);
+Square    card_target_at(int value);
+void      card_targets_piece(CardTarget* list, BattleState* battle,
+                             bool (^match)(const PieceInfo* piece));
+void      card_targets_square(CardTarget* list, BattleState* battle,
+                              bool (^match)(Square square));
+void      card_targets_piece_type(CardTarget* list,
+                                  bool (^match)(const Piece* piece));
 
 /*----------------------------------------------------------------------------*\
                                       AI.C

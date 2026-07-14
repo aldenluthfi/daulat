@@ -86,8 +86,10 @@ static void emit_battle_state(EngineState* engine) {
 
 /// emit_board
 ///
-/// Emits the board as one row line per rank: dots for empty squares,
-/// X for void squares, and piece letters per piece_letter.
+/// Emits the board as one row line per rank: middle dots for empty squares,
+/// spaces for void squares, and piece letters per piece_letter. An enemy
+/// piece the human's board view hides (Fog of War, Fog Coast) renders as ?,
+/// so the human knows a piece is there but not what it is.
 ///
 /// Params:
 /// - engine -> engine owning the battle
@@ -95,22 +97,29 @@ static void emit_battle_state(EngineState* engine) {
 static void emit_board(EngineState* engine) {
     BattleState* battle = engine->battle;
 
+    battle_board_view(battle);
+
     for (int8_t y = 0; y < battle->board.height; y++) {
-        char cells[21];
+        char cells[41];
+        int  len = 0;
 
         for (int8_t x = 0; x < battle->board.width; x++) {
-            PieceInfo* cell = battle->board.piece_board[y * 20 + x];
+            size_t      index = (size_t) (y * 20 + x);
+            PieceInfo*  cell  = battle->board.piece_board[index];
 
             if (cell == &VOID_CELL) {
-                cells[x] = 'X';
+                cells[len++] = ' ';
             } else if (!cell) {
-                cells[x] = '.';
+                cells[len++] = "·"[0];
+                cells[len++] = "·"[1];
+            } else if (!battle->board.visible[index]) {
+                cells[len++] = '?';
             } else {
-                cells[x] = piece_letter(cell);
+                cells[len++] = piece_letter(cell);
             }
         }
 
-        cells[battle->board.width] = '\0';
+        cells[len] = '\0';
 
         protocol_emit("row y=%d cells=%s", y, cells);
     }
@@ -144,7 +153,7 @@ static void emit_hand(EngineState* engine) {
 
     PlayerState* human  = black ? &battle->black : &battle->white;
 
-    bool blind = engine->run->challenge == CHALLENGE_BLIND_DRAFT;
+    bool         blind  = engine->run->challenge == CHALLENGE_BLIND_DRAFT;
 
     for (size_t i = 0; i < MAX_DRAWN_CARDS; i++) {
         Card* card = human->hand[i];
@@ -320,11 +329,21 @@ static void handle_battle(EngineState* engine, ...) {
 
     if (strcmp(argv[0], "play") == 0) {
         size_t index = (size_t) arg_long(argc, argv, "i", -1);
-        long   a     = arg_long(argc, argv, "a", 0);
-        long   b     = arg_long(argc, argv, "b", 0);
 
-        if (!battle_play(battle, index, a, b)) {
+        if (!battle_play(battle, index)) {
             protocol_emit("error msg=\"illegal play\"");
+            return;
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "target") == 0) {
+        size_t index = (size_t) arg_long(argc, argv, "i", -1);
+
+        if (!battle_card_target(battle, index)) {
+            protocol_emit("error msg=\"no pending target\"");
             return;
         }
 

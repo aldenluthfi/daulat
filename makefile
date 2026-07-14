@@ -24,8 +24,8 @@ INC_FLAGS := -I$(INC_DIR)
 # =============================================================================
 # Modes
 # =============================================================================
-DEBUG_FLAGS   := -std=c23 -Wall -O0 -DDEBUG -g -Wextra -Werror
-RELEASE_FLAGS := -std=c23 -Wall -O3 -DNDEBUG
+DEBUG_FLAGS   := -std=c23 -fblocks -Wall -O0 -DDEBUG -g -Wextra -Werror
+RELEASE_FLAGS := -std=c23 -fblocks -Wall -O3 -DNDEBUG
 
 debug:   CFLAGS_ENGINE := $(DEBUG_FLAGS) $(INC_FLAGS)
 debug:   all
