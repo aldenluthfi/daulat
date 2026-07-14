@@ -20,7 +20,13 @@
 /// backward diagonals, written from the white perspective.
 ///
 static const Square GOLD_OFFSETS[] = {
-    {0, -1}, {-1, -1}, {1, -1}, {-1, 0}, {1, 0}, {0, 1}, {0, 0},
+    {0, -1},
+    {-1, -1},
+    {1, -1},
+    {-1, 0},
+    {1, 0},
+    {0, 1},
+    {0, 0},
 };
 
 /*----------------------------------------------------------------------------*\
@@ -37,7 +43,7 @@ static const Square GOLD_OFFSETS[] = {
 /// - threat -> true for at (coverage), false for mv (movement)
 ///
 static void fuhyo_gen(BattleState* battle, PieceInfo* self, bool threat) {
-    mg_leap(battle, self, (const Square[]) {{0, -1}, {0, 0}}, threat);
+    mg_leap(battle, self, (const Square[]){{0, -1}, {0, 0}}, threat);
 }
 
 /// fuhyo_mv
@@ -83,7 +89,7 @@ static Square* fuhyo_at(BattleState* battle, PieceInfo* self) {
 /// Return: SQUARE_END terminated move list
 ///
 static Square* kyosha_mv(BattleState* battle, PieceInfo* self) {
-    mg_slide(battle, self, (const Square[]) {{0, -1}, {0, 0}}, 1, 127, false);
+    mg_slide(battle, self, (const Square[]){{0, -1}, {0, 0}}, 1, 127, false);
 
     return mg_end();
 }
@@ -99,7 +105,7 @@ static Square* kyosha_mv(BattleState* battle, PieceInfo* self) {
 /// Return: SQUARE_END terminated coverage list
 ///
 static Square* kyosha_at(BattleState* battle, PieceInfo* self) {
-    mg_slide(battle, self, (const Square[]) {{0, -1}, {0, 0}}, 1, 127, true);
+    mg_slide(battle, self, (const Square[]){{0, -1}, {0, 0}}, 1, 127, true);
 
     return mg_end();
 }
@@ -117,8 +123,13 @@ static void ginsho_gen(BattleState* battle, PieceInfo* self, bool threat) {
     mg_leap(
         battle,
         self,
-        (const Square[]) {
-            {0, -1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1}, {0, 0},
+        (const Square[]){
+            {0, -1},
+            {-1, -1},
+            {1, -1},
+            {-1, 1},
+            {1, 1},
+            {0, 0},
         },
         threat
     );
@@ -247,7 +258,7 @@ static Square* shishi_at(BattleState* battle, PieceInfo* self) {
 /// - threat -> true for at (coverage), false for mv (movement)
 ///
 static void horse_gen(BattleState* battle, PieceInfo* self, bool threat) {
-    mg_leap(battle, self, (const Square[]) {{-1, -2}, {1, -2}, {0, 0}}, threat);
+    mg_leap(battle, self, (const Square[]){{-1, -2}, {1, -2}, {0, 0}}, threat);
 }
 
 /// horse_mv
@@ -296,7 +307,7 @@ static void promoted_gen(BattleState* battle, PieceInfo* self, bool threat) {
     mg_compound(
         battle,
         self,
-        (const PieceID[]) {PIECE_BISHOP, PIECE_NONE},
+        (const PieceID[]){PIECE_BISHOP, PIECE_NONE},
         threat
     );
     mg_leap(battle, self, ORTHOGONAL_DIRECTIONS, threat);
@@ -379,7 +390,7 @@ static void dragon_gen(BattleState* battle, PieceInfo* self, bool threat) {
     mg_compound(
         battle,
         self,
-        (const PieceID[]) {PIECE_ROOK, PIECE_NONE},
+        (const PieceID[]){PIECE_ROOK, PIECE_NONE},
         threat
     );
     mg_leap(battle, self, DIAGONAL_DIRECTIONS, threat);
@@ -606,7 +617,7 @@ static bool eff_ronin_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side && p->piece->id != PIECE_KING;
+      return p->side == side && p->piece->id != PIECE_KING;
     });
 
     return card_target_count(x) > 0;
@@ -671,7 +682,7 @@ static bool eff_bushido_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side && p->piece->id != PIECE_KING;
+      return p->side == side && p->piece->id != PIECE_KING;
     });
 
     return card_target_count(x) > 0;
@@ -737,8 +748,8 @@ static bool eff_resurrection_targets(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
 
     card_targets_piece(x, battle, ^bool(const PieceInfo* p) {
-        return p->side != side && p->side != SIDE_NEUTRAL &&
-               battle_piece_flips(battle, (PieceInfo*) p) > 0;
+      return p->side != side && p->side != SIDE_NEUTRAL &&
+             battle_piece_flips(battle, (PieceInfo*) p) > 0;
     });
 
     return card_target_count(x) > 0;
@@ -791,7 +802,7 @@ static bool eff_gold_standard_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side;
+      return p->side == side;
     });
 
     return card_target_count(x) > 0;
@@ -843,7 +854,7 @@ static bool eff_promotion_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side;
+      return p->side == side;
     });
 
     return card_target_count(x) > 0;
@@ -897,13 +908,13 @@ static bool eff_dual_drop_first(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
 
     card_targets_piece(x, battle, ^bool(const PieceInfo* p) {
-        return p->side != side && p->side != SIDE_NEUTRAL &&
-               battle_piece_flips(battle, (PieceInfo*) p) > 0;
+      return p->side != side && p->side != SIDE_NEUTRAL &&
+             battle_piece_flips(battle, (PieceInfo*) p) > 0;
     });
 
     if (card_target_count(x) == 0) {
         card_targets_square(x, battle, ^bool(Square sq) {
-            return !battle_at(battle, sq);
+          return !battle_at(battle, sq);
         });
     }
 
@@ -929,18 +940,18 @@ static bool eff_dual_drop_second(EffectContext* context, void* x) {
     Square       fsq    = card_target_at(first.value);
 
     card_targets_piece(x, battle, ^bool(const PieceInfo* p) {
-        if (p->side == side || p->side == SIDE_NEUTRAL ||
-            battle_piece_flips(battle, (PieceInfo*) p) == 0) {
-            return false;
-        }
+      if (p->side == side || p->side == SIDE_NEUTRAL ||
+          battle_piece_flips(battle, (PieceInfo*) p) == 0) {
+          return false;
+      }
 
-        return first.kind != TARGET_PIECE ||
-               !(p->square.x == fsq.x && p->square.y == fsq.y);
+      return first.kind != TARGET_PIECE ||
+             !(p->square.x == fsq.x && p->square.y == fsq.y);
     });
 
     if (card_target_count(x) == 0) {
         card_targets_square(x, battle, ^bool(Square sq) {
-            return !battle_at(battle, sq);
+          return !battle_at(battle, sq);
         });
     }
 
@@ -975,8 +986,12 @@ static bool eff_dual_drop_pick(EffectContext* context, void* x) {
                 battle_flip(battle, target);
             }
         } else if (picks[i].kind == TARGET_SQUARE) {
-            battle_spawn(battle, PIECE_FUHYO,
-                         card_target_at(picks[i].value), side);
+            battle_spawn(
+                battle,
+                PIECE_FUHYO,
+                card_target_at(picks[i].value),
+                side
+            );
         }
     }
 
@@ -998,7 +1013,7 @@ static bool eff_force_drop_type_targets(EffectContext* context, void* x) {
     (void) context;
 
     card_targets_piece_type(x, ^bool(const Piece* pc) {
-        return battle_piece_unlocked(pc->id) && pc->value <= 50;
+      return battle_piece_unlocked(pc->id) && pc->value <= 50;
     });
 
     return card_target_count(x) > 0;
@@ -1021,7 +1036,7 @@ static bool eff_force_drop_dest_targets(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
 
     card_targets_square(x, battle, ^bool(Square square) {
-        return !battle_at(battle, square);
+      return !battle_at(battle, square);
     });
 
     return card_target_count(x) > 0;
@@ -1043,8 +1058,7 @@ static bool eff_force_drop_pick(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
 
-    if (picks[0].kind != TARGET_PIECE_TYPE ||
-        picks[1].kind != TARGET_SQUARE) {
+    if (picks[0].kind != TARGET_PIECE_TYPE || picks[1].kind != TARGET_SQUARE) {
         return false;
     }
 
@@ -1151,8 +1165,8 @@ const Piece HARUSHIMA_PIECES[] = {
         .value   = 35,
     },
     {
-        .at      = shishi_at,
-        .mv      = shishi_mv,
+        .at = shishi_at,
+        .mv = shishi_mv,
         .effects =
             {
                 {
@@ -1171,8 +1185,8 @@ const Piece HARUSHIMA_PIECES[] = {
         .value   = 100,
     },
     {
-        .at      = horse_at,
-        .mv      = horse_mv,
+        .at = horse_at,
+        .mv = horse_mv,
         .effects =
             {
                 {
@@ -1215,8 +1229,8 @@ const Piece HARUSHIMA_PIECES[] = {
         .value   = 50,
     },
     {
-        .at      = daimyo_at,
-        .mv      = daimyo_mv,
+        .at = daimyo_at,
+        .mv = daimyo_mv,
         .effects =
             {
                 {
@@ -1250,14 +1264,20 @@ const Piece HARUSHIMA_PIECES[] = {
 const Card HARUSHIMA_CARDS[] = {
     {
         .effects =
-            {{.func      = eff_ronin_targets,
-              .name      = "Ronin",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_ronin_pick,
-              .name      = "Ronin",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_ronin_targets,
+                    .name      = "Ronin",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_ronin_pick,
+                    .name      = "Ronin",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Ronin",
         .desc      = "Next time the targeted piece flips, refund its full "
                      "value to you.",
@@ -1269,14 +1289,20 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_resurrection_targets,
-              .name      = "Resurrection",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_resurrection_pick,
-              .name      = "Resurrection",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_resurrection_targets,
+                    .name      = "Resurrection",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_resurrection_pick,
+                    .name      = "Resurrection",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Resurrection",
         .desc      = "Reclaim any flipped piece on the board to your "
                      "control for free.",
@@ -1288,14 +1314,20 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_gold_standard_targets,
-              .name      = "Gold Standard",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_gold_standard_pick,
-              .name      = "Gold Standard",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_gold_standard_targets,
+                    .name      = "Gold Standard",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_gold_standard_pick,
+                    .name      = "Gold Standard",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Gold Standard",
         .desc      = "Target piece moves like a Kinsho this turn only.",
         .id        = CARD_GOLD_STANDARD,
@@ -1306,14 +1338,20 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_promotion_targets,
-              .name      = "Promotion",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_promotion_pick,
-              .name      = "Promotion",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_promotion_targets,
+                    .name      = "Promotion",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_promotion_pick,
+                    .name      = "Promotion",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Promotion",
         .desc      = "Target piece permanently gains Ginsho movement this "
                      "battle.",
@@ -1325,18 +1363,26 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_dual_drop_first,
-              .name      = "Dual Drop",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_dual_drop_second,
-              .name      = "Dual Drop",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_dual_drop_pick,
-              .name      = "Dual Drop",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_dual_drop_first,
+                    .name      = "Dual Drop",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_dual_drop_second,
+                    .name      = "Dual Drop",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_dual_drop_pick,
+                    .name      = "Dual Drop",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Dual Drop",
         .desc      = "Reclaim up to 2 flipped pieces; place free Fuhyo for "
                      "each missing reclaim.",
@@ -1348,18 +1394,26 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_force_drop_type_targets,
-              .name      = "Force Drop",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_force_drop_dest_targets,
-              .name      = "Force Drop",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_force_drop_pick,
-              .name      = "Force Drop",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_force_drop_type_targets,
+                    .name      = "Force Drop",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_force_drop_dest_targets,
+                    .name      = "Force Drop",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_force_drop_pick,
+                    .name      = "Force Drop",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Force Drop",
         .desc      = "Place any unlocked piece of value up to 50 on any "
                      "unoccupied square for free.",
@@ -1371,14 +1425,20 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_bushido_targets,
-              .name      = "Bushido",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_bushido_pick,
-              .name      = "Bushido",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_bushido_targets,
+                    .name      = "Bushido",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_bushido_pick,
+                    .name      = "Bushido",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Bushido",
         .desc      = "When the targeted piece flips, deal its value x2 to "
                      "enemy meter.",
@@ -1390,10 +1450,14 @@ const Card HARUSHIMA_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_tomohito,
-              .name      = "Tomohito's Patience",
-              .trigger   = ON_CARD_PLAY,
-              .lasts_for = ENTIRE_BATTLE}},
+            {
+                {
+                    .func      = eff_tomohito,
+                    .name      = "Tomohito's Patience",
+                    .trigger   = ON_CARD_PLAY,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
         .name      = "Tomohito's Patience",
         .desc      = "Reclaim up to 3 flipped pieces this turn at 15 cp "
                      "each.",
@@ -1451,10 +1515,10 @@ static bool eff_fog_coast(EffectContext* context, void* x) {
 
         for (int8_t x0 = 0; x0 < battle->board.width; x0++) {
             size_t     index = (size_t) (y * 20 + x0);
-            PieceInfo* piece = battle_at(battle, (Square) {x0, y});
+            PieceInfo* piece = battle_at(battle, (Square){x0, y});
 
-            if (!piece || piece == &VOID_CELL ||
-                piece->side == side || piece->side == SIDE_NEUTRAL) {
+            if (!piece || piece == &VOID_CELL || piece->side == side ||
+                piece->side == SIDE_NEUTRAL) {
                 continue;
             }
 
@@ -1473,23 +1537,29 @@ const BoardTrait HARUSHIMA_TRAITS[] = {
         .name = "Fog Coast",
         .desc = "The 3 farthest rows hide enemy pieces until they move.",
         .id   = BOARD_TRAIT_FOG_COAST,
-        .effects = {{
-            .func      = eff_fog_coast,
-            .name      = "Fog Coast",
-            .trigger   = QUERY_BOARD_STATE,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
+        .effects =
+            {
+                {
+                    .func      = eff_fog_coast,
+                    .name      = "Fog Coast",
+                    .trigger   = QUERY_BOARD_STATE,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
     },
     {
         .name = "Island Chain",
         .desc = "Checkered gaps in the middle columns force routing.",
         .id   = BOARD_TRAIT_ISLAND_CHAIN,
-        .effects = {{
-            .func      = eff_island_chain,
-            .name      = "Island Chain",
-            .trigger   = ON_BOARD_BUILD,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
+        .effects =
+            {
+                {
+                    .func      = eff_island_chain,
+                    .name      = "Island Chain",
+                    .trigger   = ON_BOARD_BUILD,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
     },
 };
 
@@ -1559,7 +1629,7 @@ void harushima_innate(BattleState* battle, Side side, MasteryLevel level) {
 void harushima_climax(BattleState* battle, Side side) {
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x = 0; x < battle->board.width; x++) {
-            PieceInfo* cell = battle_at(battle, (Square) {x, y});
+            PieceInfo* cell = battle_at(battle, (Square){x, y});
 
             if (cell && cell->side != side && cell->side != SIDE_NEUTRAL &&
                 cell->piece->id != PIECE_KING) {

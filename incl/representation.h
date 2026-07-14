@@ -1129,11 +1129,12 @@ void                   battle_concede(BattleState* battle);
 bool                   battle_move(BattleState* battle, Square from, Square to);
 bool                   battle_buy(BattleState* battle, PieceID id, Square at);
 bool                   battle_combine(BattleState* battle, Square a, Square b);
-bool    battle_play(BattleState* battle, size_t hand);
-bool    battle_card_can_play(BattleState* battle, size_t hand);
-bool    battle_card_target(BattleState* battle, size_t index);
-const CardTarget* battle_pending_picks(void);
-bool    battle_piece_unlocked(PieceID id);
+bool                   battle_play(BattleState* battle, size_t hand);
+bool                   battle_card_can_play(BattleState* battle, size_t hand);
+bool                   battle_card_target(BattleState* battle, size_t index);
+const CardTarget*      battle_pending_picks(void);
+bool                   battle_piece_unlocked(PieceID id);
+
 int     battle_piece_moves(BattleState* battle, PieceInfo* piece);
 int     battle_piece_flips(BattleState* battle, PieceInfo* piece);
 size_t  battle_piece_move_turn(PieceInfo* piece);
@@ -1147,6 +1148,7 @@ Square* battle_attacks(BattleState* battle, PieceInfo* piece);
 int     battle_value(BattleState* battle, PieceInfo* piece, PieceInfo* victim);
 int     battle_meter_max(BattleState* battle, Side side);
 Side    battle_territory(BattleState* battle, Square square);
+
 PieceInfo* battle_at(BattleState* battle, Square square);
 bool       battle_in_bounds(BattleState* battle, Square square);
 PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at, Side side);
@@ -1192,7 +1194,7 @@ unsigned int battle_rand(void);
 ///
 /// Return: the number of eligible cards written to out
 ///
-size_t battle_draw_pool(BattleState* battle, Side side, CardID* out);
+size_t       battle_draw_pool(BattleState* battle, Side side, CardID* out);
 
 /// Direct damage and single-piece strike
 ///
@@ -1214,15 +1216,15 @@ int          battle_lunge(BattleState* battle, PieceInfo* piece, Square to);
 /// list live only during resolve, and battle_move_from is valid only
 /// during ON_PIECE_MOVE.
 ///
-BattleState*        battle_current(void);
-PieceInfo*          battle_subject(void);
-PieceInfo*          battle_victim(void);
-Card*               battle_subject_card(void);
-const Piece*        battle_buy_piece(void);
-Square              battle_move_from(void);
-Square              battle_owner_square(void);
-PieceInfo**         battle_damagers(void);
-void                battle_draw(BattleState* battle, Side side, size_t count);
+BattleState* battle_current(void);
+PieceInfo*   battle_subject(void);
+PieceInfo*   battle_victim(void);
+Card*        battle_subject_card(void);
+const Piece* battle_buy_piece(void);
+Square       battle_move_from(void);
+Square       battle_owner_square(void);
+PieceInfo**  battle_damagers(void);
+void         battle_draw(BattleState* battle, Side side, size_t count);
 
 /*----------------------------------------------------------------------------*\
                                      PIECE.C
@@ -1284,14 +1286,14 @@ void mg_compound(
 /// slot embedder, a one-shot free move grant, the alternating double
 /// move, and the movement copying pair with its attach helper.
 ///
-bool     piece_is_pawn(PieceID id);
-Effect*  piece_embed_effect(PieceInfo* piece, const Effect* template);
-void     piece_grant_free_move(PieceInfo* piece, const char* name);
-bool     eff_free_move(EffectContext* context, void* x);
-bool     eff_double_move(EffectContext* context, void* x);
-bool     eff_copy_mv(EffectContext* context, void* x);
-bool     eff_copy_at(EffectContext* context, void* x);
-void     piece_adopt_move(
+bool    piece_is_pawn(PieceID id);
+Effect* piece_embed_effect(PieceInfo* piece, const Effect* template);
+void    piece_grant_free_move(PieceInfo* piece, const char* name);
+bool    eff_free_move(EffectContext* context, void* x);
+bool    eff_double_move(EffectContext* context, void* x);
+bool    eff_copy_mv(EffectContext* context, void* x);
+bool    eff_copy_at(EffectContext* context, void* x);
+void    piece_adopt_move(
     BattleState*   battle,
     PieceInfo*     target,
     PieceID        copied,
@@ -1324,12 +1326,20 @@ Square    card_square(void* packed);
 size_t    card_target_count(const CardTarget* list);
 void      card_target_push(CardTarget* list, TargetKind kind, int value);
 Square    card_target_at(int value);
-void      card_targets_piece(CardTarget* list, BattleState* battle,
-                             bool (^match)(const PieceInfo* piece));
-void      card_targets_square(CardTarget* list, BattleState* battle,
-                              bool (^match)(Square square));
-void      card_targets_piece_type(CardTarget* list,
-                                  bool (^match)(const Piece* piece));
+void      card_targets_piece(
+    CardTarget*  list,
+    BattleState* battle,
+    bool (^match)(const PieceInfo* piece)
+);
+void card_targets_square(
+    CardTarget*  list,
+    BattleState* battle,
+    bool (^match)(Square square)
+);
+void card_targets_piece_type(
+    CardTarget* list,
+    bool (^match)(const Piece* piece)
+);
 
 /*----------------------------------------------------------------------------*\
                                       AI.C
@@ -1421,17 +1431,17 @@ void                           vorath_setup(BattleState* battle);
 /// Function pointer tables indexed by KingdomID aggregating each
 /// kingdom's innate, climax, overseer setup, and event handler.
 ///
-extern void                    (*const KINGDOM_INNATE[KINGDOM_COUNT])(
-    BattleState*,
-    Side,
-    MasteryLevel
-);
 extern void (*const KINGDOM_CLIMAX[KINGDOM_COUNT])(BattleState*, Side);
 extern void (*const KINGDOM_OVERSEER[KINGDOM_COUNT])(BattleState*);
 extern void (*const KINGDOM_EVENT[KINGDOM_COUNT])(
     EngineState*,
     EventID,
     EventChoice
+);
+extern void (*const KINGDOM_INNATE[KINGDOM_COUNT])(
+    BattleState*,
+    Side,
+    MasteryLevel
 );
 
 /*----------------------------------------------------------------------------*\

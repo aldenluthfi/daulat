@@ -215,10 +215,8 @@ static bool eff_dead_mans_pact(EffectContext* context, void* x) {
         return false;
     }
 
-    PlayerState* player = battle_player(
-        battle_current(),
-        (Side) (uintptr_t) context->args[0]
-    );
+    PlayerState* player =
+        battle_player(battle_current(), (Side) (uintptr_t) context->args[0]);
 
     if (player->meter - *(int*) x > 0) {
         return false;
@@ -409,9 +407,9 @@ static bool eff_philosophers_stone(EffectContext* context, void* x) {
         return false;
     }
 
-    PieceInfo* piece     = x;
+    PieceInfo* piece = x;
     piece->piece->value += 20;
-    context->args[1]     = (void*) 1;
+    context->args[1] = (void*) 1;
 
     return true;
 }
@@ -430,7 +428,7 @@ static bool eff_philosophers_stone(EffectContext* context, void* x) {
 static bool eff_inherited_power(EffectContext* context, void* x) {
     (void) context;
 
-    PieceInfo* piece     = x;
+    PieceInfo* piece = x;
     piece->piece->value += 5;
 
     return true;
@@ -611,268 +609,296 @@ static bool eff_warlords_banner(EffectContext* context, void* x) {
 /// sites and is gated on run->relics) carry only a name and description.
 ///
 const Relic RELIC_REGISTRY[RELIC_COUNT] = {
-    [RELIC_MERCHANTS_LEDGER] = {
-        .name    = "Merchant's Ledger",
-        .desc    = "Card sell values +5 cp.",
-        .id      = RELIC_MERCHANTS_LEDGER,
-        .effects = {{
-            .func      = eff_ledger,
-            .name      = "Merchant's Ledger",
-            .trigger   = QUERY_CARD_SELL_COST,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_MINTED_COIN] = {
-        .name    = "Minted Coin",
-        .desc    = "+5 cp at the start of every turn.",
-        .id      = RELIC_MINTED_COIN,
-        .effects = {{
-            .func      = eff_minted_coin,
-            .name      = "Minted Coin",
-            .trigger   = QUERY_CP_INCOME,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_TAX_STAMP] = {
-        .name    = "Tax Stamp",
-        .desc    = "+10 cp when you play a card with a play cost.",
-        .id      = RELIC_TAX_STAMP,
-        .effects = {{
-            .func      = eff_tax_stamp,
-            .name      = "Tax Stamp",
-            .trigger   = ON_CARD_PLAY,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_BULK_DISCOUNT] = {
-        .name    = "Bulk Discount",
-        .desc    = "Buying 3+ pieces in a turn, one is free.",
-        .id      = RELIC_BULK_DISCOUNT,
-        .effects = {
-            {
-                .func      = eff_bulk_reset,
-                .name      = "Bulk Discount",
+    [RELIC_MERCHANTS_LEDGER] =
+        {
+            .name    = "Merchant's Ledger",
+            .desc    = "Card sell values +5 cp.",
+            .id      = RELIC_MERCHANTS_LEDGER,
+            .effects = {{
+                .func      = eff_ledger,
+                .name      = "Merchant's Ledger",
+                .trigger   = QUERY_CARD_SELL_COST,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_MINTED_COIN] =
+        {
+            .name    = "Minted Coin",
+            .desc    = "+5 cp at the start of every turn.",
+            .id      = RELIC_MINTED_COIN,
+            .effects = {{
+                .func      = eff_minted_coin,
+                .name      = "Minted Coin",
+                .trigger   = QUERY_CP_INCOME,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_TAX_STAMP] =
+        {
+            .name    = "Tax Stamp",
+            .desc    = "+10 cp when you play a card with a play cost.",
+            .id      = RELIC_TAX_STAMP,
+            .effects = {{
+                .func      = eff_tax_stamp,
+                .name      = "Tax Stamp",
+                .trigger   = ON_CARD_PLAY,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_BULK_DISCOUNT] =
+        {
+            .name = "Bulk Discount",
+            .desc = "Buying 3+ pieces in a turn, one is free.",
+            .id   = RELIC_BULK_DISCOUNT,
+            .effects =
+                {
+                    {
+                        .func      = eff_bulk_reset,
+                        .name      = "Bulk Discount",
+                        .trigger   = ON_TURN_START,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                    {
+                        .func      = eff_bulk_buy,
+                        .name      = "Bulk Discount",
+                        .trigger   = QUERY_PIECE_CP_COST_BUY,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [RELIC_WAR_CHEST] =
+        {
+            .name    = "War Chest",
+            .desc    = "Unspent cp at end of turn adds 20% of itself to meter.",
+            .id      = RELIC_WAR_CHEST,
+            .effects = {{
+                .func      = eff_war_chest,
+                .name      = "War Chest",
+                .trigger   = ON_TURN_END,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_TRADE_ROUTES] =
+        {
+            .name = "Trade Routes",
+            .desc = "The foreign kingdom markup is removed for the run.",
+            .id   = RELIC_TRADE_ROUTES,
+        },
+    [RELIC_SOUL_SHARD] =
+        {
+            .name    = "Soul Shard",
+            .desc    = "Gaining a flipped piece adds 30 to your meter.",
+            .id      = RELIC_SOUL_SHARD,
+            .effects = {{
+                .func      = eff_soul_shard,
+                .name      = "Soul Shard",
+                .trigger   = ON_PIECE_FLIP,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_VETERANS_BOND] =
+        {
+            .name    = "Veteran's Bond",
+            .desc    = "Pieces valued 50+ contribute 20 extra to your meter.",
+            .id      = RELIC_VETERANS_BOND,
+            .effects = {{
+                .func      = eff_veterans_bond,
+                .name      = "Veteran's Bond",
+                .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_DEAD_MANS_PACT] =
+        {
+            .name    = "Dead Man's Pact",
+            .desc    = "First lethal meter hit resets to 20 instead.",
+            .id      = RELIC_DEAD_MANS_PACT,
+            .effects = {{
+                .func      = eff_dead_mans_pact,
+                .name      = "Dead Man's Pact",
+                .trigger   = QUERY_METER_DAMAGE_TAKEN,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_IRON_KING] =
+        {
+            .name    = "Iron King",
+            .desc    = "Your king contributes 20 to your meter instead of 10.",
+            .id      = RELIC_IRON_KING,
+            .effects = {{
+                .func      = eff_iron_king,
+                .name      = "Iron King",
+                .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_BLOODTHIRST] =
+        {
+            .name    = "Bloodthirst",
+            .desc    = "Start of a turn leading the enemy meter: gain 5 meter.",
+            .id      = RELIC_BLOODTHIRST,
+            .effects = {{
+                .func      = eff_bloodthirst,
+                .name      = "Bloodthirst",
                 .trigger   = ON_TURN_START,
                 .lasts_for = ENTIRE_BATTLE,
-            },
-            {
-                .func      = eff_bulk_buy,
-                .name      = "Bulk Discount",
-                .trigger   = QUERY_PIECE_CP_COST_BUY,
-                .lasts_for = ENTIRE_BATTLE,
-            },
+            }},
         },
-    },
-    [RELIC_WAR_CHEST] = {
-        .name    = "War Chest",
-        .desc    = "Unspent cp at end of turn adds 20% of itself to meter.",
-        .id      = RELIC_WAR_CHEST,
-        .effects = {{
-            .func      = eff_war_chest,
-            .name      = "War Chest",
-            .trigger   = ON_TURN_END,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_TRADE_ROUTES] = {
-        .name = "Trade Routes",
-        .desc = "The foreign kingdom markup is removed for the run.",
-        .id   = RELIC_TRADE_ROUTES,
-    },
-    [RELIC_SOUL_SHARD] = {
-        .name    = "Soul Shard",
-        .desc    = "Gaining a flipped piece adds 30 to your meter.",
-        .id      = RELIC_SOUL_SHARD,
-        .effects = {{
-            .func      = eff_soul_shard,
-            .name      = "Soul Shard",
-            .trigger   = ON_PIECE_FLIP,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_VETERANS_BOND] = {
-        .name    = "Veteran's Bond",
-        .desc    = "Pieces valued 50+ contribute 20 extra to your meter.",
-        .id      = RELIC_VETERANS_BOND,
-        .effects = {{
-            .func      = eff_veterans_bond,
-            .name      = "Veteran's Bond",
-            .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_DEAD_MANS_PACT] = {
-        .name    = "Dead Man's Pact",
-        .desc    = "First lethal meter hit resets to 20 instead.",
-        .id      = RELIC_DEAD_MANS_PACT,
-        .effects = {{
-            .func      = eff_dead_mans_pact,
-            .name      = "Dead Man's Pact",
-            .trigger   = QUERY_METER_DAMAGE_TAKEN,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_IRON_KING] = {
-        .name    = "Iron King",
-        .desc    = "Your king contributes 20 to your meter instead of 10.",
-        .id      = RELIC_IRON_KING,
-        .effects = {{
-            .func      = eff_iron_king,
-            .name      = "Iron King",
-            .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_BLOODTHIRST] = {
-        .name    = "Bloodthirst",
-        .desc    = "Start of a turn leading the enemy meter: gain 5 meter.",
-        .id      = RELIC_BLOODTHIRST,
-        .effects = {{
-            .func      = eff_bloodthirst,
-            .name      = "Bloodthirst",
-            .trigger   = ON_TURN_START,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_LAST_BREATH] = {
-        .name    = "Last Breath",
-        .desc    = "A flipped friendly piece deals its value to the enemy.",
-        .id      = RELIC_LAST_BREATH,
-        .effects = {{
-            .func      = eff_last_breath,
-            .name      = "Last Breath",
-            .trigger   = ON_PIECE_FLIP,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_TACTICIANS_SCROLL] = {
-        .name    = "Tactician's Scroll",
-        .desc    = "Draw 4 cards per turn.",
-        .id      = RELIC_TACTICIANS_SCROLL,
-        .effects = {{
-            .func      = eff_tacticians_scroll,
-            .name      = "Tactician's Scroll",
-            .trigger   = QUERY_CARD_DRAW_COUNT,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_LIBRARIANS_NOTES] = {
-        .name = "Librarian's Notes",
-        .desc = "Once per turn, peek the top card and skip it.",
-        .id   = RELIC_LIBRARIANS_NOTES,
-    },
-    [RELIC_COUNTRY_SEAL] = {
-        .name    = "Country Seal",
-        .desc    = "Selling a Country-tier card gives +20 cp.",
-        .id      = RELIC_COUNTRY_SEAL,
-        .effects = {{
-            .func      = eff_country_seal,
-            .name      = "Country Seal",
-            .trigger   = QUERY_CARD_SELL_COST,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_DEEP_HAND] = {
-        .name = "Deep Hand",
-        .desc = "Once per battle, draw 2 extra on a turn of your choice.",
-        .id   = RELIC_DEEP_HAND,
-    },
-    [RELIC_GILDED_ARCHIVE] = {
-        .name    = "Gilded Archive",
-        .desc    = "District-tier cards sell for +10 cp.",
-        .id      = RELIC_GILDED_ARCHIVE,
-        .effects = {{
-            .func      = eff_gilded_archive,
-            .name      = "Gilded Archive",
-            .trigger   = QUERY_CARD_SELL_COST,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_ALCHEMISTS_KIT] = {
-        .name    = "Alchemist's Kit",
-        .desc    = "Combinations cost 0 actions.",
-        .id      = RELIC_ALCHEMISTS_KIT,
-        .effects = {{
-            .func      = eff_alchemists_kit,
-            .name      = "Alchemist's Kit",
-            .trigger   = QUERY_PIECE_ACTION_COST_COMBINE,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_MASTERS_NOTES] = {
-        .name = "Master's Notes",
-        .desc = "Archive nodes reveal 2 recipes instead of 1.",
-        .id   = RELIC_MASTERS_NOTES,
-    },
-    [RELIC_PHILOSOPHERS_STONE] = {
-        .name    = "Philosopher's Stone",
-        .desc    = "Once per battle, a combined piece gains +20 value.",
-        .id      = RELIC_PHILOSOPHERS_STONE,
-        .effects = {{
-            .func      = eff_philosophers_stone,
-            .name      = "Philosopher's Stone",
-            .trigger   = ON_PIECE_COMBINE,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_INHERITED_POWER] = {
-        .name    = "Inherited Power",
-        .desc    = "Combined pieces gain +5 value above their result.",
-        .id      = RELIC_INHERITED_POWER,
-        .effects = {{
-            .func      = eff_inherited_power,
-            .name      = "Inherited Power",
-            .trigger   = ON_PIECE_COMBINE,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_EAGLE_EYE] = {
-        .name = "Eagle Eye",
-        .desc = "Enemy pieces are always visible.",
-        .id   = RELIC_EAGLE_EYE,
-        .effects = {{
-            .func      = eff_eagle_eye,
-            .name      = "Eagle Eye",
-            .trigger   = QUERY_BOARD_STATE,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_SURVEYORS_MAP] = {
-        .name = "Surveyor's Map",
-        .desc = "One random battle node's modifier is pre-revealed per map.",
-        .id   = RELIC_SURVEYORS_MAP,
-    },
-    [RELIC_FORWARD_COMMAND] = {
-        .name    = "Forward Command",
-        .desc    = "+5 damage while occupying enemy territory.",
-        .id      = RELIC_FORWARD_COMMAND,
-        .effects = {{
-            .func      = eff_forward_command,
-            .name      = "Forward Command",
-            .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_FORTIFIED_LINE] = {
-        .name    = "Fortified Line",
-        .desc    = "Pieces that did not move this turn deal +5 damage.",
-        .id      = RELIC_FORTIFIED_LINE,
-        .effects = {{
-            .func      = eff_fortified_line,
-            .name      = "Fortified Line",
-            .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [RELIC_WARLORDS_BANNER] = {
-        .name    = "Warlord's Banner",
-        .desc    = "Pieces adjacent to your king deal +5 damage.",
-        .id      = RELIC_WARLORDS_BANNER,
-        .effects = {{
-            .func      = eff_warlords_banner,
-            .name      = "Warlord's Banner",
-            .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
+    [RELIC_LAST_BREATH] =
+        {
+            .name    = "Last Breath",
+            .desc    = "A flipped friendly piece deals its value to the enemy.",
+            .id      = RELIC_LAST_BREATH,
+            .effects = {{
+                .func      = eff_last_breath,
+                .name      = "Last Breath",
+                .trigger   = ON_PIECE_FLIP,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_TACTICIANS_SCROLL] =
+        {
+            .name    = "Tactician's Scroll",
+            .desc    = "Draw 4 cards per turn.",
+            .id      = RELIC_TACTICIANS_SCROLL,
+            .effects = {{
+                .func      = eff_tacticians_scroll,
+                .name      = "Tactician's Scroll",
+                .trigger   = QUERY_CARD_DRAW_COUNT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_LIBRARIANS_NOTES] =
+        {
+            .name = "Librarian's Notes",
+            .desc = "Once per turn, peek the top card and skip it.",
+            .id   = RELIC_LIBRARIANS_NOTES,
+        },
+    [RELIC_COUNTRY_SEAL] =
+        {
+            .name    = "Country Seal",
+            .desc    = "Selling a Country-tier card gives +20 cp.",
+            .id      = RELIC_COUNTRY_SEAL,
+            .effects = {{
+                .func      = eff_country_seal,
+                .name      = "Country Seal",
+                .trigger   = QUERY_CARD_SELL_COST,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_DEEP_HAND] =
+        {
+            .name = "Deep Hand",
+            .desc = "Once per battle, draw 2 extra on a turn of your choice.",
+            .id   = RELIC_DEEP_HAND,
+        },
+    [RELIC_GILDED_ARCHIVE] =
+        {
+            .name    = "Gilded Archive",
+            .desc    = "District-tier cards sell for +10 cp.",
+            .id      = RELIC_GILDED_ARCHIVE,
+            .effects = {{
+                .func      = eff_gilded_archive,
+                .name      = "Gilded Archive",
+                .trigger   = QUERY_CARD_SELL_COST,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_ALCHEMISTS_KIT] =
+        {
+            .name    = "Alchemist's Kit",
+            .desc    = "Combinations cost 0 actions.",
+            .id      = RELIC_ALCHEMISTS_KIT,
+            .effects = {{
+                .func      = eff_alchemists_kit,
+                .name      = "Alchemist's Kit",
+                .trigger   = QUERY_PIECE_ACTION_COST_COMBINE,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_MASTERS_NOTES] =
+        {
+            .name = "Master's Notes",
+            .desc = "Archive nodes reveal 2 recipes instead of 1.",
+            .id   = RELIC_MASTERS_NOTES,
+        },
+    [RELIC_PHILOSOPHERS_STONE] =
+        {
+            .name    = "Philosopher's Stone",
+            .desc    = "Once per battle, a combined piece gains +20 value.",
+            .id      = RELIC_PHILOSOPHERS_STONE,
+            .effects = {{
+                .func      = eff_philosophers_stone,
+                .name      = "Philosopher's Stone",
+                .trigger   = ON_PIECE_COMBINE,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_INHERITED_POWER] =
+        {
+            .name    = "Inherited Power",
+            .desc    = "Combined pieces gain +5 value above their result.",
+            .id      = RELIC_INHERITED_POWER,
+            .effects = {{
+                .func      = eff_inherited_power,
+                .name      = "Inherited Power",
+                .trigger   = ON_PIECE_COMBINE,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_EAGLE_EYE] =
+        {
+            .name    = "Eagle Eye",
+            .desc    = "Enemy pieces are always visible.",
+            .id      = RELIC_EAGLE_EYE,
+            .effects = {{
+                .func      = eff_eagle_eye,
+                .name      = "Eagle Eye",
+                .trigger   = QUERY_BOARD_STATE,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_SURVEYORS_MAP] =
+        {
+            .name = "Surveyor's Map",
+            .desc =
+                "One random battle node's modifier is pre-revealed per map.",
+            .id = RELIC_SURVEYORS_MAP,
+        },
+    [RELIC_FORWARD_COMMAND] =
+        {
+            .name    = "Forward Command",
+            .desc    = "+5 damage while occupying enemy territory.",
+            .id      = RELIC_FORWARD_COMMAND,
+            .effects = {{
+                .func      = eff_forward_command,
+                .name      = "Forward Command",
+                .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_FORTIFIED_LINE] =
+        {
+            .name    = "Fortified Line",
+            .desc    = "Pieces that did not move this turn deal +5 damage.",
+            .id      = RELIC_FORTIFIED_LINE,
+            .effects = {{
+                .func      = eff_fortified_line,
+                .name      = "Fortified Line",
+                .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [RELIC_WARLORDS_BANNER] =
+        {
+            .name    = "Warlord's Banner",
+            .desc    = "Pieces adjacent to your king deal +5 damage.",
+            .id      = RELIC_WARLORDS_BANNER,
+            .effects = {{
+                .func      = eff_warlords_banner,
+                .name      = "Warlord's Banner",
+                .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
 };

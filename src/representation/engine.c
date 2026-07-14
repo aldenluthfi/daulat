@@ -271,10 +271,8 @@ bool engine_load(EngineState* engine, const char* path) {
             }
         } else if (sscanf(line, "cleared=%d", &ints[0]) == 1) {
             engine->cleared = (Difficulty) ints[0];
-        } else if (
-            strncmp(line, "seed=", 5) == 0 &&
-            sscanf(line, "seed=%zu", &seed) == 1
-        ) {
+        } else if (strncmp(line, "seed=", 5) == 0 &&
+                   sscanf(line, "seed=%zu", &seed) == 1) {
             saved_seed = seed;
         } else if (sscanf(line, "difficulty=%d", &difficulty) == 1) {
             saved_diff = difficulty;
@@ -291,53 +289,41 @@ bool engine_load(EngineState* engine, const char* path) {
             engine->run->vorath_counter = value;
         } else if (sscanf(line, "battles=%zu", &value) == 1) {
             engine->run->battles_fought = value;
-        } else if (
-            sscanf(line, "relics=%511s", bits) == 1 &&
-            strncmp(line, "relics=", 7) == 0
-        ) {
+        } else if (sscanf(line, "relics=%511s", bits) == 1 &&
+                   strncmp(line, "relics=", 7) == 0) {
             apply_bits(engine->run->relics, RELIC_COUNT, bits);
-        } else if (
-            sscanf(line, "pieces=%511s", bits) == 1 &&
-            strncmp(line, "pieces=", 7) == 0
-        ) {
+        } else if (sscanf(line, "pieces=%511s", bits) == 1 &&
+                   strncmp(line, "pieces=", 7) == 0) {
             apply_bits(engine->run->pieces, PIECE_COUNT, bits);
-        } else if (
-            sscanf(line, "cards=%511s", bits) == 1 &&
-            strncmp(line, "cards=", 6) == 0
-        ) {
+        } else if (sscanf(line, "cards=%511s", bits) == 1 &&
+                   strncmp(line, "cards=", 6) == 0) {
             apply_bits(engine->run->cards, CARD_COUNT, bits);
-        } else if (
-            sscanf(line, "synergies=%511s", bits) == 1 &&
-            strncmp(line, "synergies=", 10) == 0
-        ) {
+        } else if (sscanf(line, "synergies=%511s", bits) == 1 &&
+                   strncmp(line, "synergies=", 10) == 0) {
             apply_bits(engine->run->synergies, KINGDOM_COUNT, bits);
-        } else if (
-            sscanf(
-                line,
-                "chains=%d,%d,%d,%d,%d",
-                &ints[0],
-                &ints[1],
-                &ints[2],
-                &ints[3],
-                &ints[4]
-            ) == 5
-        ) {
+        } else if (sscanf(
+                       line,
+                       "chains=%d,%d,%d,%d,%d",
+                       &ints[0],
+                       &ints[1],
+                       &ints[2],
+                       &ints[3],
+                       &ints[4]
+                   ) == 5) {
             for (size_t i = 0; i < KINGDOM_COUNT; i++) {
                 engine->run->kingdoms[i].chain =
                     ints[i] < 0 ? nullptr
                                 : (ChainPenalty*) &CHAIN_REGISTRY[ints[i]];
             }
-        } else if (
-            sscanf(
-                line,
-                "ever=%d,%d,%d,%d,%d",
-                &ints[0],
-                &ints[1],
-                &ints[2],
-                &ints[3],
-                &ints[4]
-            ) == 5
-        ) {
+        } else if (sscanf(
+                       line,
+                       "ever=%d,%d,%d,%d,%d",
+                       &ints[0],
+                       &ints[1],
+                       &ints[2],
+                       &ints[3],
+                       &ints[4]
+                   ) == 5) {
             for (size_t i = 0; i < KINGDOM_COUNT; i++) {
                 engine->run->kingdoms[i].ever_chained = ints[i];
             }
@@ -345,19 +331,17 @@ bool engine_load(EngineState* engine, const char* path) {
             char* cursor = line + 11;
 
             for (size_t i = 0; i < KINGDOM_COUNT; i++) {
-                engine->run->liberation_at[i]  = strtoul(cursor, &cursor, 10);
-                cursor                        += *cursor == ',';
+                engine->run->liberation_at[i] = strtoul(cursor, &cursor, 10);
+                cursor += *cursor == ',';
             }
-        } else if (
-            sscanf(
-                line,
-                "map k=%d t=%d cleared=%511s revealed=%511s",
-                &k,
-                &t,
-                bits,
-                revealed
-            ) == 4
-        ) {
+        } else if (sscanf(
+                       line,
+                       "map k=%d t=%d cleared=%511s revealed=%511s",
+                       &k,
+                       &t,
+                       bits,
+                       revealed
+                   ) == 4) {
             MapState* map = save_map(engine->run, (size_t) k, (size_t) t);
 
             for (size_t i = 0; i < map->nodes.vertices_count; i++) {

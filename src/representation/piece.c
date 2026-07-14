@@ -51,7 +51,7 @@ static size_t SCRATCH_CURSOR;
 /// Resets the shared static scratch buffer that movement generation
 /// writes into. See the header for the full scratch buffer convention.
 ///
-void mg_begin(void) {
+void          mg_begin(void) {
     SCRATCH_CURSOR = 0;
 }
 
@@ -392,7 +392,7 @@ bool eff_copy_mv(EffectContext* context, void* x) {
     mg_compound(
         battle_current(),
         target,
-        (const PieceID[]) {(PieceID) (uintptr_t) context->args[2], PIECE_NONE},
+        (const PieceID[]){(PieceID) (uintptr_t) context->args[2], PIECE_NONE},
         false
     );
     mg_end();
@@ -428,7 +428,7 @@ bool eff_copy_at(EffectContext* context, void* x) {
     mg_compound(
         battle_current(),
         target,
-        (const PieceID[]) {(PieceID) (uintptr_t) context->args[2], PIECE_NONE},
+        (const PieceID[]){(PieceID) (uintptr_t) context->args[2], PIECE_NONE},
         true
     );
     mg_end();

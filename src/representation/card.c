@@ -43,11 +43,11 @@ size_t card_target_count(const CardTarget* list) {
 /// - value -> value read per kind
 ///
 void card_target_push(CardTarget* list, TargetKind kind, int value) {
-    size_t count = card_target_count(list);
+    size_t count         = card_target_count(list);
 
-    list[count].kind      = kind;
-    list[count].value     = value;
-    list[count + 1].kind  = TARGET_NONE;
+    list[count].kind     = kind;
+    list[count].value    = value;
+    list[count + 1].kind = TARGET_NONE;
 }
 
 /// card_target_at
@@ -61,7 +61,7 @@ void card_target_push(CardTarget* list, TargetKind kind, int value) {
 /// Return: the decoded board square
 ///
 Square card_target_at(int value) {
-    return (Square) {(int8_t) (value % 20), (int8_t) (value / 20)};
+    return (Square){(int8_t) (value % 20), (int8_t) (value / 20)};
 }
 
 /// card_targets_piece
@@ -76,11 +76,14 @@ Square card_target_at(int value) {
 /// - battle -> battle providing the board
 /// - match  -> block selecting acceptable pieces
 ///
-void card_targets_piece(CardTarget* list, BattleState* battle,
-                        bool (^match)(const PieceInfo* piece)) {
+void card_targets_piece(
+    CardTarget*  list,
+    BattleState* battle,
+    bool (^match)(const PieceInfo* piece)
+) {
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x = 0; x < battle->board.width; x++) {
-            PieceInfo* cell = battle_at(battle, (Square) {x, y});
+            PieceInfo* cell = battle_at(battle, (Square){x, y});
 
             if (cell && cell->piece && match(cell)) {
                 card_target_push(list, TARGET_PIECE, y * 20 + x);
@@ -100,8 +103,11 @@ void card_targets_piece(CardTarget* list, BattleState* battle,
 /// - battle -> battle providing the board
 /// - match  -> block selecting acceptable squares
 ///
-void card_targets_square(CardTarget* list, BattleState* battle,
-                         bool (^match)(Square square)) {
+void card_targets_square(
+    CardTarget*  list,
+    BattleState* battle,
+    bool (^match)(Square square)
+) {
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x = 0; x < battle->board.width; x++) {
             Square square = {x, y};
@@ -123,8 +129,10 @@ void card_targets_square(CardTarget* list, BattleState* battle,
 /// - list  -> target list to extend
 /// - match -> block selecting acceptable identities
 ///
-void card_targets_piece_type(CardTarget* list,
-                             bool (^match)(const Piece* piece)) {
+void card_targets_piece_type(
+    CardTarget* list,
+    bool (^match)(const Piece* piece)
+) {
     for (int id = 0; id < PIECE_COUNT; id++) {
         const Piece* piece = PIECE_REGISTRY[id];
 
@@ -147,7 +155,7 @@ void card_targets_piece_type(CardTarget* list,
 Square card_square(void* packed) {
     long value = (long) (uintptr_t) packed;
 
-    return (Square) {(int8_t) (value % 20), (int8_t) (value / 20)};
+    return (Square){(int8_t) (value % 20), (int8_t) (value / 20)};
 }
 
 /// card_pack

@@ -365,11 +365,10 @@ static const size_t LAYOUT_SIZE[KINGDOM_COUNT][3] = {
         {sizeof(HARUSHIMA_TOWN) / sizeof(MapNode),
          sizeof(HARUSHIMA_PROVINCE) / sizeof(MapNode),
          sizeof(HARUSHIMA_COUNTRY) / sizeof(MapNode)},
-    [KINGDOM_CAELAN] = {
-        sizeof(CAELAN_TOWN) / sizeof(MapNode),
-        sizeof(CAELAN_PROVINCE) / sizeof(MapNode),
-        sizeof(CAELAN_COUNTRY) / sizeof(MapNode)
-    },
+    [KINGDOM_CAELAN] =
+        {sizeof(CAELAN_TOWN) / sizeof(MapNode),
+         sizeof(CAELAN_PROVINCE) / sizeof(MapNode),
+         sizeof(CAELAN_COUNTRY) / sizeof(MapNode)},
 };
 
 static const char* const KINGDOM_NAME[KINGDOM_COUNT] = {
@@ -505,12 +504,10 @@ map_generate(MapState* map, KingdomID kingdom, MapTypeID tier, size_t seed) {
             node->modifier = (BattleModifier*) &MODIFIER_REGISTRY[pick];
         }
 
-        if (node->type == MAP_NODE_BATTLE &&
-            rng_mix(seed, i + 100) % 2 == 0) {
-            size_t which =
-                (size_t) kingdom * 2 + rng_mix(seed, i + 200) % 2;
+        if (node->type == MAP_NODE_BATTLE && rng_mix(seed, i + 100) % 2 == 0) {
+            size_t which = (size_t) kingdom * 2 + rng_mix(seed, i + 200) % 2;
 
-            node->trait = (BoardTrait*) TRAIT_REGISTRY[which];
+            node->trait  = (BoardTrait*) TRAIT_REGISTRY[which];
         }
 
         map->nodes.nodes[i].data = node;
@@ -552,8 +549,7 @@ static MapTypeID active_tier(RunState* run, KingdomID kingdom) {
     MapState*     maps[3] = {
         state->town_map,
         state->province_map,
-        state->country_map
-    };
+        state->country_map};
 
     for (int tier = 0; tier < 2; tier++) {
         if (!map_complete(maps[tier])) {
@@ -703,8 +699,7 @@ void run_new(
         MapState** maps[3]  = {
             &state->town_map,
             &state->province_map,
-            &state->country_map
-        };
+            &state->country_map};
 
         for (int tier = 0; tier < 3; tier++) {
             *maps[tier]            = calloc(1, sizeof(MapState));
@@ -772,8 +767,7 @@ void run_free(RunState* run) {
         MapState*     maps[3] = {
             state->town_map,
             state->province_map,
-            state->country_map
-        };
+            state->country_map};
 
         for (int tier = 0; tier < 3; tier++) {
             if (maps[tier]) {
@@ -1145,11 +1139,10 @@ void run_event_choose(EngineState* engine, EventChoice choice) {
             continue;
         }
 
-        size_t reduce       = VORATH_REDUCTIONS[i].reduce;
+        size_t reduce = VORATH_REDUCTIONS[i].reduce;
 
-        run->vorath_counter = run->vorath_counter > reduce
-            ? run->vorath_counter - reduce
-            : 0;
+        run->vorath_counter =
+            run->vorath_counter > reduce ? run->vorath_counter - reduce : 0;
     }
 
     if (event == EVENT_DESERT_CROSSING && choice == CHOICE_B) {

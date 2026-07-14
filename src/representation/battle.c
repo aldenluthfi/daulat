@@ -14,23 +14,23 @@
                                SUBJECT REGISTERS
 \*----------------------------------------------------------------------------*/
 
-const PieceInfo      VOID_CELL = {};
+const PieceInfo     VOID_CELL = {};
 
-static BattleState*  CURRENT_BATTLE;
-static PieceInfo*    SUBJECT;
-static PieceInfo*    VICTIM;
-static Card*         SUBJECT_CARD;
-static const Piece*  BUY_PIECE;
-static Square        MOVE_FROM = {-1, -1};
-static Square        OWNER_SQUARE = {-1, -1};
-static PieceInfo**   DAMAGERS;
+static BattleState* CURRENT_BATTLE;
+static PieceInfo*   SUBJECT;
+static PieceInfo*   VICTIM;
+static Card*        SUBJECT_CARD;
+static const Piece* BUY_PIECE;
+static Square       MOVE_FROM    = {-1, -1};
+static Square       OWNER_SQUARE = {-1, -1};
+static PieceInfo**  DAMAGERS;
 
-static EngineState*  BATTLE_ENGINE;
-static Side          HUMAN_SIDE;
-static Side          ACTING_SIDE;
-static unsigned int  BATTLE_RNG;
-static PieceInfo*    FLIPPED_PIECE;
-static PieceInfo*    DAMAGER_LIST[MAX_BOARD_SIZE + 1];
+static EngineState* BATTLE_ENGINE;
+static Side         HUMAN_SIDE;
+static Side         ACTING_SIDE;
+static unsigned int BATTLE_RNG;
+static PieceInfo*   FLIPPED_PIECE;
+static PieceInfo*   DAMAGER_LIST[MAX_BOARD_SIZE + 1];
 
 #define MARK_MOVED     ((uintptr_t) 1)
 #define MARK_FLIPPED   ((uintptr_t) 2)
@@ -534,7 +534,7 @@ PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at, Side side) {
         return nullptr;
     }
 
-    *copy        = *template;
+    *copy = *template;
 
     if (BATTLE_ENGINE && side == HUMAN_SIDE) {
         copy->value += run_value_bonus(BATTLE_ENGINE->run, copy);
@@ -664,7 +664,7 @@ int battle_piece_moves(BattleState* battle, PieceInfo* piece) {
     PieceInfo* saved = SUBJECT;
     int        count = piece_mark(piece, MARK_MOVED);
 
-    SUBJECT = piece;
+    SUBJECT          = piece;
     effect_fire(battle, piece->side, QUERY_PIECE_HAS_MOVED, &count);
     SUBJECT = saved;
 
@@ -687,7 +687,7 @@ int battle_piece_flips(BattleState* battle, PieceInfo* piece) {
     PieceInfo* saved = SUBJECT;
     int        count = piece_mark(piece, MARK_FLIPPED);
 
-    SUBJECT = piece;
+    SUBJECT          = piece;
     effect_fire(battle, piece->side, QUERY_PIECE_HAS_FLIPPED, &count);
     SUBJECT = saved;
 
@@ -748,14 +748,14 @@ void battle_flip(BattleState* battle, PieceInfo* piece) {
 /// - b      -> second piece
 ///
 void battle_swap(BattleState* battle, PieceInfo* a, PieceInfo* b) {
-    Square square_a = a->square;
-    Square square_b = b->square;
+    Square square_a                                   = a->square;
+    Square square_b                                   = b->square;
 
     battle->board.piece_board[square_index(square_a)] = b;
     battle->board.piece_board[square_index(square_b)] = a;
 
-    a->square = square_b;
-    b->square = square_a;
+    a->square                                         = square_b;
+    b->square                                         = square_a;
 }
 
 /// battle_remove
@@ -830,9 +830,9 @@ bool battle_move(BattleState* battle, Square from, Square to) {
         return false;
     }
 
-    player->actions     -= cost;
+    player->actions -= cost;
 
-    PieceInfo* occupant  = battle_at(battle, to);
+    PieceInfo* occupant = battle_at(battle, to);
 
     if (occupant && occupant->side == piece->side) {
         battle->board.piece_board[square_index(from)] = occupant;
@@ -848,7 +848,7 @@ bool battle_move(BattleState* battle, Square from, Square to) {
 
     MOVE_FROM = from;
     effect_fire(battle, ACTING_SIDE, ON_PIECE_MOVE, piece);
-    MOVE_FROM      = SQUARE_END;
+    MOVE_FROM = SQUARE_END;
 
     piece_mark_set(piece, MARK_MOVED, piece_mark(piece, MARK_MOVED) + 1);
     piece_mark_set(piece, TURN_LAST_MOVE, (int) battle->turn);
@@ -871,10 +871,8 @@ bool battle_move(BattleState* battle, Square from, Square to) {
 ///
 /// Return: true when the purchase is permitted
 ///
-static bool battle_challenge_allows_buy(
-    BattleState* battle,
-    const Piece* template
-) {
+static bool
+battle_challenge_allows_buy(BattleState* battle, const Piece* template) {
     ChallengeRunID challenge = BATTLE_ENGINE->run->challenge;
 
     if (challenge == CHALLENGE_PACIFIST_DOCTRINE && template->value > 20) {
@@ -910,17 +908,13 @@ static bool battle_challenge_allows_buy(
 ///
 /// Return: the region-adjusted base cost
 ///
-static int battle_price(
-    BattleState* battle,
-    const Piece* template,
-    Side         side
-) {
+static int battle_price(BattleState* battle, const Piece* template, Side side) {
     int cost = template->value;
 
     if (side == HUMAN_SIDE && BATTLE_ENGINE) {
         int discount = run_cost_bonus(BATTLE_ENGINE->run, template);
 
-        cost = cost * (100 - discount) / 100;
+        cost         = cost * (100 - discount) / 100;
     }
 
     if (template->kingdom == KINGDOM_NONE || !battle->node ||
@@ -932,9 +926,8 @@ static int battle_price(
         return cost * 60 / 100;
     }
 
-    bool trade_routes =
-        side == HUMAN_SIDE && BATTLE_ENGINE &&
-        BATTLE_ENGINE->run->relics[RELIC_TRADE_ROUTES];
+    bool trade_routes = side == HUMAN_SIDE && BATTLE_ENGINE &&
+                        BATTLE_ENGINE->run->relics[RELIC_TRADE_ROUTES];
 
     return trade_routes ? cost : cost * 120 / 100;
 }
@@ -1030,9 +1023,9 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
         return false;
     }
 
-    player->cp      -= cost;
+    player->cp -= cost;
     player->actions -= action_cost;
-    player->meter   += battle_value(battle, piece, nullptr);
+    player->meter += battle_value(battle, piece, nullptr);
 
     CURRENT_BATTLE = battle;
     effect_fire(battle, ACTING_SIDE, ON_PIECE_BUY, piece);
@@ -1163,7 +1156,7 @@ static size_t battle_card_step_count(const Card* card) {
 static size_t battle_build_step(Card* card, size_t step, Side side) {
     PENDING_TARGETS[0].kind = TARGET_NONE;
 
-    size_t ordinal = 0;
+    size_t ordinal          = 0;
 
     for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
         const Effect* effect = &card->effects[slot];
@@ -1178,7 +1171,7 @@ static size_t battle_build_step(Card* card, size_t step, Side side) {
 
         EffectContext ctx = {};
 
-        ctx.args[0]          = (void*) (uintptr_t) side;
+        ctx.args[0]       = (void*) (uintptr_t) side;
 
         effect->func(&ctx, PENDING_TARGETS);
         break;
@@ -1254,7 +1247,7 @@ bool battle_card_can_play(BattleState* battle, size_t hand) {
         return false;
     }
 
-    int cost = card->play_cost;
+    int cost       = card->play_cost;
 
     CURRENT_BATTLE = battle;
     SUBJECT_CARD   = card;
@@ -1275,7 +1268,7 @@ bool battle_card_can_play(BattleState* battle, size_t hand) {
             saved_picks[i] = PENDING_PICKS[i];
         }
 
-        PENDING_PICKS[0] = (CardTarget) {TARGET_NONE, 0};
+        PENDING_PICKS[0] = (CardTarget){TARGET_NONE, 0};
 
         for (size_t step = 0; can && step < steps; step++) {
             if (battle_build_step(card, step, ACTING_SIDE) == 0) {
@@ -1284,7 +1277,7 @@ bool battle_card_can_play(BattleState* battle, size_t hand) {
             }
 
             PENDING_PICKS[step]     = PENDING_TARGETS[0];
-            PENDING_PICKS[step + 1] = (CardTarget) {TARGET_NONE, 0};
+            PENDING_PICKS[step + 1] = (CardTarget){TARGET_NONE, 0};
         }
 
         for (size_t i = 0; i <= MAX_EFFECT_COUNT; i++) {
@@ -1323,10 +1316,10 @@ bool battle_play(BattleState* battle, size_t hand) {
     PlayerState* player = battle_player(battle, ACTING_SIDE);
     Card*        card   = player->hand[hand];
 
-    int cost       = card->play_cost;
+    int          cost   = card->play_cost;
 
-    CURRENT_BATTLE = battle;
-    SUBJECT_CARD   = card;
+    CURRENT_BATTLE      = battle;
+    SUBJECT_CARD        = card;
     effect_fire(battle, ACTING_SIDE, QUERY_CARD_PLAY_COST, &cost);
 
     size_t steps = battle_card_step_count(card);
@@ -1401,8 +1394,8 @@ bool battle_play(BattleState* battle, size_t hand) {
         battle_emit_targets(PENDING_TARGET_COUNT);
     }
 
-    SUBJECT_CARD       = nullptr;
-    CURRENT_BATTLE     = nullptr;
+    SUBJECT_CARD   = nullptr;
+    CURRENT_BATTLE = nullptr;
 
     return true;
 }
@@ -1426,11 +1419,11 @@ bool battle_card_target(BattleState* battle, size_t index) {
         return false;
     }
 
-    Card* card = PENDING_CARD;
-    Side  side = PENDING_SIDE;
+    Card* card                      = PENDING_CARD;
+    Side  side                      = PENDING_SIDE;
 
     PENDING_PICKS[PENDING_STEP]     = PENDING_TARGETS[index];
-    PENDING_PICKS[PENDING_STEP + 1] = (CardTarget) {TARGET_NONE, 0};
+    PENDING_PICKS[PENDING_STEP + 1] = (CardTarget){TARGET_NONE, 0};
     PENDING_STEP++;
 
     CURRENT_BATTLE = battle;
@@ -1446,8 +1439,8 @@ bool battle_card_target(BattleState* battle, size_t index) {
             return true;
         }
 
-        PENDING_PICKS[PENDING_STEP]     = (CardTarget) {TARGET_NONE, 0};
-        PENDING_PICKS[PENDING_STEP + 1] = (CardTarget) {TARGET_NONE, 0};
+        PENDING_PICKS[PENDING_STEP]     = (CardTarget){TARGET_NONE, 0};
+        PENDING_PICKS[PENDING_STEP + 1] = (CardTarget){TARGET_NONE, 0};
         PENDING_STEP++;
     }
 
@@ -1462,7 +1455,7 @@ bool battle_card_target(BattleState* battle, size_t index) {
 
         EffectContext ctx = {};
 
-        ctx.args[0]          = (void*) (uintptr_t) side;
+        ctx.args[0]       = (void*) (uintptr_t) side;
 
         if (effect->func(&ctx, PENDING_PICKS) && effect->name) {
             protocol_emit(
@@ -1609,8 +1602,8 @@ static int battle_resolve(BattleState* battle, Side attacker) {
         }
 
         if (dealt > 0) {
-            total                  += dealt;
-            DAMAGER_LIST[damagers]  = piece;
+            total += dealt;
+            DAMAGER_LIST[damagers] = piece;
             damagers++;
         }
     }
@@ -1685,14 +1678,14 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
             return false;
         }
 
-        Side   gainer_side  = receiver == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
+        Side gainer_side    = receiver == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
 
         PlayerState* gainer = battle_player(battle, gainer_side);
         int          max_before = battle_meter_max(battle, gainer_side);
 
-        int flips = 1;
+        int          flips      = 1;
 
-        CURRENT_BATTLE = battle;
+        CURRENT_BATTLE          = battle;
         effect_fire(battle, receiver, QUERY_FLIP_COUNT, &flips);
         CURRENT_BATTLE = nullptr;
 
@@ -1717,13 +1710,13 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
 
         CURRENT_BATTLE = battle;
         effect_fire(battle, receiver, QUERY_METER_REFILL, &refill);
-        CURRENT_BATTLE  = nullptr;
+        CURRENT_BATTLE = nullptr;
 
-        player->meter   = refill - deficit;
+        player->meter  = refill - deficit;
 
-        int gainer_max  = battle_meter_max(battle, gainer_side);
+        int gainer_max = battle_meter_max(battle, gainer_side);
 
-        gainer->meter  += gainer_max - max_before;
+        gainer->meter += gainer_max - max_before;
 
         if (gainer->meter > 2 * gainer_max) {
             gainer->meter = 2 * gainer_max;
@@ -1797,9 +1790,9 @@ static bool battle_half_turn(BattleState* battle, Side side) {
 
     CURRENT_BATTLE = battle;
     effect_fire(battle, enemy_side, QUERY_METER_DAMAGE_TAKEN, &total);
-    CURRENT_BATTLE  = nullptr;
+    CURRENT_BATTLE = nullptr;
 
-    enemy->meter   -= total;
+    enemy->meter -= total;
 
     if (total > 0) {
         protocol_emit(
@@ -1882,14 +1875,14 @@ int battle_lunge(BattleState* battle, PieceInfo* piece, Square to) {
 
     if ((to.x != piece->square.x || to.y != piece->square.y) &&
         battle_in_bounds(battle, to) && !battle_at(battle, to)) {
-        Square from = piece->square;
+        Square from                                   = piece->square;
 
         battle->board.piece_board[square_index(from)] = nullptr;
         piece->square                                 = to;
         battle->board.piece_board[square_index(to)]   = piece;
 
-        CURRENT_BATTLE = battle;
-        MOVE_FROM      = from;
+        CURRENT_BATTLE                                = battle;
+        MOVE_FROM                                     = from;
         effect_fire(battle, piece->side, ON_PIECE_MOVE, piece);
         MOVE_FROM      = SQUARE_END;
         CURRENT_BATTLE = saved;
@@ -2014,7 +2007,7 @@ static void battle_free_army(
             int8_t x = (int8_t) (rand_r(&BATTLE_RNG) % battle->board.width);
             int8_t y = (int8_t) (low + rand_r(&BATTLE_RNG) % (high - low));
 
-            if (battle_spawn(battle, id, (Square) {x, y}, owner)) {
+            if (battle_spawn(battle, id, (Square){x, y}, owner)) {
                 break;
             }
         }
@@ -2041,9 +2034,10 @@ static void battle_setup_armies(BattleState* battle) {
     }
 
     KingdomID      kingdom = node->kingdom->id;
-    ChainPenaltyID level   = node->kingdom->chain
-        ? (ChainPenaltyID) (node->kingdom->chain - CHAIN_REGISTRY)
-        : CHAIN_NONE;
+    ChainPenaltyID level =
+        node->kingdom->chain
+            ? (ChainPenaltyID) (node->kingdom->chain - CHAIN_REGISTRY)
+            : CHAIN_NONE;
 
     Difficulty difficulty = BATTLE_ENGINE->run->difficulty;
 
@@ -2062,9 +2056,9 @@ static void battle_setup_armies(BattleState* battle) {
 
             if (attached) {
                 int penalty = difficulty >= DIFFICULTY_SHACKLED &&
-                              difficulty <= DIFFICULTY_ENSLAVED
-                    ? 25
-                    : 10;
+                                      difficulty <= DIFFICULTY_ENSLAVED
+                                  ? 25
+                                  : 10;
 
                 attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
                 attached->context->args[1] = (void*) (uintptr_t) penalty;
@@ -2090,20 +2084,18 @@ static void battle_setup_armies(BattleState* battle) {
     effect_fire(battle, HUMAN_SIDE, QUERY_ENEMY_ARMY_COUNT, &count);
     CURRENT_BATTLE = nullptr;
 
-    Side enemy = battle_enemy(HUMAN_SIDE);
+    Side enemy     = battle_enemy(HUMAN_SIDE);
 
     battle_free_army(
-        battle, enemy, enemy, KINGDOM_BASIC[kingdom], (size_t) count
+        battle,
+        enemy,
+        enemy,
+        KINGDOM_BASIC[kingdom],
+        (size_t) count
     );
 
     if (BATTLE_ENGINE->run->challenge == CHALLENGE_THE_TRAITORS_GAMBIT) {
-        battle_free_army(
-            battle,
-            enemy,
-            HUMAN_SIDE,
-            KINGDOM_BASIC[kingdom],
-            3
-        );
+        battle_free_army(battle, enemy, HUMAN_SIDE, KINGDOM_BASIC[kingdom], 3);
     }
 }
 
@@ -2171,11 +2163,7 @@ static void battle_walk_innates(BattleState* battle) {
         battle->node->kingdom) {
         KingdomID kingdom = battle->node->kingdom->id;
 
-        KINGDOM_INNATE[kingdom](
-            battle,
-            battle_enemy(HUMAN_SIDE),
-            MASTERY_NONE
-        );
+        KINGDOM_INNATE[kingdom](battle, battle_enemy(HUMAN_SIDE), MASTERY_NONE);
     }
 }
 
@@ -2230,7 +2218,7 @@ void battle_scatter_voids(BattleState* battle, int percent) {
         int8_t x     = (int8_t) (rand_r(&BATTLE_RNG) % battle->board.width);
         int8_t y     = (int8_t) (rand_r(&BATTLE_RNG) % battle->board.height);
 
-        size_t index = square_index((Square) {x, y});
+        size_t index = square_index((Square){x, y});
 
         if (battle->board.piece_board[index]) {
             continue;
@@ -2257,7 +2245,7 @@ void battle_board_view(BattleState* battle) {
 
     BattleState* saved = CURRENT_BATTLE;
 
-    CURRENT_BATTLE = battle;
+    CURRENT_BATTLE     = battle;
     effect_fire(battle, HUMAN_SIDE, QUERY_BOARD_STATE, &battle->board);
     CURRENT_BATTLE = saved;
 }
@@ -2339,8 +2327,8 @@ void battle_begin(EngineState* engine, MapNode* node) {
     BATTLE_RNG            = (unsigned int)
         rng_mix(engine->run->seed, engine->run->battles_fought + 1);
 
-    battle->white.cp    = 20;
-    battle->black.cp    = 20;
+    battle->white.cp = 20;
+    battle->black.cp = 20;
 
     battle_walk_run(battle);
     battle_walk_modifiers(battle);
@@ -2354,15 +2342,15 @@ void battle_begin(EngineState* engine, MapNode* node) {
     battle->board.width  = dimension.x;
     battle->board.height = dimension.y;
 
-    int8_t center = (int8_t) (battle->board.width / 2);
+    int8_t center        = (int8_t) (battle->board.width / 2);
 
     battle_spawn(
         battle,
         PIECE_KING,
-        (Square) {center, (int8_t) (battle->board.height - 1)},
+        (Square){center, (int8_t) (battle->board.height - 1)},
         SIDE_WHITE
     );
-    battle_spawn(battle, PIECE_KING, (Square) {center, 0}, SIDE_BLACK);
+    battle_spawn(battle, PIECE_KING, (Square){center, 0}, SIDE_BLACK);
 
     effect_fire(battle, SIDE_WHITE, ON_BOARD_BUILD, &battle->board);
     CURRENT_BATTLE = nullptr;
@@ -2374,7 +2362,7 @@ void battle_begin(EngineState* engine, MapNode* node) {
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);
 
-    size_t vorath = engine->run->vorath_counter / 2;
+    size_t vorath       = engine->run->vorath_counter / 2;
 
     if (vorath > 0) {
         battle_meter_gain(
@@ -2384,9 +2372,9 @@ void battle_begin(EngineState* engine, MapNode* node) {
         );
     }
 
-    ACTING_SIDE         = SIDE_WHITE;
+    ACTING_SIDE    = SIDE_WHITE;
 
-    CURRENT_BATTLE      = battle;
+    CURRENT_BATTLE = battle;
     effect_fire(battle, SIDE_WHITE, ON_BATTLE_START, node);
     effect_fire(battle, SIDE_BLACK, ON_BATTLE_START, node);
     CURRENT_BATTLE = nullptr;
@@ -2420,7 +2408,7 @@ static void battle_territory_finish(BattleState* battle) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x = 0; x < battle->board.width; x++) {
-            Side holder    = battle_territory(battle, (Square) {x, y});
+            Side holder = battle_territory(battle, (Square){x, y});
 
             white_squares += holder == SIDE_WHITE;
             black_squares += holder == SIDE_BLACK;
@@ -2678,14 +2666,14 @@ Side battle_territory(BattleState* battle, Square square) {
         }
     }
 
-    Side owner = nearest_white < nearest_black   ? SIDE_WHITE
-                 : nearest_black < nearest_white ? SIDE_BLACK
-                                                 : SIDE_NEUTRAL;
+    Side         owner = nearest_white < nearest_black   ? SIDE_WHITE
+                         : nearest_black < nearest_white ? SIDE_BLACK
+                                                         : SIDE_NEUTRAL;
 
     BattleState* saved = CURRENT_BATTLE;
 
-    CURRENT_BATTLE = battle;
-    OWNER_SQUARE   = square;
+    CURRENT_BATTLE     = battle;
+    OWNER_SQUARE       = square;
     effect_fire(battle, SIDE_WHITE, QUERY_SQUARE_OWNER, &owner);
     OWNER_SQUARE   = SQUARE_END;
     CURRENT_BATTLE = saved;

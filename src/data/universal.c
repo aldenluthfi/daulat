@@ -134,7 +134,7 @@ static bool eff_sacrifice_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side && p->piece->id != PIECE_KING;
+      return p->side == side && p->piece->id != PIECE_KING;
     });
 
     return card_target_count(x) > 0;
@@ -271,7 +271,7 @@ static bool eff_reforge(EffectContext* context, void* x) {
 
     LinkedList* list = &battle_player(battle, side)->effects;
 
-    Effect mark = {
+    Effect      mark = {
         .func      = eff_noop,
         .trigger   = ON_TURN_START,
         .lasts_for = TURNS_2,
@@ -414,8 +414,7 @@ static bool eff_pawn_storm_buy(EffectContext* context, void* x) {
         return false;
     }
 
-    mark->context->args[2] =
-        (void*) ((uintptr_t) mark->context->args[2] + 1);
+    mark->context->args[2] = (void*) ((uintptr_t) mark->context->args[2] + 1);
 
     return true;
 }
@@ -438,7 +437,7 @@ static bool eff_pawn_storm(EffectContext* context, void* x) {
     Side         side   = (Side) (uintptr_t) context->args[0];
     LinkedList*  list   = &battle_player(battle, side)->effects;
 
-    Effect mark = {
+    Effect       mark   = {
         .func      = eff_noop,
         .trigger   = ON_TURN_START,
         .lasts_for = TURNS_1,
@@ -526,7 +525,7 @@ static bool eff_mercy_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side && p->piece->id != PIECE_KING;
+      return p->side == side && p->piece->id != PIECE_KING;
     });
 
     return card_target_count(x) > 0;
@@ -669,8 +668,8 @@ static bool eff_chain_break_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side != side && p->side != SIDE_NEUTRAL &&
-               p->piece->id != PIECE_KING;
+      return p->side != side && p->side != SIDE_NEUTRAL &&
+             p->piece->id != PIECE_KING;
     });
 
     return card_target_count(x) > 0;
@@ -738,8 +737,7 @@ static bool eff_hydra(EffectContext* context, void* x) {
         for (int8_t dx = -1; dx <= 1 && spawned < 2; dx++) {
             Square spot = {
                 (int8_t) (king->square.x + dx),
-                (int8_t) (king->square.y + dy)
-            };
+                (int8_t) (king->square.y + dy)};
 
             if ((dx || dy) && battle_in_bounds(battle, spot) &&
                 !battle_at(battle, spot) &&
@@ -776,10 +774,14 @@ const Piece UNIVERSAL_PIECES[] = {
 const Card UNIVERSAL_CARDS[] = {
     {
         .effects =
-            {{.func      = eff_pawn_storm,
-              .name      = "Pawn Storm",
-              .trigger   = ON_CARD_PLAY,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_pawn_storm,
+                    .name      = "Pawn Storm",
+                    .trigger   = ON_CARD_PLAY,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Pawn Storm",
         .desc      = "Buy up to 3 pawns this turn without action cost; "
                      "the third is free.",
@@ -791,10 +793,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_revitalize,
-              .name      = "Revitalize",
-              .trigger   = ON_CARD_PLAY,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_revitalize,
+                    .name      = "Revitalize",
+                    .trigger   = ON_CARD_PLAY,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Revitalize",
         .desc      = "Restore 50 to your meter.",
         .id        = CARD_REVITALIZE,
@@ -805,10 +811,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_hostage,
-              .name      = "Hostage",
-              .trigger   = ON_PIECE_FLIP,
-              .lasts_for = ENTIRE_BATTLE}},
+            {
+                {
+                    .func      = eff_hostage,
+                    .name      = "Hostage",
+                    .trigger   = ON_PIECE_FLIP,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
         .name      = "Hostage",
         .desc      = "Next flip to your side: your meter gains 20 bonus.",
         .id        = CARD_HOSTAGE,
@@ -819,10 +829,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_last_stand,
-              .name      = "Last Stand",
-              .trigger   = QUERY_PIECE_CAN_FLIP,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_last_stand,
+                    .name      = "Last Stand",
+                    .trigger   = QUERY_PIECE_CAN_FLIP,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Last Stand",
         .desc      = "This turn your meter cannot trigger a flip. Damage "
                      "still applies.",
@@ -834,14 +848,20 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_sacrifice_targets,
-              .name      = "Sacrifice",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_sacrifice_pick,
-              .name      = "Sacrifice",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_sacrifice_targets,
+                    .name      = "Sacrifice",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_sacrifice_pick,
+                    .name      = "Sacrifice",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Sacrifice",
         .desc      = "Remove one of your pieces. Gain its value x2 as "
                      "meter.",
@@ -853,10 +873,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_reforge,
-              .name      = "Reforge",
-              .trigger   = ON_PIECE_FLIP_PRE,
-              .lasts_for = ENTIRE_BATTLE}},
+            {
+                {
+                    .func      = eff_reforge,
+                    .name      = "Reforge",
+                    .trigger   = ON_PIECE_FLIP_PRE,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
         .name      = "Reforge",
         .desc      = "Next time a piece flips, its type is 30% cheaper "
                      "to buy next turn.",
@@ -868,14 +892,20 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_mercy_targets,
-              .name      = "Mercy",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_mercy_pick,
-              .name      = "Mercy",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_mercy_targets,
+                    .name      = "Mercy",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_mercy_pick,
+                    .name      = "Mercy",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Mercy",
         .desc      = "Target which piece flips next, overriding earlier "
                      "uses.",
@@ -887,10 +917,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_bloodletting,
-              .name      = "Bloodletting",
-              .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_bloodletting,
+                    .name      = "Bloodletting",
+                    .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Bloodletting",
         .desc      = "This turn your attacks deal extra damage equal to "
                      "50% of your missing meter.",
@@ -902,10 +936,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_counter_coup,
-              .name      = "Counter Coup",
-              .trigger   = QUERY_METER_DAMAGE_TAKEN,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_counter_coup,
+                    .name      = "Counter Coup",
+                    .trigger   = QUERY_METER_DAMAGE_TAKEN,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Counter Coup",
         .desc      = "This turn all damage you take echoes back at 50% "
                      "to enemy meter.",
@@ -917,10 +955,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_spite,
-              .name      = "Spite",
-              .trigger   = ON_PIECE_FLIP_PRE,
-              .lasts_for = ENTIRE_BATTLE}},
+            {
+                {
+                    .func      = eff_spite,
+                    .name      = "Spite",
+                    .trigger   = ON_PIECE_FLIP_PRE,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
         .name      = "Spite",
         .desc      = "Next time you lose a piece, deal its value x3 to "
                      "enemy meter.",
@@ -932,14 +974,20 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_chain_break_targets,
-              .name      = "Chain Break",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_chain_break_pick,
-              .name      = "Chain Break",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_chain_break_targets,
+                    .name      = "Chain Break",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_chain_break_pick,
+                    .name      = "Chain Break",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Chain Break",
         .desc      = "Force-flip one enemy piece of your choice.",
         .id        = CARD_CHAIN_BREAK,
@@ -950,10 +998,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_hydra,
-              .name      = "Hydra",
-              .trigger   = ON_PIECE_FLIP_PRE,
-              .lasts_for = ENTIRE_BATTLE}},
+            {
+                {
+                    .func      = eff_hydra,
+                    .name      = "Hydra",
+                    .trigger   = ON_PIECE_FLIP_PRE,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
         .name      = "Hydra",
         .desc      = "Next time a piece flips, 2 friendly pawns spawn "
                      "beside your king.",
@@ -982,10 +1034,8 @@ const Card UNIVERSAL_CARDS[] = {
 static bool eff_lean_times(EffectContext* context, void* x) {
     (void) x;
 
-    PlayerState* player = battle_player(
-        battle_current(),
-        (Side) (uintptr_t) context->args[0]
-    );
+    PlayerState* player =
+        battle_player(battle_current(), (Side) (uintptr_t) context->args[0]);
 
     player->cp -= 20;
 
@@ -1009,10 +1059,8 @@ static bool eff_lean_times(EffectContext* context, void* x) {
 static bool eff_windfall(EffectContext* context, void* x) {
     (void) x;
 
-    battle_player(
-        battle_current(),
-        (Side) (uintptr_t) context->args[0]
-    )->cp += 30;
+    battle_player(battle_current(), (Side) (uintptr_t) context->args[0])->cp +=
+        30;
 
     return true;
 }
@@ -1066,10 +1114,8 @@ static bool eff_devalued(EffectContext* context, void* x) {
 static bool eff_tax_collector(EffectContext* context, void* x) {
     (void) x;
 
-    battle_player(
-        battle_current(),
-        (Side) (uintptr_t) context->args[0]
-    )->cp += 5;
+    battle_player(battle_current(), (Side) (uintptr_t) context->args[0])->cp +=
+        5;
 
     return true;
 }
@@ -1274,9 +1320,9 @@ static bool eff_lucky_strike(EffectContext* context, void* x) {
         }
     }
 
-    Card** hand = x;
+    Card** hand      = x;
 
-    hand[0] = (Card*) CARD_REGISTRY[top[battle_rand() % count]];
+    hand[0]          = (Card*) CARD_REGISTRY[top[battle_rand() % count]];
     context->args[1] = (void*) (uintptr_t) (turn + 1);
 
     return true;
@@ -1369,15 +1415,15 @@ static bool eff_bloodbath(EffectContext* context, void* x) {
 /// Return: true when at least one enemy piece was hidden
 ///
 static bool eff_fog_of_war(EffectContext* context, void* x) {
-    BattleState* battle  = battle_current();
-    Side         side    = (Side) (uintptr_t) context->args[0];
-    Board*       board   = x;
+    BattleState* battle                   = battle_current();
+    Side         side                     = (Side) (uintptr_t) context->args[0];
+    Board*       board                    = x;
 
-    bool attacked[MAX_BOARD_SIZE] = {};
+    bool         attacked[MAX_BOARD_SIZE] = {};
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x0 = 0; x0 < battle->board.width; x0++) {
-            PieceInfo* piece = battle_at(battle, (Square) {x0, y});
+            PieceInfo* piece = battle_at(battle, (Square){x0, y});
 
             if (!piece || piece == &VOID_CELL || piece->side != side) {
                 continue;
@@ -1385,8 +1431,8 @@ static bool eff_fog_of_war(EffectContext* context, void* x) {
 
             Square* coverage = battle_attacks(battle, piece);
 
-            for (size_t i = 0;
-                 !(coverage[i].x == -1 && coverage[i].y == -1); i++) {
+            for (size_t i = 0; !(coverage[i].x == -1 && coverage[i].y == -1);
+                 i++) {
                 attacked[coverage[i].y * 20 + coverage[i].x] = true;
             }
         }
@@ -1397,10 +1443,10 @@ static bool eff_fog_of_war(EffectContext* context, void* x) {
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x0 = 0; x0 < battle->board.width; x0++) {
             size_t     index = (size_t) (y * 20 + x0);
-            PieceInfo* piece = battle_at(battle, (Square) {x0, y});
+            PieceInfo* piece = battle_at(battle, (Square){x0, y});
 
-            if (!piece || piece == &VOID_CELL ||
-                piece->side == side || piece->side == SIDE_NEUTRAL) {
+            if (!piece || piece == &VOID_CELL || piece->side == side ||
+                piece->side == SIDE_NEUTRAL) {
                 continue;
             }
 
@@ -1415,204 +1461,276 @@ static bool eff_fog_of_war(EffectContext* context, void* x) {
 }
 
 const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT] = {
-    [MODIFIER_LEAN_TIMES] = {
-        .name    = "Lean Times",
-        .desc    = "Both sides start with 20 less cp.",
-        .id      = MODIFIER_LEAN_TIMES,
-        .effects = {{
-            .func      = eff_lean_times,
-            .name      = "Lean Times",
-            .trigger   = ON_BATTLE_START,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_WINDFALL] = {
-        .name    = "Windfall",
-        .desc    = "Both sides start with 30 more cp.",
-        .id      = MODIFIER_WINDFALL,
-        .effects = {{
-            .func      = eff_windfall,
-            .name      = "Windfall",
-            .trigger   = ON_BATTLE_START,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_OPEN_MARKET] = {
-        .name    = "Open Market",
-        .desc    = "All pieces cost 50% this battle.",
-        .id      = MODIFIER_OPEN_MARKET,
-        .effects = {{
-            .func      = eff_open_market,
-            .name      = "Open Market",
-            .trigger   = QUERY_PIECE_CP_COST_BUY,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_DEVALUED_CURRENCY] = {
-        .name    = "Devalued Currency",
-        .desc    = "All card sell values are halved.",
-        .id      = MODIFIER_DEVALUED_CURRENCY,
-        .effects = {{
-            .func      = eff_devalued,
-            .name      = "Devalued Currency",
-            .trigger   = QUERY_CARD_SELL_COST,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_TAX_COLLECTOR] = {
-        .name    = "Tax Collector",
-        .desc    = "+5 cp on top of each card sold.",
-        .id      = MODIFIER_TAX_COLLECTOR,
-        .effects = {{
-            .func      = eff_tax_collector,
-            .name      = "Tax Collector",
-            .trigger   = ON_CARD_SELL,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_GLASS_CANNON] = {
-        .name    = "Glass Cannon",
-        .desc    = "Both meters refill at only 50% of value.",
-        .id      = MODIFIER_GLASS_CANNON,
-        .effects = {{
-            .func      = eff_glass_cannon,
-            .name      = "Glass Cannon",
-            .trigger   = QUERY_METER_REFILL,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_BLOODBATH] = {
-        .name = "Bloodbath",
-        .desc = "Each flip triggers 2 pieces instead of 1.",
-        .id   = MODIFIER_BLOODBATH,
-        .effects = {{
-            .func      = eff_bloodbath,
-            .name      = "Bloodbath",
-            .trigger   = QUERY_FLIP_COUNT,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_IRON_WILL] = {
-        .name    = "Iron Will",
-        .desc    = "Damage you deal hits your own meter at 25%.",
-        .id      = MODIFIER_IRON_WILL,
-        .effects = {{
-            .func      = eff_iron_will,
-            .name      = "Iron Will",
-            .trigger   = QUERY_METER_DAMAGE_TAKEN,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_OVERFLOW] = {
-        .name    = "Overflow",
-        .desc    = "A flipped piece you gain gets +30 value.",
-        .id      = MODIFIER_OVERFLOW,
-        .effects = {{
-            .func      = eff_overflow,
-            .name      = "Overflow",
-            .trigger   = ON_PIECE_FLIP,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_MIRROR] = {
-        .name    = "Mirror",
-        .desc    = "Damage you deal heals your own meter at 25%.",
-        .id      = MODIFIER_MIRROR,
-        .effects = {{
-            .func      = eff_mirror,
-            .name      = "Mirror",
-            .trigger   = QUERY_METER_DAMAGE_TAKEN,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_RICH_HAND] = {
-        .name    = "Rich Hand",
-        .desc    = "Draw 4 cards per turn.",
-        .id      = MODIFIER_RICH_HAND,
-        .effects = {{
-            .func      = eff_rich_hand,
-            .name      = "Rich Hand",
-            .trigger   = QUERY_CARD_DRAW_COUNT,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_SPARSE_HAND] = {
-        .name    = "Sparse Hand",
-        .desc    = "Draw 2 cards per turn.",
-        .id      = MODIFIER_SPARSE_HAND,
-        .effects = {{
-            .func      = eff_sparse_hand,
-            .name      = "Sparse Hand",
-            .trigger   = QUERY_CARD_DRAW_COUNT,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_KINGDOM_PURITY] = {
-        .name    = "Kingdom Purity",
-        .desc    = "Only cards of the region being fought in are drawn.",
-        .id      = MODIFIER_KINGDOM_PURITY,
-        .effects = {{
-            .func      = eff_kingdom_purity,
-            .name      = "Kingdom Purity",
-            .trigger   = QUERY_CARD_CAN_DRAW,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_LUCKY_STRIKE] = {
-        .name    = "Lucky Strike",
-        .desc    = "First card drawn each turn is the highest tier available.",
-        .id      = MODIFIER_LUCKY_STRIKE,
-        .effects = {{
-            .func      = eff_lucky_strike,
-            .name      = "Lucky Strike",
-            .trigger   = ON_CARDS_DRAWN,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_FOG_OF_WAR] = {
-        .name = "Fog of War",
-        .desc = "Enemy pieces are hidden off squares you attack.",
-        .id   = MODIFIER_FOG_OF_WAR,
-        .effects = {{
-            .func      = eff_fog_of_war,
-            .name      = "Fog of War",
-            .trigger   = QUERY_BOARD_STATE,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_DENSE_TERRAIN] = {
-        .name = "Dense Terrain",
-        .desc = "20% of squares are missing, revealed at start.",
-        .id   = MODIFIER_DENSE_TERRAIN,
-        .effects = {{
-            .func      = eff_dense_terrain,
-            .name      = "Dense Terrain",
-            .trigger   = ON_BOARD_BUILD,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_EXTENDED_FRONT] = {
-        .name = "Extended Front",
-        .desc = "Board is 2 columns wider.",
-        .id   = MODIFIER_EXTENDED_FRONT,
-        .effects = {{
-            .func      = eff_extended_front,
-            .name      = "Extended Front",
-            .trigger   = QUERY_BOARD_DIMENSION,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [MODIFIER_COMPRESSED] = {
-        .name = "Compressed",
-        .desc = "Board is 2 columns narrower.",
-        .id   = MODIFIER_COMPRESSED,
-        .effects = {{
-            .func      = eff_compressed,
-            .name      = "Compressed",
-            .trigger   = QUERY_BOARD_DIMENSION,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
+    [MODIFIER_LEAN_TIMES] =
+        {
+            .name = "Lean Times",
+            .desc = "Both sides start with 20 less cp.",
+            .id   = MODIFIER_LEAN_TIMES,
+            .effects =
+                {
+                    {
+                        .func      = eff_lean_times,
+                        .name      = "Lean Times",
+                        .trigger   = ON_BATTLE_START,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_WINDFALL] =
+        {
+            .name = "Windfall",
+            .desc = "Both sides start with 30 more cp.",
+            .id   = MODIFIER_WINDFALL,
+            .effects =
+                {
+                    {
+                        .func      = eff_windfall,
+                        .name      = "Windfall",
+                        .trigger   = ON_BATTLE_START,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_OPEN_MARKET] =
+        {
+            .name = "Open Market",
+            .desc = "All pieces cost 50% this battle.",
+            .id   = MODIFIER_OPEN_MARKET,
+            .effects =
+                {
+                    {
+                        .func      = eff_open_market,
+                        .name      = "Open Market",
+                        .trigger   = QUERY_PIECE_CP_COST_BUY,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_DEVALUED_CURRENCY] =
+        {
+            .name = "Devalued Currency",
+            .desc = "All card sell values are halved.",
+            .id   = MODIFIER_DEVALUED_CURRENCY,
+            .effects =
+                {
+                    {
+                        .func      = eff_devalued,
+                        .name      = "Devalued Currency",
+                        .trigger   = QUERY_CARD_SELL_COST,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_TAX_COLLECTOR] =
+        {
+            .name = "Tax Collector",
+            .desc = "+5 cp on top of each card sold.",
+            .id   = MODIFIER_TAX_COLLECTOR,
+            .effects =
+                {
+                    {
+                        .func      = eff_tax_collector,
+                        .name      = "Tax Collector",
+                        .trigger   = ON_CARD_SELL,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_GLASS_CANNON] =
+        {
+            .name = "Glass Cannon",
+            .desc = "Both meters refill at only 50% of value.",
+            .id   = MODIFIER_GLASS_CANNON,
+            .effects =
+                {
+                    {
+                        .func      = eff_glass_cannon,
+                        .name      = "Glass Cannon",
+                        .trigger   = QUERY_METER_REFILL,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_BLOODBATH] =
+        {
+            .name = "Bloodbath",
+            .desc = "Each flip triggers 2 pieces instead of 1.",
+            .id   = MODIFIER_BLOODBATH,
+            .effects =
+                {
+                    {
+                        .func      = eff_bloodbath,
+                        .name      = "Bloodbath",
+                        .trigger   = QUERY_FLIP_COUNT,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_IRON_WILL] =
+        {
+            .name = "Iron Will",
+            .desc = "Damage you deal hits your own meter at 25%.",
+            .id   = MODIFIER_IRON_WILL,
+            .effects =
+                {
+                    {
+                        .func      = eff_iron_will,
+                        .name      = "Iron Will",
+                        .trigger   = QUERY_METER_DAMAGE_TAKEN,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_OVERFLOW] =
+        {
+            .name = "Overflow",
+            .desc = "A flipped piece you gain gets +30 value.",
+            .id   = MODIFIER_OVERFLOW,
+            .effects =
+                {
+                    {
+                        .func      = eff_overflow,
+                        .name      = "Overflow",
+                        .trigger   = ON_PIECE_FLIP,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_MIRROR] =
+        {
+            .name = "Mirror",
+            .desc = "Damage you deal heals your own meter at 25%.",
+            .id   = MODIFIER_MIRROR,
+            .effects =
+                {
+                    {
+                        .func      = eff_mirror,
+                        .name      = "Mirror",
+                        .trigger   = QUERY_METER_DAMAGE_TAKEN,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_RICH_HAND] =
+        {
+            .name = "Rich Hand",
+            .desc = "Draw 4 cards per turn.",
+            .id   = MODIFIER_RICH_HAND,
+            .effects =
+                {
+                    {
+                        .func      = eff_rich_hand,
+                        .name      = "Rich Hand",
+                        .trigger   = QUERY_CARD_DRAW_COUNT,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_SPARSE_HAND] =
+        {
+            .name = "Sparse Hand",
+            .desc = "Draw 2 cards per turn.",
+            .id   = MODIFIER_SPARSE_HAND,
+            .effects =
+                {
+                    {
+                        .func      = eff_sparse_hand,
+                        .name      = "Sparse Hand",
+                        .trigger   = QUERY_CARD_DRAW_COUNT,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_KINGDOM_PURITY] =
+        {
+            .name = "Kingdom Purity",
+            .desc = "Only cards of the region being fought in are drawn.",
+            .id   = MODIFIER_KINGDOM_PURITY,
+            .effects =
+                {
+                    {
+                        .func      = eff_kingdom_purity,
+                        .name      = "Kingdom Purity",
+                        .trigger   = QUERY_CARD_CAN_DRAW,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_LUCKY_STRIKE] =
+        {
+            .name = "Lucky Strike",
+            .desc = "First card drawn each turn is the highest tier available.",
+            .id   = MODIFIER_LUCKY_STRIKE,
+            .effects =
+                {
+                    {
+                        .func      = eff_lucky_strike,
+                        .name      = "Lucky Strike",
+                        .trigger   = ON_CARDS_DRAWN,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_FOG_OF_WAR] =
+        {
+            .name = "Fog of War",
+            .desc = "Enemy pieces are hidden off squares you attack.",
+            .id   = MODIFIER_FOG_OF_WAR,
+            .effects =
+                {
+                    {
+                        .func      = eff_fog_of_war,
+                        .name      = "Fog of War",
+                        .trigger   = QUERY_BOARD_STATE,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_DENSE_TERRAIN] =
+        {
+            .name = "Dense Terrain",
+            .desc = "20% of squares are missing, revealed at start.",
+            .id   = MODIFIER_DENSE_TERRAIN,
+            .effects =
+                {
+                    {
+                        .func      = eff_dense_terrain,
+                        .name      = "Dense Terrain",
+                        .trigger   = ON_BOARD_BUILD,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_EXTENDED_FRONT] =
+        {
+            .name = "Extended Front",
+            .desc = "Board is 2 columns wider.",
+            .id   = MODIFIER_EXTENDED_FRONT,
+            .effects =
+                {
+                    {
+                        .func      = eff_extended_front,
+                        .name      = "Extended Front",
+                        .trigger   = QUERY_BOARD_DIMENSION,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [MODIFIER_COMPRESSED] =
+        {
+            .name = "Compressed",
+            .desc = "Board is 2 columns narrower.",
+            .id   = MODIFIER_COMPRESSED,
+            .effects =
+                {
+                    {
+                        .func      = eff_compressed,
+                        .name      = "Compressed",
+                        .trigger   = QUERY_BOARD_DIMENSION,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
 };
 
 /*----------------------------------------------------------------------------*\
@@ -1633,10 +1751,8 @@ const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT] = {
 static bool eff_bronze_chain(EffectContext* context, void* x) {
     (void) x;
 
-    PlayerState* player = battle_player(
-        battle_current(),
-        (Side) (uintptr_t) context->args[0]
-    );
+    PlayerState* player =
+        battle_player(battle_current(), (Side) (uintptr_t) context->args[0]);
 
     int penalty = context->args[1] ? (int) (uintptr_t) context->args[1] : 10;
 
@@ -1669,33 +1785,42 @@ static bool eff_silver_chain(EffectContext* context, void* x) {
 }
 
 const ChainPenalty CHAIN_REGISTRY[CHAIN_PENALTY_COUNT] = {
-    [CHAIN_BRONZE] = {
-        .name    = "Bronze",
-        .desc    = "Battles in this region start with -10 cp.",
-        .id      = CHAIN_BRONZE,
-        .effects = {{
-            .func      = eff_bronze_chain,
-            .name      = "Bronze Chain",
-            .trigger   = ON_BATTLE_START,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [CHAIN_SILVER] = {
-        .name    = "Silver",
-        .desc    = "Enemy gets +1 free starting piece in this region.",
-        .id      = CHAIN_SILVER,
-        .effects = {{
-            .func      = eff_silver_chain,
-            .name      = "Silver Chain",
-            .trigger   = QUERY_ENEMY_ARMY_COUNT,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
-    },
-    [CHAIN_GOLD] = {
-        .name = "Gold",
-        .desc = "Figurehead Subjugated: the track locks.",
-        .id   = CHAIN_GOLD,
-    },
+    [CHAIN_BRONZE] =
+        {
+            .name = "Bronze",
+            .desc = "Battles in this region start with -10 cp.",
+            .id   = CHAIN_BRONZE,
+            .effects =
+                {
+                    {
+                        .func      = eff_bronze_chain,
+                        .name      = "Bronze Chain",
+                        .trigger   = ON_BATTLE_START,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [CHAIN_SILVER] =
+        {
+            .name = "Silver",
+            .desc = "Enemy gets +1 free starting piece in this region.",
+            .id   = CHAIN_SILVER,
+            .effects =
+                {
+                    {
+                        .func      = eff_silver_chain,
+                        .name      = "Silver Chain",
+                        .trigger   = QUERY_ENEMY_ARMY_COUNT,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                },
+        },
+    [CHAIN_GOLD] =
+        {
+            .name = "Gold",
+            .desc = "Figurehead Subjugated: the track locks.",
+            .id   = CHAIN_GOLD,
+        },
 };
 
 /*----------------------------------------------------------------------------*\
@@ -1827,39 +1952,44 @@ static bool eff_syn_caelan(EffectContext* context, void* x) {
 }
 
 const Effect SYNERGY_REGISTRY[KINGDOM_COUNT] = {
-    [KINGDOM_LONGWEI] = {
-        .func      = eff_syn_pao,
-        .name      = "Longwei Synergy",
-        .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-        .lasts_for = ENTIRE_BATTLE,
-    },
-    [KINGDOM_KEWARANI] = {
-        .func      = eff_syn_kewarani,
-        .name      = "Kewarani Synergy",
-        .trigger   = QUERY_PIECE_CP_COST_BUY,
-        .lasts_for = ENTIRE_BATTLE,
-    },
-    [KINGDOM_ZARQAN] = {
-        .func      = eff_syn_zarqan,
-        .name      = "Zarqan Synergy",
-        .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-        .lasts_for = ENTIRE_BATTLE,
-    },
-    [KINGDOM_HARUSHIMA] = {
-        .func      = eff_syn_harushima,
-        .name      = "Harushima Synergy",
-        .trigger   = ON_CARD_PLAY,
-        .lasts_for = ENTIRE_BATTLE,
-    },
-    [KINGDOM_CAELAN] = {
-        .func      = eff_syn_caelan,
-        .name      = "Caelan Synergy",
-        .trigger   = ON_CARD_PLAY,
-        .lasts_for = ENTIRE_BATTLE,
-    },
+    [KINGDOM_LONGWEI] =
+        {
+            .func      = eff_syn_pao,
+            .name      = "Longwei Synergy",
+            .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+            .lasts_for = ENTIRE_BATTLE,
+        },
+    [KINGDOM_KEWARANI] =
+        {
+            .func      = eff_syn_kewarani,
+            .name      = "Kewarani Synergy",
+            .trigger   = QUERY_PIECE_CP_COST_BUY,
+            .lasts_for = ENTIRE_BATTLE,
+        },
+    [KINGDOM_ZARQAN] =
+        {
+            .func      = eff_syn_zarqan,
+            .name      = "Zarqan Synergy",
+            .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+            .lasts_for = ENTIRE_BATTLE,
+        },
+    [KINGDOM_HARUSHIMA] =
+        {
+            .func      = eff_syn_harushima,
+            .name      = "Harushima Synergy",
+            .trigger   = ON_CARD_PLAY,
+            .lasts_for = ENTIRE_BATTLE,
+        },
+    [KINGDOM_CAELAN] =
+        {
+            .func      = eff_syn_caelan,
+            .name      = "Caelan Synergy",
+            .trigger   = ON_CARD_PLAY,
+            .lasts_for = ENTIRE_BATTLE,
+        },
 };
 
-const Piece* const   PIECE_REGISTRY[PIECE_COUNT]         = {
+const Piece* const PIECE_REGISTRY[PIECE_COUNT] = {
     [PIECE_KING]             = &UNIVERSAL_PIECES[0],
 
     [PIECE_BING]             = &LONGWEI_PIECES[0],
@@ -1909,64 +2039,64 @@ const Piece* const   PIECE_REGISTRY[PIECE_COUNT]         = {
 };
 
 const Card* const CARD_REGISTRY[CARD_COUNT] = {
-    [CARD_PAWN_STORM]    = &UNIVERSAL_CARDS[0],
-    [CARD_REVITALIZE]    = &UNIVERSAL_CARDS[1],
-    [CARD_HOSTAGE]       = &UNIVERSAL_CARDS[2],
-    [CARD_LAST_STAND]    = &UNIVERSAL_CARDS[3],
-    [CARD_SACRIFICE]     = &UNIVERSAL_CARDS[4],
-    [CARD_REFORGE]       = &UNIVERSAL_CARDS[5],
-    [CARD_MERCY]         = &UNIVERSAL_CARDS[6],
-    [CARD_BLOODLETTING]  = &UNIVERSAL_CARDS[7],
-    [CARD_COUNTER_COUP]  = &UNIVERSAL_CARDS[8],
-    [CARD_SPITE]         = &UNIVERSAL_CARDS[9],
-    [CARD_CHAIN_BREAK]   = &UNIVERSAL_CARDS[10],
-    [CARD_HYDRA]         = &UNIVERSAL_CARDS[11],
+    [CARD_PAWN_STORM]           = &UNIVERSAL_CARDS[0],
+    [CARD_REVITALIZE]           = &UNIVERSAL_CARDS[1],
+    [CARD_HOSTAGE]              = &UNIVERSAL_CARDS[2],
+    [CARD_LAST_STAND]           = &UNIVERSAL_CARDS[3],
+    [CARD_SACRIFICE]            = &UNIVERSAL_CARDS[4],
+    [CARD_REFORGE]              = &UNIVERSAL_CARDS[5],
+    [CARD_MERCY]                = &UNIVERSAL_CARDS[6],
+    [CARD_BLOODLETTING]         = &UNIVERSAL_CARDS[7],
+    [CARD_COUNTER_COUP]         = &UNIVERSAL_CARDS[8],
+    [CARD_SPITE]                = &UNIVERSAL_CARDS[9],
+    [CARD_CHAIN_BREAK]          = &UNIVERSAL_CARDS[10],
+    [CARD_HYDRA]                = &UNIVERSAL_CARDS[11],
 
-    [CARD_RIVER_WADE]    = &LONGWEI_CARDS[0],
-    [CARD_CHARGE]        = &LONGWEI_CARDS[1],
-    [CARD_FORMATION]     = &LONGWEI_CARDS[2],
-    [CARD_DIVINATION]    = &LONGWEI_CARDS[3],
-    [CARD_CANNON_VOLLEY] = &LONGWEI_CARDS[4],
-    [CARD_PALACE_DECREE] = &LONGWEI_CARDS[5],
-    [CARD_MANDATE]       = &LONGWEI_CARDS[6],
-    [CARD_MINGZHUS_SEAL] = &LONGWEI_CARDS[7],
+    [CARD_RIVER_WADE]           = &LONGWEI_CARDS[0],
+    [CARD_CHARGE]               = &LONGWEI_CARDS[1],
+    [CARD_FORMATION]            = &LONGWEI_CARDS[2],
+    [CARD_DIVINATION]           = &LONGWEI_CARDS[3],
+    [CARD_CANNON_VOLLEY]        = &LONGWEI_CARDS[4],
+    [CARD_PALACE_DECREE]        = &LONGWEI_CARDS[5],
+    [CARD_MANDATE]              = &LONGWEI_CARDS[6],
+    [CARD_MINGZHUS_SEAL]        = &LONGWEI_CARDS[7],
 
-    [CARD_RONIN]         = &HARUSHIMA_CARDS[0],
-    [CARD_RESURRECTION]  = &HARUSHIMA_CARDS[1],
-    [CARD_GOLD_STANDARD] = &HARUSHIMA_CARDS[2],
-    [CARD_PROMOTION]     = &HARUSHIMA_CARDS[3],
-    [CARD_DUAL_DROP]     = &HARUSHIMA_CARDS[4],
-    [CARD_FORCE_DROP]    = &HARUSHIMA_CARDS[5],
-    [CARD_BUSHIDO]       = &HARUSHIMA_CARDS[6],
-    [CARD_TOMOHITOS_PATIENCE] = &HARUSHIMA_CARDS[7],
+    [CARD_RONIN]                = &HARUSHIMA_CARDS[0],
+    [CARD_RESURRECTION]         = &HARUSHIMA_CARDS[1],
+    [CARD_GOLD_STANDARD]        = &HARUSHIMA_CARDS[2],
+    [CARD_PROMOTION]            = &HARUSHIMA_CARDS[3],
+    [CARD_DUAL_DROP]            = &HARUSHIMA_CARDS[4],
+    [CARD_FORCE_DROP]           = &HARUSHIMA_CARDS[5],
+    [CARD_BUSHIDO]              = &HARUSHIMA_CARDS[6],
+    [CARD_TOMOHITOS_PATIENCE]   = &HARUSHIMA_CARDS[7],
 
-    [CARD_SULTANS_GOLD]  = &KEWARANI_CARDS[0],
-    [CARD_MARCH]         = &KEWARANI_CARDS[1],
-    [CARD_DOUBLE_TIME]   = &KEWARANI_CARDS[2],
-    [CARD_SALT_ROAD]     = &KEWARANI_CARDS[3],
-    [CARD_CARAVAN]       = &KEWARANI_CARDS[4],
-    [CARD_DOUBLESTRIKE]  = &KEWARANI_CARDS[5],
-    [CARD_HAJJ]          = &KEWARANI_CARDS[6],
-    [CARD_SELASSIES_MARCH] = &KEWARANI_CARDS[7],
+    [CARD_SULTANS_GOLD]         = &KEWARANI_CARDS[0],
+    [CARD_MARCH]                = &KEWARANI_CARDS[1],
+    [CARD_DOUBLE_TIME]          = &KEWARANI_CARDS[2],
+    [CARD_SALT_ROAD]            = &KEWARANI_CARDS[3],
+    [CARD_CARAVAN]              = &KEWARANI_CARDS[4],
+    [CARD_DOUBLESTRIKE]         = &KEWARANI_CARDS[5],
+    [CARD_HAJJ]                 = &KEWARANI_CARDS[6],
+    [CARD_SELASSIES_MARCH]      = &KEWARANI_CARDS[7],
 
-    [CARD_COUNSEL]       = &ZARQAN_CARDS[0],
-    [CARD_PILLAGE]       = &ZARQAN_CARDS[1],
-    [CARD_ROYAL_DECOY]   = &ZARQAN_CARDS[2],
-    [CARD_BAZAAR]        = &ZARQAN_CARDS[3],
-    [CARD_STEPPE_RIDERS] = &ZARQAN_CARDS[4],
-    [CARD_AMBITION]      = &ZARQAN_CARDS[5],
-    [CARD_CITADEL]       = &ZARQAN_CARDS[6],
-    [CARD_CONQUEST]      = &ZARQAN_CARDS[7],
-    [CARD_TIMURS_CONQUEST] = &ZARQAN_CARDS[8],
+    [CARD_COUNSEL]              = &ZARQAN_CARDS[0],
+    [CARD_PILLAGE]              = &ZARQAN_CARDS[1],
+    [CARD_ROYAL_DECOY]          = &ZARQAN_CARDS[2],
+    [CARD_BAZAAR]               = &ZARQAN_CARDS[3],
+    [CARD_STEPPE_RIDERS]        = &ZARQAN_CARDS[4],
+    [CARD_AMBITION]             = &ZARQAN_CARDS[5],
+    [CARD_CITADEL]              = &ZARQAN_CARDS[6],
+    [CARD_CONQUEST]             = &ZARQAN_CARDS[7],
+    [CARD_TIMURS_CONQUEST]      = &ZARQAN_CARDS[8],
 
-    [CARD_CASTLING]      = &CAELAN_CARDS[0],
-    [CARD_QUEENS_GAMBIT] = &CAELAN_CARDS[1],
-    [CARD_VENGEANCE]     = &CAELAN_CARDS[2],
-    [CARD_QUEENS_DECREE] = &CAELAN_CARDS[3],
-    [CARD_CATHEDRAL]     = &CAELAN_CARDS[4],
-    [CARD_CORONATION]    = &CAELAN_CARDS[5],
-    [CARD_CRUSADE]       = &CAELAN_CARDS[6],
-    [CARD_DIVINE_RIGHT]  = &CAELAN_CARDS[7],
+    [CARD_CASTLING]             = &CAELAN_CARDS[0],
+    [CARD_QUEENS_GAMBIT]        = &CAELAN_CARDS[1],
+    [CARD_VENGEANCE]            = &CAELAN_CARDS[2],
+    [CARD_QUEENS_DECREE]        = &CAELAN_CARDS[3],
+    [CARD_CATHEDRAL]            = &CAELAN_CARDS[4],
+    [CARD_CORONATION]           = &CAELAN_CARDS[5],
+    [CARD_CRUSADE]              = &CAELAN_CARDS[6],
+    [CARD_DIVINE_RIGHT]         = &CAELAN_CARDS[7],
     [CARD_ISABELLAS_CORONATION] = &CAELAN_CARDS[8],
 };
 const BoardTrait* const TRAIT_REGISTRY[BOARD_TRAIT_COUNT] = {
@@ -1986,7 +2116,7 @@ const BoardTrait* const TRAIT_REGISTRY[BOARD_TRAIT_COUNT] = {
     [BOARD_TRAIT_SIEGE_TRENCH]     = &CAELAN_TRAITS[1],
 };
 
-const KingdomID         KINGDOM_ADJACENT[KINGDOM_COUNT]   = {
+const KingdomID KINGDOM_ADJACENT[KINGDOM_COUNT] = {
     [KINGDOM_LONGWEI]   = KINGDOM_KEWARANI,
     [KINGDOM_KEWARANI]  = KINGDOM_ZARQAN,
     [KINGDOM_ZARQAN]    = KINGDOM_HARUSHIMA,

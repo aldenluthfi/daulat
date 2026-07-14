@@ -72,9 +72,15 @@ static void jamal_gen(BattleState* battle, PieceInfo* self, bool threat) {
     mg_leap(
         battle,
         self,
-        (const Square[]) {
-            {1, 3},  {1, -3},  {-1, 3},  {-1, -3},
-            {3, 1},  {3, -1},  {-3, 1},  {-3, -1},
+        (const Square[]){
+            {1, 3},
+            {1, -3},
+            {-1, 3},
+            {-1, -3},
+            {3, 1},
+            {3, -1},
+            {-3, 1},
+            {-3, -1},
             {0, 0},
         },
         threat
@@ -328,7 +334,7 @@ static void cataphract_gen(BattleState* battle, PieceInfo* self, bool threat) {
     mg_compound(
         battle,
         self,
-        (const PieceID[]) {PIECE_KNIGHT, PIECE_JAMAL, PIECE_NONE},
+        (const PieceID[]){PIECE_KNIGHT, PIECE_JAMAL, PIECE_NONE},
         threat
     );
 }
@@ -412,7 +418,7 @@ static Square* elephant_mv(BattleState* battle, PieceInfo* self) {
     mg_compound(
         battle,
         self,
-        (const PieceID[]) {PIECE_ZIRAAFA, PIECE_NONE},
+        (const PieceID[]){PIECE_ZIRAAFA, PIECE_NONE},
         false
     );
 
@@ -465,11 +471,11 @@ static bool eff_shahzadeh_swap(EffectContext* context, void* x) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t sx = 0; sx < battle->board.width; sx++) {
-            PieceInfo* cell = battle_at(battle, (Square) {sx, y});
+            PieceInfo* cell = battle_at(battle, (Square){sx, y});
 
             if (cell && cell->side == self->side &&
                 cell->piece->id == PIECE_KING) {
-                mg_push((Square) {sx, y});
+                mg_push((Square){sx, y});
                 mg_end();
 
                 return true;
@@ -547,7 +553,7 @@ static bool eff_pillage(EffectContext* context, void* x) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t sx = 0; sx < battle->board.width; sx++) {
-            PieceInfo* cell = battle_at(battle, (Square) {sx, y});
+            PieceInfo* cell = battle_at(battle, (Square){sx, y});
 
             if (cell && cell->side == side) {
                 count++;
@@ -575,7 +581,7 @@ static bool eff_royal_decoy_first(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side;
+      return p->side == side;
     });
 
     return card_target_count(x) > 0;
@@ -597,8 +603,8 @@ static bool eff_royal_decoy_second(EffectContext* context, void* x) {
     Square first = card_target_at(battle_pending_picks()[0].value);
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side &&
-               !(p->square.x == first.x && p->square.y == first.y);
+      return p->side == side &&
+             !(p->square.x == first.x && p->square.y == first.y);
     });
 
     return card_target_count(x) > 0;
@@ -652,7 +658,7 @@ static bool eff_bazaar_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side && p->piece->id != PIECE_KING;
+      return p->side == side && p->piece->id != PIECE_KING;
     });
 
     return card_target_count(x) > 0;
@@ -712,7 +718,7 @@ static bool eff_steppe_riders(EffectContext* context, void* x) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t sx = 0; sx < battle->board.width; sx++) {
-            PieceInfo* cell = battle_at(battle, (Square) {sx, y});
+            PieceInfo* cell = battle_at(battle, (Square){sx, y});
 
             if (!cell || cell->side != side) {
                 continue;
@@ -746,7 +752,7 @@ static bool eff_copy_piece_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side;
+      return p->side == side;
     });
 
     return card_target_count(x) > 0;
@@ -770,10 +776,10 @@ static bool eff_copy_type_targets(EffectContext* context, void* x) {
     Square       tsq    = card_target_at(battle_pending_picks()[0].value);
 
     card_targets_piece_type(x, ^bool(const Piece* pc) {
-        PieceInfo* target = battle_at(battle, tsq);
+      PieceInfo* target = battle_at(battle, tsq);
 
-        return battle_piece_unlocked(pc->id) &&
-               (!target || target->piece->id != pc->id);
+      return battle_piece_unlocked(pc->id) &&
+             (!target || target->piece->id != pc->id);
     });
 
     return card_target_count(x) > 0;
@@ -795,8 +801,7 @@ static bool eff_ambition_pick(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
 
-    if (picks[0].kind != TARGET_PIECE ||
-        picks[1].kind != TARGET_PIECE_TYPE) {
+    if (picks[0].kind != TARGET_PIECE || picks[1].kind != TARGET_PIECE_TYPE) {
         return false;
     }
 
@@ -828,7 +833,7 @@ static bool eff_citadel_targets(EffectContext* context, void* x) {
     (void) context;
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == SIDE_WHITE || p->side == SIDE_BLACK;
+      return p->side == SIDE_WHITE || p->side == SIDE_BLACK;
     });
 
     return card_target_count(x) > 0;
@@ -902,8 +907,7 @@ static bool eff_conquest_pick(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
 
-    if (picks[0].kind != TARGET_PIECE ||
-        picks[1].kind != TARGET_PIECE_TYPE) {
+    if (picks[0].kind != TARGET_PIECE || picks[1].kind != TARGET_PIECE_TYPE) {
         return false;
     }
 
@@ -984,10 +988,10 @@ static bool eff_timur_watch(EffectContext* context, void* x) {
 static bool eff_timur(EffectContext* context, void* x) {
     (void) x;
 
-    BattleState* battle = battle_current();
-    Side         side   = (Side) (uintptr_t) context->args[0];
+    BattleState*        battle = battle_current();
+    Side                side   = (Side) (uintptr_t) context->args[0];
 
-    static const Effect watch = {
+    static const Effect watch  = {
         .func      = eff_timur_watch,
         .name      = "Timur's Conquest",
         .trigger   = ON_PIECE_FLIP_POST,
@@ -1054,8 +1058,8 @@ const Piece ZARQAN_PIECES[] = {
         .value   = 35,
     },
     {
-        .at      = shahzadeh_at,
-        .mv      = shahzadeh_mv,
+        .at = shahzadeh_at,
+        .mv = shahzadeh_mv,
         .effects =
             {
                 {
@@ -1123,10 +1127,14 @@ const Piece ZARQAN_PIECES[] = {
 const Card ZARQAN_CARDS[] = {
     {
         .effects =
-            {{.func      = eff_counsel,
-              .name      = "Counsel",
-              .trigger   = QUERY_CARD_CAN_DRAW,
-              .lasts_for = TURNS_2}},
+            {
+                {
+                    .func      = eff_counsel,
+                    .name      = "Counsel",
+                    .trigger   = QUERY_CARD_CAN_DRAW,
+                    .lasts_for = TURNS_2,
+                },
+            },
         .name      = "Counsel",
         .desc      = "Peek at next turn's cards. Discard 1 from the "
                      "upcoming hand.",
@@ -1138,10 +1146,14 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_pillage,
-              .name      = "Pillage",
-              .trigger   = ON_CARD_PLAY,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_pillage,
+                    .name      = "Pillage",
+                    .trigger   = ON_CARD_PLAY,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Pillage",
         .desc      = "Gain 5 cp for each friendly piece on the board, "
                      "including the king.",
@@ -1153,18 +1165,26 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_royal_decoy_first,
-              .name      = "Royal Decoy",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_royal_decoy_second,
-              .name      = "Royal Decoy",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_royal_decoy_pick,
-              .name      = "Royal Decoy",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_royal_decoy_first,
+                    .name      = "Royal Decoy",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_royal_decoy_second,
+                    .name      = "Royal Decoy",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_royal_decoy_pick,
+                    .name      = "Royal Decoy",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Royal Decoy",
         .desc      = "Swap positions of any 2 of your pieces.",
         .id        = CARD_ROYAL_DECOY,
@@ -1175,14 +1195,20 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_bazaar_targets,
-              .name      = "Bazaar",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_bazaar_pick,
-              .name      = "Bazaar",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_bazaar_targets,
+                    .name      = "Bazaar",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_bazaar_pick,
+                    .name      = "Bazaar",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Bazaar",
         .desc      = "Sell one of your pieces for 150% of its value.",
         .id        = CARD_BAZAAR,
@@ -1193,10 +1219,14 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_steppe_riders,
-              .name      = "Steppe Riders",
-              .trigger   = ON_CARD_PLAY,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_steppe_riders,
+                    .name      = "Steppe Riders",
+                    .trigger   = ON_CARD_PLAY,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Steppe Riders",
         .desc      = "All your Knights, Jamals, and Cataphracts move twice "
                      "this turn.",
@@ -1208,18 +1238,26 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_copy_piece_targets,
-              .name      = "Ambition",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_copy_type_targets,
-              .name      = "Ambition",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_ambition_pick,
-              .name      = "Ambition",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_copy_piece_targets,
+                    .name      = "Ambition",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_copy_type_targets,
+                    .name      = "Ambition",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_ambition_pick,
+                    .name      = "Ambition",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Ambition",
         .desc      = "Target piece copies any other piece's movement "
                      "pattern this turn.",
@@ -1231,14 +1269,20 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_citadel_targets,
-              .name      = "Citadel",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_citadel_pick,
-              .name      = "Citadel",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_citadel_targets,
+                    .name      = "Citadel",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_citadel_pick,
+                    .name      = "Citadel",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Citadel",
         .desc      = "Target piece becomes immobile and immune for 2 "
                      "turns.",
@@ -1250,18 +1294,26 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_copy_piece_targets,
-              .name      = "Conquest",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_copy_type_targets,
-              .name      = "Conquest",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_conquest_pick,
-              .name      = "Conquest",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_copy_piece_targets,
+                    .name      = "Conquest",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_copy_type_targets,
+                    .name      = "Conquest",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_conquest_pick,
+                    .name      = "Conquest",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Conquest",
         .desc      = "Target piece permanently adopts any other piece's "
                      "movement pattern this battle.",
@@ -1273,10 +1325,14 @@ const Card ZARQAN_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_timur,
-              .name      = "Timur's Conquest",
-              .trigger   = ON_CARD_PLAY,
-              .lasts_for = ENTIRE_BATTLE}},
+            {
+                {
+                    .func      = eff_timur,
+                    .name      = "Timur's Conquest",
+                    .trigger   = ON_CARD_PLAY,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
         .name      = "Timur's Conquest",
         .desc      = "Royal Substitution triggers when the meter drops "
                      "below 20.",
@@ -1311,9 +1367,9 @@ static bool eff_sandstorm(EffectContext* context, void* x) {
         return false;
     }
 
-    Square* moves   = x;
-    size_t  write   = 0;
-    bool    pruned  = false;
+    Square* moves  = x;
+    size_t  write  = 0;
+    bool    pruned = false;
 
     for (size_t read = 0; !(moves[read].x == -1 && moves[read].y == -1);
          read++) {
@@ -1358,26 +1414,32 @@ static bool eff_mirage(EffectContext* context, void* x) {
 
 const BoardTrait ZARQAN_TRAITS[] = {
     {
-        .name      = "Sandstorm",
-        .desc      = "On even turns, all sliders move at most 3 squares.",
-        .id        = BOARD_TRAIT_SANDSTORM,
-        .effects   = {{
-            .func      = eff_sandstorm,
-            .name      = "Sandstorm",
-            .trigger   = QUERY_PIECE_MOVES,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
+        .name = "Sandstorm",
+        .desc = "On even turns, all sliders move at most 3 squares.",
+        .id   = BOARD_TRAIT_SANDSTORM,
+        .effects =
+            {
+                {
+                    .func      = eff_sandstorm,
+                    .name      = "Sandstorm",
+                    .trigger   = QUERY_PIECE_MOVES,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
     },
     {
         .name = "Mirage",
         .desc = "5% of squares cannot be entered, marked when revealed.",
         .id   = BOARD_TRAIT_MIRAGE,
-        .effects = {{
-            .func      = eff_mirage,
-            .name      = "Mirage",
-            .trigger   = ON_BOARD_BUILD,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
+        .effects =
+            {
+                {
+                    .func      = eff_mirage,
+                    .name      = "Mirage",
+                    .trigger   = ON_BOARD_BUILD,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
     },
 };
 
@@ -1474,7 +1536,7 @@ void zarqan_climax(BattleState* battle, Side side) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x = 0; x < battle->board.width; x++) {
-            PieceInfo* cell = battle_at(battle, (Square) {x, y});
+            PieceInfo* cell = battle_at(battle, (Square){x, y});
 
             if (!cell || cell->side != side || cell->piece->id == PIECE_KING) {
                 continue;

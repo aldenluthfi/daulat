@@ -104,8 +104,8 @@ static void emit_board(EngineState* engine) {
         int  len = 0;
 
         for (int8_t x = 0; x < battle->board.width; x++) {
-            size_t      index = (size_t) (y * 20 + x);
-            PieceInfo*  cell  = battle->board.piece_board[index];
+            size_t     index = (size_t) (y * 20 + x);
+            PieceInfo* cell  = battle->board.piece_board[index];
 
             if (cell == &VOID_CELL) {
                 cells[len++] = ' ';
@@ -246,7 +246,7 @@ static void handle_title(EngineState* engine, ...) {
 ///
 static Square
 battle_square_arg(int argc, char** argv, const char* key_x, const char* key_y) {
-    return (Square) {
+    return (Square){
         (int8_t) arg_long(argc, argv, key_x, -1),
         (int8_t) arg_long(argc, argv, key_y, -1),
     };

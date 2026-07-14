@@ -26,7 +26,7 @@
 /// - threat -> true for at (coverage), false for mv (movement)
 ///
 static void bing_gen(BattleState* battle, PieceInfo* self, bool threat) {
-    mg_leap(battle, self, (const Square[]) {{0, -1}, {0, 0}}, threat);
+    mg_leap(battle, self, (const Square[]){{0, -1}, {0, 0}}, threat);
 }
 
 /// bing_mv
@@ -75,7 +75,7 @@ static void xiang_gen(BattleState* battle, PieceInfo* self, bool threat) {
     mg_leap(
         battle,
         self,
-        (const Square[]) {{-2, -2}, {2, -2}, {-2, 2}, {2, 2}, {0, 0}},
+        (const Square[]){{-2, -2}, {2, -2}, {-2, 2}, {2, 2}, {0, 0}},
         threat
     );
 }
@@ -124,18 +124,26 @@ static Square* xiang_at(BattleState* battle, PieceInfo* self) {
 ///
 static void ma_gen(BattleState* battle, PieceInfo* self, bool threat) {
     static const Square leaps[] = {
-        {-1, -2}, {1, -2}, {-2, -1}, {2, -1},
-        {-2, 1},  {2, 1},  {-1, 2},  {1, 2},
+        {-1, -2},
+        {1, -2},
+        {-2, -1},
+        {2, -1},
+        {-2, 1},
+        {2, 1},
+        {-1, 2},
+        {1, 2},
     };
 
     for (size_t i = 0; i < 8; i++) {
-        Square elbow = abs(leaps[i].y) == 2
-                           ? (Square) {self->square.x,
-                                       (int8_t) (self->square.y +
-                                                 (leaps[i].y > 0 ? 1 : -1))}
-                           : (Square) {(int8_t) (self->square.x +
-                                                 (leaps[i].x > 0 ? 1 : -1)),
-                                       self->square.y};
+        Square elbow =
+            abs(leaps[i].y) == 2
+                ? (
+                      Square
+                  ){self->square.x,
+                    (int8_t) (self->square.y + (leaps[i].y > 0 ? 1 : -1))}
+                : (Square){
+                      (int8_t) (self->square.x + (leaps[i].x > 0 ? 1 : -1)),
+                      self->square.y};
 
         if (battle_at(battle, elbow)) {
             continue;
@@ -201,11 +209,8 @@ static Square* ma_at(BattleState* battle, PieceInfo* self) {
 /// - self       -> generating piece
 /// - directions -> zero vector terminated direction array
 ///
-static void cannon_cover(
-    BattleState*  battle,
-    PieceInfo*    self,
-    const Square* directions
-) {
+static void
+cannon_cover(BattleState* battle, PieceInfo* self, const Square* directions) {
     for (size_t i = 0; directions[i].x != 0 || directions[i].y != 0; i++) {
         int8_t dx       = directions[i].x;
         int8_t dy       = directions[i].y;
@@ -297,7 +302,7 @@ static Square* liubo_mv(BattleState* battle, PieceInfo* self) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x = 0; x < battle->board.width; x++) {
-            PieceInfo* enemy = battle_at(battle, (Square) {x, y});
+            PieceInfo* enemy = battle_at(battle, (Square){x, y});
 
             if (!enemy || enemy->side == self->side) {
                 continue;
@@ -313,8 +318,8 @@ static Square* liubo_mv(BattleState* battle, PieceInfo* self) {
                 bool duplicate = false;
 
                 for (size_t k = 0; k < count && !duplicate; k++) {
-                    duplicate = found[k].x == cover[i].x &&
-                                found[k].y == cover[i].y;
+                    duplicate =
+                        found[k].x == cover[i].x && found[k].y == cover[i].y;
                 }
 
                 if (!duplicate && count < MAX_BOARD_SIZE) {
@@ -362,8 +367,8 @@ static Square* liubo_at(BattleState* battle, PieceInfo* self) {
 /// - threat -> true for at (coverage), false for mv (movement)
 ///
 static void sang_gen(BattleState* battle, PieceInfo* self, bool threat) {
-    for (size_t o = 0; ORTHOGONAL_DIRECTIONS[o].x != 0 ||
-                       ORTHOGONAL_DIRECTIONS[o].y != 0;
+    for (size_t o = 0;
+         ORTHOGONAL_DIRECTIONS[o].x != 0 || ORTHOGONAL_DIRECTIONS[o].y != 0;
          o++) {
         int8_t ox    = ORTHOGONAL_DIRECTIONS[o].x;
         int8_t oy    = ORTHOGONAL_DIRECTIONS[o].y;
@@ -377,8 +382,8 @@ static void sang_gen(BattleState* battle, PieceInfo* self, bool threat) {
             continue;
         }
 
-        for (size_t d = 0; DIAGONAL_DIRECTIONS[d].x != 0 ||
-                           DIAGONAL_DIRECTIONS[d].y != 0;
+        for (size_t d = 0;
+             DIAGONAL_DIRECTIONS[d].x != 0 || DIAGONAL_DIRECTIONS[d].y != 0;
              d++) {
             int8_t dx = DIAGONAL_DIRECTIONS[d].x;
             int8_t dy = DIAGONAL_DIRECTIONS[d].y;
@@ -460,9 +465,15 @@ static void cavalry_gen(BattleState* battle, PieceInfo* self, bool threat) {
     mg_leap(
         battle,
         self,
-        (const Square[]) {
-            {-1, -2}, {1, -2}, {-2, -1}, {2, -1},
-            {-2, 1},  {2, 1},  {-1, 2},  {1, 2},
+        (const Square[]){
+            {-1, -2},
+            {1, -2},
+            {-2, -1},
+            {2, -1},
+            {-2, 1},
+            {2, 1},
+            {-1, 2},
+            {1, 2},
             {0, 0},
         },
         threat
@@ -623,8 +634,8 @@ static bool eff_bing_sideways_at(EffectContext* context, void* x) {
     size_t       pushed = 0;
 
     for (int8_t dx = -1; dx <= 1; dx += 2) {
-        Square      side     = {(int8_t) (self->square.x + dx), self->square.y};
-        PieceInfo*  occupant = battle_at(battle, side);
+        Square     side     = {(int8_t) (self->square.x + dx), self->square.y};
+        PieceInfo* occupant = battle_at(battle, side);
 
         if (battle_in_bounds(battle, side) &&
             (!occupant || occupant->side != self->side)) {
@@ -753,7 +764,7 @@ static bool eff_river_wade_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side && piece_is_pawn(p->piece->id);
+      return p->side == side && piece_is_pawn(p->piece->id);
     });
 
     return card_target_count(x) > 0;
@@ -871,7 +882,7 @@ static bool eff_charge_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side && p->piece->class == MOVE_SLIDER;
+      return p->side == side && p->piece->class == MOVE_SLIDER;
     });
 
     return card_target_count(x) > 0;
@@ -899,8 +910,7 @@ static bool eff_charge_pick(EffectContext* context, void* x) {
 
     PieceInfo* piece = battle_at(battle, card_target_at(target->value));
 
-    if (!piece || piece->side != side ||
-        piece->piece->class != MOVE_SLIDER) {
+    if (!piece || piece->side != side || piece->piece->class != MOVE_SLIDER) {
         return false;
     }
 
@@ -911,8 +921,8 @@ static bool eff_charge_pick(EffectContext* context, void* x) {
         .lasts_for = TURNS_1,
     };
 
-    Effect* attached = effect_attach(&battle_player(battle, side)->effects,
-                                     &charge);
+    Effect* attached =
+        effect_attach(&battle_player(battle, side)->effects, &charge);
 
     if (attached) {
         attached->context->args[1] = piece;
@@ -942,8 +952,8 @@ static bool eff_formation(EffectContext* context, void* x) {
 
     static const Square lines[] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 
-    BattleState* battle = battle_current();
-    bool         formed = false;
+    BattleState*        battle  = battle_current();
+    bool                formed  = false;
 
     for (size_t i = 0; i < 4 && !formed; i++) {
         int count = 1;
@@ -1014,7 +1024,7 @@ static bool eff_cannon_volley_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side && p->piece->id == PIECE_PAO;
+      return p->side == side && p->piece->id == PIECE_PAO;
     });
 
     return card_target_count(x) > 0;
@@ -1051,7 +1061,7 @@ static bool eff_cannon_volley_pick(EffectContext* context, void* x) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x2 = 0; x2 < battle->board.width; x2++) {
-            PieceInfo* cell = battle_at(battle, (Square) {x2, y});
+            PieceInfo* cell = battle_at(battle, (Square){x2, y});
 
             if (cell && cell->side != side && cell->side != SIDE_NEUTRAL &&
                 (x2 == pao->square.x || y == pao->square.y)) {
@@ -1177,7 +1187,7 @@ static bool eff_mingzhu_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side != side && p->side != SIDE_NEUTRAL;
+      return p->side != side && p->side != SIDE_NEUTRAL;
     });
 
     return card_target_count(x) > 0;
@@ -1216,10 +1226,8 @@ static bool eff_mingzhu_pick(EffectContext* context, void* x) {
         .lasts_for = TURNS_3,
     };
 
-    Effect* attached = effect_attach(
-        &battle_player(battle, piece->side)->effects,
-        &seal
-    );
+    Effect* attached =
+        effect_attach(&battle_player(battle, piece->side)->effects, &seal);
 
     if (attached) {
         attached->context->args[1] = piece;
@@ -1243,7 +1251,7 @@ static bool eff_mandate_targets(EffectContext* context, void* x) {
     Side side = (Side) (uintptr_t) context->args[0];
 
     card_targets_piece(x, battle_current(), ^bool(const PieceInfo* p) {
-        return p->side == side && p->piece->id != PIECE_KING;
+      return p->side == side && p->piece->id != PIECE_KING;
     });
 
     return card_target_count(x) > 0;
@@ -1314,8 +1322,8 @@ static bool eff_longwei_climax(EffectContext* context, void* x) {
 
 const Piece LONGWEI_PIECES[] = {
     {
-        .at      = bing_at,
-        .mv      = bing_mv,
+        .at = bing_at,
+        .mv = bing_mv,
         .effects =
             {
                 {
@@ -1347,8 +1355,8 @@ const Piece LONGWEI_PIECES[] = {
         .value   = 10,
     },
     {
-        .at      = xiang_at,
-        .mv      = xiang_mv,
+        .at = xiang_at,
+        .mv = xiang_mv,
         .effects =
             {
                 {
@@ -1415,8 +1423,8 @@ const Piece LONGWEI_PIECES[] = {
         .value   = 30,
     },
     {
-        .at      = cavalry_at,
-        .mv      = cavalry_mv,
+        .at = cavalry_at,
+        .mv = cavalry_mv,
         .effects =
             {
                 {
@@ -1452,14 +1460,20 @@ const Piece LONGWEI_PIECES[] = {
 const Card LONGWEI_CARDS[] = {
     {
         .effects =
-            {{.func      = eff_river_wade_targets,
-              .name      = "River Wade",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_river_wade_pick,
-              .name      = "River Wade",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_river_wade_targets,
+                    .name      = "River Wade",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_river_wade_pick,
+                    .name      = "River Wade",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "River Wade",
         .desc      = "Target pawn permanently gains a sideways step this "
                      "battle.",
@@ -1471,14 +1485,20 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_charge_targets,
-              .name      = "Charge",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_charge_pick,
-              .name      = "Charge",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_charge_targets,
+                    .name      = "Charge",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_charge_pick,
+                    .name      = "Charge",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Charge",
         .desc      = "Target slider may pass through one occupied square "
                      "on its next move.",
@@ -1490,10 +1510,14 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_formation,
-              .name      = "Formation",
-              .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_formation,
+                    .name      = "Formation",
+                    .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Formation",
         .desc      = "3 of your pieces in a straight line each deal +50% "
                      "damage this turn.",
@@ -1505,10 +1529,14 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_divination,
-              .name      = "Divination",
-              .trigger   = ON_CARD_PLAY,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_divination,
+                    .name      = "Divination",
+                    .trigger   = ON_CARD_PLAY,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Divination",
         .desc      = "Reveal the enemy's intended moves and cards for next "
                      "turn.",
@@ -1520,14 +1548,20 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_cannon_volley_targets,
-              .name      = "Cannon Volley",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_cannon_volley_pick,
-              .name      = "Cannon Volley",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_cannon_volley_targets,
+                    .name      = "Cannon Volley",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_cannon_volley_pick,
+                    .name      = "Cannon Volley",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Cannon Volley",
         .desc      = "Target Pao attacks every enemy on its row and column "
                      "this turn, ignoring screens.",
@@ -1539,10 +1573,14 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_palace_decree,
-              .name      = "Palace Decree",
-              .trigger   = ON_CARD_PLAY,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_palace_decree,
+                    .name      = "Palace Decree",
+                    .trigger   = ON_CARD_PLAY,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Palace Decree",
         .desc      = "Enemy king restricted to a 3x3 zone for 2 turns.",
         .id        = CARD_PALACE_DECREE,
@@ -1553,14 +1591,20 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_mandate_targets,
-              .name      = "Mandate",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = TURNS_1},
-             {.func      = eff_mandate_pick,
-              .name      = "Mandate",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = TURNS_1}},
+            {
+                {
+                    .func      = eff_mandate_targets,
+                    .name      = "Mandate",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = TURNS_1,
+                },
+                {
+                    .func      = eff_mandate_pick,
+                    .name      = "Mandate",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = TURNS_1,
+                },
+            },
         .name      = "Mandate",
         .desc      = "Remove one of your pieces. Deal damage to enemy "
                      "meter by its value x3.",
@@ -1572,14 +1616,20 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {{.func      = eff_mingzhu_targets,
-              .name      = "Mingzhu's Seal",
-              .trigger   = QUERY_CARD_TARGETS,
-              .lasts_for = ENTIRE_BATTLE},
-             {.func      = eff_mingzhu_pick,
-              .name      = "Mingzhu's Seal",
-              .trigger   = ON_CARD_TARGET_SELECTED,
-              .lasts_for = ENTIRE_BATTLE}},
+            {
+                {
+                    .func      = eff_mingzhu_targets,
+                    .name      = "Mingzhu's Seal",
+                    .trigger   = QUERY_CARD_TARGETS,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+                {
+                    .func      = eff_mingzhu_pick,
+                    .name      = "Mingzhu's Seal",
+                    .trigger   = ON_CARD_TARGET_SELECTED,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
         .name      = "Mingzhu's Seal",
         .desc      = "Target 1 enemy piece. It cannot move for 3 turns.",
         .id        = CARD_MINGZHUS_SEAL,
@@ -1614,8 +1664,8 @@ static bool eff_palace(EffectContext* context, void* x) {
         context->args[2] = (void*) (uintptr_t) (subject->square.y + 1);
     }
 
-    int cx = (int) (uintptr_t) context->args[1] - 1;
-    int cy = (int) (uintptr_t) context->args[2] - 1;
+    int     cx     = (int) (uintptr_t) context->args[1] - 1;
+    int     cy     = (int) (uintptr_t) context->args[2] - 1;
 
     Square* moves  = x;
     size_t  write  = 0;
@@ -1730,35 +1780,39 @@ static bool eff_river_bing(EffectContext* context, void* x) {
 
 const BoardTrait LONGWEI_TRAITS[] = {
     {
-        .name    = "River Crossing",
-        .desc    = "A river bisects the board; Xiang cannot cross, a Bing "
-                   "gains a sideways step on crossing.",
-        .id      = BOARD_TRAIT_RIVER_CROSSING,
-        .effects = {
+        .name = "River Crossing",
+        .desc = "A river bisects the board; Xiang cannot cross, a Bing "
+                "gains a sideways step on crossing.",
+        .id   = BOARD_TRAIT_RIVER_CROSSING,
+        .effects =
             {
-                .func      = eff_river_crossing,
-                .name      = "River Crossing",
-                .trigger   = QUERY_PIECE_MOVES,
-                .lasts_for = ENTIRE_BATTLE,
+                {
+                    .func      = eff_river_crossing,
+                    .name      = "River Crossing",
+                    .trigger   = QUERY_PIECE_MOVES,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+                {
+                    .func      = eff_river_bing,
+                    .name      = "River Crossing",
+                    .trigger   = ON_PIECE_MOVE,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
             },
-            {
-                .func      = eff_river_bing,
-                .name      = "River Crossing",
-                .trigger   = ON_PIECE_MOVE,
-                .lasts_for = ENTIRE_BATTLE,
-            },
-        },
     },
     {
-        .name      = "The Palace",
-        .desc      = "A 3x3 zone near the king. The king cannot leave it.",
-        .id        = BOARD_TRAIT_THE_PALACE,
-        .effects   = {{
-            .func      = eff_palace,
-            .name      = "The Palace",
-            .trigger   = QUERY_PIECE_MOVES,
-            .lasts_for = ENTIRE_BATTLE,
-        }},
+        .name = "The Palace",
+        .desc = "A 3x3 zone near the king. The king cannot leave it.",
+        .id   = BOARD_TRAIT_THE_PALACE,
+        .effects =
+            {
+                {
+                    .func      = eff_palace,
+                    .name      = "The Palace",
+                    .trigger   = QUERY_PIECE_MOVES,
+                    .lasts_for = ENTIRE_BATTLE,
+                },
+            },
     },
 };
 
@@ -1791,8 +1845,8 @@ static bool eff_bulwark(EffectContext* context, void* x) {
     BattleState* battle  = battle_current();
     bool         guarded = false;
 
-    for (size_t o = 0; ORTHOGONAL_DIRECTIONS[o].x != 0 ||
-                       ORTHOGONAL_DIRECTIONS[o].y != 0;
+    for (size_t o = 0;
+         ORTHOGONAL_DIRECTIONS[o].x != 0 || ORTHOGONAL_DIRECTIONS[o].y != 0;
          o++) {
         Square adjacent = {
             (int8_t) (piece->square.x + ORTHOGONAL_DIRECTIONS[o].x),
@@ -1813,7 +1867,7 @@ static bool eff_bulwark(EffectContext* context, void* x) {
 
     int reduction = level >= MASTERY_LEVEL_3 ? 60 : 50;
 
-    *(int*) x = *(int*) x * (100 - reduction) / 100;
+    *(int*) x     = *(int*) x * (100 - reduction) / 100;
 
     return true;
 }
