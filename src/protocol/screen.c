@@ -48,7 +48,7 @@ static const char* const SAVE_PATH = "daulat.sav";
 ///
 /// Return: board character for the piece
 ///
-static char              piece_letter(PieceInfo* piece) {
+static char piece_letter(PieceInfo* piece) {
     char letter = piece->piece->id == PIECE_KNIGHT
                       ? 'n'
                       : (char) tolower(piece->piece->name[0]);
@@ -141,19 +141,19 @@ static void emit_squares(const Square* list) {
 /// emit_hand
 ///
 /// Emits one line per card in the human's hand: index, id, name, tier,
-/// and play and sell costs. Under the Blind Draft challenge the id and
-/// name are masked, leaving only the kingdom and tier visible.
+/// and play and sell costs. A card the hand-state query has hidden masks
+/// its id and name, leaving only the kingdom and tier visible.
 ///
 /// Params:
 /// - engine -> engine owning the battle
 ///
 static void emit_hand(EngineState* engine) {
     BattleState* battle = engine->battle;
-    bool         black  = engine->run->battles_fought % 2;
+    Side side = engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
 
-    PlayerState* human  = black ? &battle->black : &battle->white;
+    PlayerState* human = battle_player(battle, side);
 
-    bool         blind  = engine->run->challenge == CHALLENGE_BLIND_DRAFT;
+    battle_hand_view(battle, side);
 
     for (size_t i = 0; i < MAX_DRAWN_CARDS; i++) {
         Card* card = human->hand[i];
@@ -162,25 +162,12 @@ static void emit_hand(EngineState* engine) {
             continue;
         }
 
-        if (blind) {
-            protocol_emit(
-                "card i=%zu id=-1 name=\"?\" kingdom=%d tier=%d "
-                "play=%d sell=%d",
-                i,
-                card->kingdom,
-                card->tier,
-                card->play_cost,
-                card->sell_cost
-            );
-
-            continue;
-        }
-
         protocol_emit(
-            "card i=%zu id=%d name=\"%s\" tier=%d play=%d sell=%d",
+            "card i=%zu id=%d name=\"%s\" kingdom=%d tier=%d play=%d sell=%d",
             i,
-            card->id,
-            card->name,
+            human->hand_visible[i] ? card->id : -1,
+            human->hand_visible[i] ? card->name : "?",
+            card->kingdom,
             card->tier,
             card->play_cost,
             card->sell_cost

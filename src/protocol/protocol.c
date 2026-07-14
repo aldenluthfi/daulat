@@ -22,7 +22,7 @@ static Protocol* BOUND_PROTOCOL;
 /// Params:
 /// - protocol -> protocol to bind
 ///
-void             protocol_bind(Protocol* protocol) {
+void protocol_bind(Protocol* protocol) {
     BOUND_PROTOCOL = protocol;
 }
 

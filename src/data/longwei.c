@@ -1460,20 +1460,14 @@ const Piece LONGWEI_PIECES[] = {
 const Card LONGWEI_CARDS[] = {
     {
         .effects =
-            {
-                {
-                    .func      = eff_river_wade_targets,
-                    .name      = "River Wade",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_river_wade_pick,
-                    .name      = "River Wade",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_river_wade_targets,
+              .name      = "River Wade",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_river_wade_pick,
+              .name      = "River Wade",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "River Wade",
         .desc      = "Target pawn permanently gains a sideways step this "
                      "battle.",
@@ -1485,20 +1479,14 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_charge_targets,
-                    .name      = "Charge",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_charge_pick,
-                    .name      = "Charge",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_charge_targets,
+              .name      = "Charge",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_charge_pick,
+              .name      = "Charge",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Charge",
         .desc      = "Target slider may pass through one occupied square "
                      "on its next move.",
@@ -1510,14 +1498,10 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_formation,
-                    .name      = "Formation",
-                    .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_formation,
+              .name      = "Formation",
+              .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+              .lasts_for = TURNS_1}},
         .name      = "Formation",
         .desc      = "3 of your pieces in a straight line each deal +50% "
                      "damage this turn.",
@@ -1529,14 +1513,10 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_divination,
-                    .name      = "Divination",
-                    .trigger   = ON_CARD_PLAY,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_divination,
+              .name      = "Divination",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = TURNS_1}},
         .name      = "Divination",
         .desc      = "Reveal the enemy's intended moves and cards for next "
                      "turn.",
@@ -1548,20 +1528,14 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_cannon_volley_targets,
-                    .name      = "Cannon Volley",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_cannon_volley_pick,
-                    .name      = "Cannon Volley",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_cannon_volley_targets,
+              .name      = "Cannon Volley",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_cannon_volley_pick,
+              .name      = "Cannon Volley",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Cannon Volley",
         .desc      = "Target Pao attacks every enemy on its row and column "
                      "this turn, ignoring screens.",
@@ -1573,14 +1547,10 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_palace_decree,
-                    .name      = "Palace Decree",
-                    .trigger   = ON_CARD_PLAY,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_palace_decree,
+              .name      = "Palace Decree",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = TURNS_1}},
         .name      = "Palace Decree",
         .desc      = "Enemy king restricted to a 3x3 zone for 2 turns.",
         .id        = CARD_PALACE_DECREE,
@@ -1591,20 +1561,14 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_mandate_targets,
-                    .name      = "Mandate",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_mandate_pick,
-                    .name      = "Mandate",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_mandate_targets,
+              .name      = "Mandate",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_mandate_pick,
+              .name      = "Mandate",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Mandate",
         .desc      = "Remove one of your pieces. Deal damage to enemy "
                      "meter by its value x3.",
@@ -1616,20 +1580,14 @@ const Card LONGWEI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_mingzhu_targets,
-                    .name      = "Mingzhu's Seal",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-                {
-                    .func      = eff_mingzhu_pick,
-                    .name      = "Mingzhu's Seal",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+            {{.func      = eff_mingzhu_targets,
+              .name      = "Mingzhu's Seal",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = ENTIRE_BATTLE},
+             {.func      = eff_mingzhu_pick,
+              .name      = "Mingzhu's Seal",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = ENTIRE_BATTLE}},
         .name      = "Mingzhu's Seal",
         .desc      = "Target 1 enemy piece. It cannot move for 3 turns.",
         .id        = CARD_MINGZHUS_SEAL,
@@ -1801,18 +1759,15 @@ const BoardTrait LONGWEI_TRAITS[] = {
             },
     },
     {
-        .name = "The Palace",
-        .desc = "A 3x3 zone near the king. The king cannot leave it.",
-        .id   = BOARD_TRAIT_THE_PALACE,
-        .effects =
-            {
-                {
-                    .func      = eff_palace,
-                    .name      = "The Palace",
-                    .trigger   = QUERY_PIECE_MOVES,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+        .name    = "The Palace",
+        .desc    = "A 3x3 zone near the king. The king cannot leave it.",
+        .id      = BOARD_TRAIT_THE_PALACE,
+        .effects = {{
+            .func      = eff_palace,
+            .name      = "The Palace",
+            .trigger   = QUERY_PIECE_MOVES,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
 };
 

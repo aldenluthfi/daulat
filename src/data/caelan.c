@@ -738,8 +738,8 @@ static bool eff_queens_decree(EffectContext* context, void* x) {
         return false;
     }
 
-    *(int*) x *= 2;
-    context->args[3] = (void*) 1;
+    *(int*) x        *= 2;
+    context->args[3]  = (void*) 1;
 
     return true;
 }
@@ -998,8 +998,8 @@ static bool eff_caelan_climax(EffectContext* context, void* x) {
         return false;
     }
 
-    int* damage = x;
-    *damage += *damage / 2;
+    int* damage  = x;
+    *damage     += *damage / 2;
 
     return true;
 }
@@ -1112,20 +1112,14 @@ const Piece CAELAN_PIECES[] = {
 const Card CAELAN_CARDS[] = {
     {
         .effects =
-            {
-                {
-                    .func      = eff_castling_targets,
-                    .name      = "Castling",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_castling_pick,
-                    .name      = "Castling",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_castling_targets,
+              .name      = "Castling",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_castling_pick,
+              .name      = "Castling",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Castling",
         .desc      = "Your king and one of your Rooks swap positions.",
         .id        = CARD_CASTLING,
@@ -1136,20 +1130,14 @@ const Card CAELAN_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_queens_gambit_targets,
-                    .name      = "Queen's Gambit",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_queens_gambit_pick,
-                    .name      = "Queen's Gambit",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_queens_gambit_targets,
+              .name      = "Queen's Gambit",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_queens_gambit_pick,
+              .name      = "Queen's Gambit",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Queen's Gambit",
         .desc      = "Sacrifice a pawn. Draw 3 additional cards "
                      "immediately.",
@@ -1161,14 +1149,10 @@ const Card CAELAN_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_vengeance,
-                    .name      = "Vengeance",
-                    .trigger   = ON_CARD_PLAY,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_vengeance,
+              .name      = "Vengeance",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = TURNS_1}},
         .name      = "Vengeance",
         .desc      = "Deal 2x damage to an enemy piece adjacent to one "
                      "of your pieces.",
@@ -1180,14 +1164,10 @@ const Card CAELAN_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_queens_decree,
-                    .name      = "Queen's Decree",
-                    .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_queens_decree,
+              .name      = "Queen's Decree",
+              .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+              .lasts_for = TURNS_1}},
         .name      = "Queen's Decree",
         .desc      = "Your next attack this turn deals double damage.",
         .id        = CARD_QUEENS_DECREE,
@@ -1198,14 +1178,10 @@ const Card CAELAN_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_cathedral,
-                    .name      = "Cathedral",
-                    .trigger   = QUERY_PIECE_DAMAGE_TAKEN,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+            {{.func      = eff_cathedral,
+              .name      = "Cathedral",
+              .trigger   = QUERY_PIECE_DAMAGE_TAKEN,
+              .lasts_for = ENTIRE_BATTLE}},
         .name      = "Cathedral",
         .desc      = "Pieces defended by a friendly bishop take 40% less "
                      "damage.",
@@ -1217,20 +1193,14 @@ const Card CAELAN_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_coronation_targets,
-                    .name      = "Coronation",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_coronation_pick,
-                    .name      = "Coronation",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_coronation_targets,
+              .name      = "Coronation",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_coronation_pick,
+              .name      = "Coronation",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Coronation",
         .desc      = "Promote a pawn to Queen in place.",
         .id        = CARD_CORONATION,
@@ -1241,20 +1211,14 @@ const Card CAELAN_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_crusade_targets,
-                    .name      = "Crusade",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_crusade_pick,
-                    .name      = "Crusade",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_crusade_targets,
+              .name      = "Crusade",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_crusade_pick,
+              .name      = "Crusade",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Crusade",
         .desc      = "Target Knight makes 3 consecutive attacks this "
                      "turn.",
@@ -1266,14 +1230,10 @@ const Card CAELAN_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_divine_right,
-                    .name      = "Divine Right",
-                    .trigger   = QUERY_PIECE_ATTACKS,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_divine_right,
+              .name      = "Divine Right",
+              .trigger   = QUERY_PIECE_ATTACKS,
+              .lasts_for = TURNS_1}},
         .name      = "Divine Right",
         .desc      = "Your king attacks as a Queen this turn.",
         .id        = CARD_DIVINE_RIGHT,
@@ -1284,14 +1244,10 @@ const Card CAELAN_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_isabella,
-                    .name      = "Isabella's Coronation",
-                    .trigger   = ON_CARD_PLAY,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+            {{.func      = eff_isabella,
+              .name      = "Isabella's Coronation",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = ENTIRE_BATTLE}},
         .name      = "Isabella's Coronation",
         .desc      = "All friendly Pawns promote to Queens at once.",
         .id        = CARD_ISABELLAS_CORONATION,
@@ -1373,32 +1329,26 @@ static bool eff_siege_trench(EffectContext* context, void* x) {
 
 const BoardTrait CAELAN_TRAITS[] = {
     {
-        .name = "Castle Corners",
-        .desc = "The four 2x2 corner zones grant immunity.",
-        .id   = BOARD_TRAIT_CASTLE_CORNERS,
-        .effects =
-            {
-                {
-                    .func      = eff_castle_corners,
-                    .name      = "Castle Corners",
-                    .trigger   = QUERY_PIECE_CAN_FLIP,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+        .name    = "Castle Corners",
+        .desc    = "The four 2x2 corner zones grant immunity.",
+        .id      = BOARD_TRAIT_CASTLE_CORNERS,
+        .effects = {{
+            .func      = eff_castle_corners,
+            .name      = "Castle Corners",
+            .trigger   = QUERY_PIECE_CAN_FLIP,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     {
-        .name = "Siege Trench",
-        .desc = "A row of immunity squares crosses the board middle.",
-        .id   = BOARD_TRAIT_SIEGE_TRENCH,
-        .effects =
-            {
-                {
-                    .func      = eff_siege_trench,
-                    .name      = "Siege Trench",
-                    .trigger   = QUERY_PIECE_CAN_FLIP,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+        .name    = "Siege Trench",
+        .desc    = "A row of immunity squares crosses the board middle.",
+        .id      = BOARD_TRAIT_SIEGE_TRENCH,
+        .effects = {{
+            .func      = eff_siege_trench,
+            .name      = "Siege Trench",
+            .trigger   = QUERY_PIECE_CAN_FLIP,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
 };
 
@@ -1444,7 +1394,7 @@ static bool eff_conqueror(EffectContext* context, void* x) {
         }
 
         piece->piece->value += (piece->piece->value * percent + 99) / 100;
-        applied = true;
+        applied              = true;
     }
 
     return applied;

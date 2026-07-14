@@ -100,7 +100,7 @@ static size_t     PENDING_STEP_COUNT;
 /// while effect_fire is still walking the board; the actual free happens
 /// here at turn and battle boundaries where no walk is in flight.
 ///
-static void       battle_reap(void) {
+static void battle_reap(void) {
     for (size_t i = 0; i < REAP_COUNT; i++) {
         PieceInfo* piece = REAP_LIST[i];
 
@@ -339,10 +339,10 @@ PieceInfo* battle_find_king(BattleState* battle, Side side) {
 /// - amount -> meter to add, may be negative
 ///
 void battle_meter_gain(BattleState* battle, Side side, int amount) {
-    PlayerState* player = battle_player(battle, side);
-    int          max    = battle_meter_max(battle, side);
+    PlayerState* player  = battle_player(battle, side);
+    int          max     = battle_meter_max(battle, side);
 
-    player->meter += amount;
+    player->meter       += amount;
 
     if (player->meter > 2 * max) {
         player->meter = 2 * max;
@@ -424,6 +424,10 @@ static void turn_start(BattleState* battle, Side side) {
     effect_fire(battle, side, QUERY_CP_INCOME, &income);
 
     player->cp += income;
+
+    if (player->cp < 0) {
+        player->cp = 0;
+    }
 
     effect_fire(battle, side, ON_TURN_START, (void*) (uintptr_t) battle->turn);
     CURRENT_BATTLE = nullptr;
@@ -830,9 +834,9 @@ bool battle_move(BattleState* battle, Square from, Square to) {
         return false;
     }
 
-    player->actions -= cost;
+    player->actions     -= cost;
 
-    PieceInfo* occupant = battle_at(battle, to);
+    PieceInfo* occupant  = battle_at(battle, to);
 
     if (occupant && occupant->side == piece->side) {
         battle->board.piece_board[square_index(from)] = occupant;
@@ -855,40 +859,6 @@ bool battle_move(BattleState* battle, Square from, Square to) {
 
     CURRENT_BATTLE = nullptr;
     SUBJECT        = nullptr;
-
-    return true;
-}
-
-/// battle_challenge_allows_buy
-///
-/// Enforces the buy constraints of the active challenge: Pacifist Doctrine
-/// forbids pieces valued above twenty, Solo Vanguard forbids a second
-/// non-king piece on the human's side.
-///
-/// Params:
-/// - battle   -> battle being played
-/// - template -> piece being bought
-///
-/// Return: true when the purchase is permitted
-///
-static bool
-battle_challenge_allows_buy(BattleState* battle, const Piece* template) {
-    ChallengeRunID challenge = BATTLE_ENGINE->run->challenge;
-
-    if (challenge == CHALLENGE_PACIFIST_DOCTRINE && template->value > 20) {
-        return false;
-    }
-
-    if (challenge == CHALLENGE_SOLO_VANGUARD) {
-        for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
-            PieceInfo* cell = battle->board.piece_board[index];
-
-            if (cell && cell != &VOID_CELL && cell->side == HUMAN_SIDE &&
-                cell->piece->id != PIECE_KING) {
-                return false;
-            }
-        }
-    }
 
     return true;
 }
@@ -996,9 +966,17 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
         return false;
     }
 
-    if (ACTING_SIDE == HUMAN_SIDE &&
-        !battle_challenge_allows_buy(battle, template)) {
-        return false;
+    if (ACTING_SIDE == HUMAN_SIDE) {
+        bool allowed   = true;
+
+        CURRENT_BATTLE = battle;
+        BUY_PIECE      = template;
+        effect_fire(battle, HUMAN_SIDE, QUERY_PIECE_CAN_BUY, &allowed);
+        CURRENT_BATTLE = nullptr;
+
+        if (!allowed) {
+            return false;
+        }
     }
 
     PlayerState* player      = battle_player(battle, ACTING_SIDE);
@@ -1023,11 +1001,11 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
         return false;
     }
 
-    player->cp -= cost;
+    player->cp      -= cost;
     player->actions -= action_cost;
-    player->meter += battle_value(battle, piece, nullptr);
+    player->meter   += battle_value(battle, piece, nullptr);
 
-    CURRENT_BATTLE = battle;
+    CURRENT_BATTLE   = battle;
     effect_fire(battle, ACTING_SIDE, ON_PIECE_BUY, piece);
     CURRENT_BATTLE = nullptr;
 
@@ -1602,8 +1580,8 @@ static int battle_resolve(BattleState* battle, Side attacker) {
         }
 
         if (dealt > 0) {
-            total += dealt;
-            DAMAGER_LIST[damagers] = piece;
+            total                  += dealt;
+            DAMAGER_LIST[damagers]  = piece;
             damagers++;
         }
     }
@@ -1710,13 +1688,13 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
 
         CURRENT_BATTLE = battle;
         effect_fire(battle, receiver, QUERY_METER_REFILL, &refill);
-        CURRENT_BATTLE = nullptr;
+        CURRENT_BATTLE  = nullptr;
 
-        player->meter  = refill - deficit;
+        player->meter   = refill - deficit;
 
-        int gainer_max = battle_meter_max(battle, gainer_side);
+        int gainer_max  = battle_meter_max(battle, gainer_side);
 
-        gainer->meter += gainer_max - max_before;
+        gainer->meter  += gainer_max - max_before;
 
         if (gainer->meter > 2 * gainer_max) {
             gainer->meter = 2 * gainer_max;
@@ -1790,9 +1768,9 @@ static bool battle_half_turn(BattleState* battle, Side side) {
 
     CURRENT_BATTLE = battle;
     effect_fire(battle, enemy_side, QUERY_METER_DAMAGE_TAKEN, &total);
-    CURRENT_BATTLE = nullptr;
+    CURRENT_BATTLE  = nullptr;
 
-    enemy->meter -= total;
+    enemy->meter   -= total;
 
     if (total > 0) {
         protocol_emit(
@@ -2014,14 +1992,46 @@ static void battle_free_army(
     }
 }
 
+/// battle_reinforce
+///
+/// Grants a side count free reinforcements of the region kingdom's basic
+/// infantry, spawned across the chosen half of the board. Backs both the
+/// enemy's starting army and the Traitor's Gambit intrusion, so difficulty
+/// and challenge effects reinforce without the private basic-piece table.
+///
+/// Params:
+/// - battle -> battle to place pieces in
+/// - owner  -> side the pieces belong to
+/// - half   -> side whose half the pieces spawn in
+/// - count  -> number of pieces to place
+///
+void battle_reinforce(
+    BattleState* battle,
+    Side         owner,
+    Side         half,
+    size_t       count
+) {
+    if (!battle->node || !battle->node->kingdom) {
+        return;
+    }
+
+    battle_free_army(
+        battle,
+        owner,
+        half,
+        KINGDOM_BASIC[battle->node->kingdom->id],
+        count
+    );
+}
+
 /// battle_setup_armies
 ///
 /// Attaches the region's cumulative chain penalties to the human seat, then
 /// grants the enemy its free starting reinforcements. The base count is
 /// Vorath's pressure plus the elite and liberation node bonuses; chain and
-/// difficulty penalties fold in through QUERY_ENEMY_ARMY_COUNT. The pieces
-/// are the region kingdom's basic infantry. Runs before the meters compute
-/// so the extra pieces fold into the enemy's starting maximum.
+/// difficulty army bonuses fold in through QUERY_ENEMY_ARMY_COUNT. The
+/// pieces are the region kingdom's basic infantry. Runs before the meters
+/// compute so the extra pieces fold into the enemy's starting maximum.
 ///
 /// Params:
 /// - battle -> battle being set up
@@ -2039,8 +2049,6 @@ static void battle_setup_armies(BattleState* battle) {
             ? (ChainPenaltyID) (node->kingdom->chain - CHAIN_REGISTRY)
             : CHAIN_NONE;
 
-    Difficulty difficulty = BATTLE_ENGINE->run->difficulty;
-
     for (ChainPenaltyID c = CHAIN_BRONZE; c <= level; c++) {
         const ChainPenalty* chain = &CHAIN_REGISTRY[c];
 
@@ -2055,22 +2063,12 @@ static void battle_setup_armies(BattleState* battle) {
             );
 
             if (attached) {
-                int penalty = difficulty >= DIFFICULTY_SHACKLED &&
-                                      difficulty <= DIFFICULTY_ENSLAVED
-                                  ? 25
-                                  : 10;
-
                 attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
-                attached->context->args[1] = (void*) (uintptr_t) penalty;
             }
         }
     }
 
     int count = (int) run_pressure(BATTLE_ENGINE->run, kingdom);
-
-    if (difficulty >= DIFFICULTY_BOUND && difficulty <= DIFFICULTY_ENSLAVED) {
-        count += 2;
-    }
 
     if (node->type == MAP_NODE_ELITE) {
         count++;
@@ -2086,17 +2084,7 @@ static void battle_setup_armies(BattleState* battle) {
 
     Side enemy     = battle_enemy(HUMAN_SIDE);
 
-    battle_free_army(
-        battle,
-        enemy,
-        enemy,
-        KINGDOM_BASIC[kingdom],
-        (size_t) count
-    );
-
-    if (BATTLE_ENGINE->run->challenge == CHALLENGE_THE_TRAITORS_GAMBIT) {
-        battle_free_army(battle, enemy, HUMAN_SIDE, KINGDOM_BASIC[kingdom], 3);
-    }
+    battle_reinforce(battle, enemy, enemy, (size_t) count);
 }
 
 /// battle_walk_synergies
@@ -2135,9 +2123,7 @@ static void battle_walk_synergies(BattleState* battle) {
 
 /// battle_walk_innates
 ///
-/// Attaches each kingdom innate the human has unlocked to the human seat,
-/// and under the Enslaved difficulty attaches the region kingdom's innate
-/// to the enemy seat so its army fights with its innate from battle one.
+/// Attaches each kingdom innate the human has unlocked to the human seat.
 ///
 /// Params:
 /// - battle -> battle being set up
@@ -2157,13 +2143,6 @@ static void battle_walk_innates(BattleState* battle) {
                 run->kingdoms[kingdom].mastery
             );
         }
-    }
-
-    if (run->difficulty == DIFFICULTY_ENSLAVED && battle->node &&
-        battle->node->kingdom) {
-        KingdomID kingdom = battle->node->kingdom->id;
-
-        KINGDOM_INNATE[kingdom](battle, battle_enemy(HUMAN_SIDE), MASTERY_NONE);
     }
 }
 
@@ -2250,6 +2229,29 @@ void battle_board_view(BattleState* battle) {
     CURRENT_BATTLE = saved;
 }
 
+/// battle_hand_view
+///
+/// Refills a side's hand reveal read: every card starts visible, then
+/// QUERY_HAND_STATE lets the side's blinder effects mask a card's identity.
+///
+/// Params:
+/// - battle -> battle whose hand view is refilled
+/// - side   -> side whose hand is read
+///
+void battle_hand_view(BattleState* battle, Side side) {
+    PlayerState* player = battle_player(battle, side);
+
+    for (size_t card = 0; card < MAX_DRAWN_CARDS; card++) {
+        player->hand_visible[card] = true;
+    }
+
+    BattleState* saved = CURRENT_BATTLE;
+
+    CURRENT_BATTLE     = battle;
+    effect_fire(battle, side, QUERY_HAND_STATE, player);
+    CURRENT_BATTLE = saved;
+}
+
 /// battle_walk_traits
 ///
 /// Attaches the board trait's effects to both seats, one copy each, so
@@ -2281,6 +2283,63 @@ static void battle_walk_traits(BattleState* battle) {
                 attached->context->args[0] = (void*) (uintptr_t) sides[seat];
             }
         }
+    }
+}
+
+/// battle_attach_rule
+///
+/// Attaches one rule item's effects to the human seat with the human as
+/// their beneficiary in args[0]. Shared by the difficulty and challenge
+/// walks.
+///
+/// Params:
+/// - battle  -> battle being set up
+/// - effects -> the rule item's effect array
+///
+static void battle_attach_rule(BattleState* battle, const Effect* effects) {
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        if (!effects[slot].func) {
+            continue;
+        }
+
+        Effect* attached = effect_attach(
+            &battle_player(battle, HUMAN_SIDE)->effects,
+            &effects[slot]
+        );
+
+        if (attached) {
+            attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
+        }
+    }
+}
+
+/// battle_walk_rules
+///
+/// Attaches the run's difficulty and challenge effect items to the human
+/// seat so their penalties and constraints compose through the battle
+/// triggers, naming no specific difficulty or challenge in the engine.
+/// Difficulties are cumulative, so every level up to the run's is attached;
+/// the challenge is a single choice. Runs before the meters compute so a
+/// value-editing rule folds into the starting maxima.
+///
+/// Params:
+/// - battle -> battle being set up
+///
+static void battle_walk_rules(BattleState* battle) {
+    RunState* run = BATTLE_ENGINE ? BATTLE_ENGINE->run : nullptr;
+
+    if (!run) {
+        return;
+    }
+
+    for (Difficulty d = DIFFICULTY_FREE;
+         d < DIFFICULTY_NONE && d <= run->difficulty;
+         d++) {
+        battle_attach_rule(battle, DIFFICULTY_REGISTRY[d].effects);
+    }
+
+    if (run->challenge < CHALLENGE_COUNT) {
+        battle_attach_rule(battle, CHALLENGE_REGISTRY[run->challenge].effects);
     }
 }
 
@@ -2333,6 +2392,7 @@ void battle_begin(EngineState* engine, MapNode* node) {
     battle_walk_run(battle);
     battle_walk_modifiers(battle);
     battle_walk_traits(battle);
+    battle_walk_rules(battle);
 
     Square dimension = {battle->board.width, battle->board.height};
 
@@ -2358,6 +2418,10 @@ void battle_begin(EngineState* engine, MapNode* node) {
     battle_setup_armies(battle);
     battle_walk_innates(battle);
     battle_walk_synergies(battle);
+
+    CURRENT_BATTLE = battle;
+    effect_fire(battle, HUMAN_SIDE, ON_BATTLE_SETUP, node);
+    CURRENT_BATTLE      = nullptr;
 
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);
@@ -2408,7 +2472,7 @@ static void battle_territory_finish(BattleState* battle) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x = 0; x < battle->board.width; x++) {
-            Side holder = battle_territory(battle, (Square){x, y});
+            Side holder    = battle_territory(battle, (Square){x, y});
 
             white_squares += holder == SIDE_WHITE;
             black_squares += holder == SIDE_BLACK;

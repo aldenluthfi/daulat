@@ -51,7 +51,7 @@ static size_t SCRATCH_CURSOR;
 /// Resets the shared static scratch buffer that movement generation
 /// writes into. See the header for the full scratch buffer convention.
 ///
-void          mg_begin(void) {
+void mg_begin(void) {
     SCRATCH_CURSOR = 0;
 }
 

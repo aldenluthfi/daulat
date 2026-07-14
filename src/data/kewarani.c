@@ -349,8 +349,8 @@ static bool eff_split_square(EffectContext* context, void* x) {
 static bool eff_sultans_gold(EffectContext* context, void* x) {
     (void) x;
 
-    BattleState* battle = battle_current();
-    Side         side   = (Side) (uintptr_t) context->args[0];
+    BattleState* battle              = battle_current();
+    Side         side                = (Side) (uintptr_t) context->args[0];
 
     battle_player(battle, side)->cp += 60;
 
@@ -473,8 +473,8 @@ static bool eff_double_time_pick(EffectContext* context, void* x) {
 static bool eff_salt_road(EffectContext* context, void* x) {
     (void) x;
 
-    BattleState* battle = battle_current();
-    Side         side   = (Side) (uintptr_t) context->args[0];
+    BattleState* battle              = battle_current();
+    Side         side                = (Side) (uintptr_t) context->args[0];
 
     battle_player(battle, side)->cp += 10;
 
@@ -818,14 +818,10 @@ const Piece KEWARANI_PIECES[] = {
 const Card KEWARANI_CARDS[] = {
     {
         .effects =
-            {
-                {
-                    .func      = eff_sultans_gold,
-                    .name      = "Sultan's Gold",
-                    .trigger   = ON_CARD_PLAY,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_sultans_gold,
+              .name      = "Sultan's Gold",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = TURNS_1}},
         .name      = "Sultan's Gold",
         .desc      = "Gain 60 cp.",
         .id        = CARD_SULTANS_GOLD,
@@ -836,14 +832,10 @@ const Card KEWARANI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_march,
-                    .name      = "March",
-                    .trigger   = ON_CARD_PLAY,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_march,
+              .name      = "March",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = TURNS_1}},
         .name      = "March",
         .desc      = "Every friendly pawn that can move forward 1 does, no "
                      "action cost.",
@@ -855,20 +847,14 @@ const Card KEWARANI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_double_time_targets,
-                    .name      = "Double Time",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_double_time_pick,
-                    .name      = "Double Time",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_double_time_targets,
+              .name      = "Double Time",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_double_time_pick,
+              .name      = "Double Time",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Double Time",
         .desc      = "Target piece makes one additional move this turn.",
         .id        = CARD_DOUBLE_TIME,
@@ -879,14 +865,10 @@ const Card KEWARANI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_salt_road,
-                    .name      = "Salt Road",
-                    .trigger   = ON_TURN_START,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+            {{.func      = eff_salt_road,
+              .name      = "Salt Road",
+              .trigger   = ON_TURN_START,
+              .lasts_for = ENTIRE_BATTLE}},
         .name      = "Salt Road",
         .desc      = "Gain 10 cp at the start of every remaining turn this "
                      "battle.",
@@ -898,20 +880,14 @@ const Card KEWARANI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_caravan_targets,
-                    .name      = "Caravan",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_caravan_pick,
-                    .name      = "Caravan",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_caravan_targets,
+              .name      = "Caravan",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_caravan_pick,
+              .name      = "Caravan",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Caravan",
         .desc      = "All pieces on a file move 1 square forward together, "
                      "no action cost.",
@@ -923,14 +899,10 @@ const Card KEWARANI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_doublestrike,
-                    .name      = "Doublestrike",
-                    .trigger   = QUERY_PIECE_ACTION_COST_MOVE,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_doublestrike,
+              .name      = "Doublestrike",
+              .trigger   = QUERY_PIECE_ACTION_COST_MOVE,
+              .lasts_for = TURNS_1}},
         .name      = "Doublestrike",
         .desc      = "Move two of your pieces with 1 action cost.",
         .id        = CARD_DOUBLESTRIKE,
@@ -941,26 +913,18 @@ const Card KEWARANI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_hajj_piece_targets,
-                    .name      = "Hajj",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_hajj_dest_targets,
-                    .name      = "Hajj",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_hajj_pick,
-                    .name      = "Hajj",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_hajj_piece_targets,
+              .name      = "Hajj",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_hajj_dest_targets,
+              .name      = "Hajj",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_hajj_pick,
+              .name      = "Hajj",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Hajj",
         .desc      = "Target piece teleports to any unoccupied square. "
                      "Does not count as an attack.",
@@ -972,14 +936,10 @@ const Card KEWARANI_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_selassie,
-                    .name      = "Selassie's March",
-                    .trigger   = ON_CARD_PLAY,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+            {{.func      = eff_selassie,
+              .name      = "Selassie's March",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = ENTIRE_BATTLE}},
         .name      = "Selassie's March",
         .desc      = "Kewarani pieces move extra times this action "
                      "this turn.",
@@ -1113,32 +1073,26 @@ static bool eff_contested_market(EffectContext* context, void* x) {
 
 const BoardTrait KEWARANI_TRAITS[] = {
     {
-        .name = "Trade Route",
-        .desc = "A diagonal path grants pieces on it +1 movement.",
-        .id   = BOARD_TRAIT_TRADE_ROUTE,
-        .effects =
-            {
-                {
-                    .func      = eff_trade_route,
-                    .name      = "Trade Route",
-                    .trigger   = QUERY_PIECE_MOVES,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+        .name    = "Trade Route",
+        .desc    = "A diagonal path grants pieces on it +1 movement.",
+        .id      = BOARD_TRAIT_TRADE_ROUTE,
+        .effects = {{
+            .func      = eff_trade_route,
+            .name      = "Trade Route",
+            .trigger   = QUERY_PIECE_MOVES,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
     {
-        .name = "Contested Market",
-        .desc = "Each turn a neutral Kewarani piece appears to be claimed.",
-        .id   = BOARD_TRAIT_CONTESTED_MARKET,
-        .effects =
-            {
-                {
-                    .func      = eff_contested_market,
-                    .name      = "Contested Market",
-                    .trigger   = ON_TURN_START,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+        .name    = "Contested Market",
+        .desc    = "Each turn a neutral Kewarani piece appears to be claimed.",
+        .id      = BOARD_TRAIT_CONTESTED_MARKET,
+        .effects = {{
+            .func      = eff_contested_market,
+            .name      = "Contested Market",
+            .trigger   = ON_TURN_START,
+            .lasts_for = ENTIRE_BATTLE,
+        }},
     },
 };
 

@@ -72,7 +72,7 @@ static void jamal_gen(BattleState* battle, PieceInfo* self, bool threat) {
     mg_leap(
         battle,
         self,
-        (const Square[]){
+        (const Square[]) {
             {1, 3},
             {1, -3},
             {-1, 3},
@@ -334,7 +334,7 @@ static void cataphract_gen(BattleState* battle, PieceInfo* self, bool threat) {
     mg_compound(
         battle,
         self,
-        (const PieceID[]){PIECE_KNIGHT, PIECE_JAMAL, PIECE_NONE},
+        (const PieceID[]) {PIECE_KNIGHT, PIECE_JAMAL, PIECE_NONE},
         threat
     );
 }
@@ -418,7 +418,7 @@ static Square* elephant_mv(BattleState* battle, PieceInfo* self) {
     mg_compound(
         battle,
         self,
-        (const PieceID[]){PIECE_ZIRAAFA, PIECE_NONE},
+        (const PieceID[]) {PIECE_ZIRAAFA, PIECE_NONE},
         false
     );
 
@@ -471,11 +471,11 @@ static bool eff_shahzadeh_swap(EffectContext* context, void* x) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t sx = 0; sx < battle->board.width; sx++) {
-            PieceInfo* cell = battle_at(battle, (Square){sx, y});
+            PieceInfo* cell = battle_at(battle, (Square) {sx, y});
 
             if (cell && cell->side == self->side &&
                 cell->piece->id == PIECE_KING) {
-                mg_push((Square){sx, y});
+                mg_push((Square) {sx, y});
                 mg_end();
 
                 return true;
@@ -553,7 +553,7 @@ static bool eff_pillage(EffectContext* context, void* x) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t sx = 0; sx < battle->board.width; sx++) {
-            PieceInfo* cell = battle_at(battle, (Square){sx, y});
+            PieceInfo* cell = battle_at(battle, (Square) {sx, y});
 
             if (cell && cell->side == side) {
                 count++;
@@ -718,7 +718,7 @@ static bool eff_steppe_riders(EffectContext* context, void* x) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t sx = 0; sx < battle->board.width; sx++) {
-            PieceInfo* cell = battle_at(battle, (Square){sx, y});
+            PieceInfo* cell = battle_at(battle, (Square) {sx, y});
 
             if (!cell || cell->side != side) {
                 continue;
@@ -1536,7 +1536,7 @@ void zarqan_climax(BattleState* battle, Side side) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x = 0; x < battle->board.width; x++) {
-            PieceInfo* cell = battle_at(battle, (Square){x, y});
+            PieceInfo* cell = battle_at(battle, (Square) {x, y});
 
             if (!cell || cell->side != side || cell->piece->id == PIECE_KING) {
                 continue;

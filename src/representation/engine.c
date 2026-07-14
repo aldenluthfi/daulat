@@ -331,8 +331,8 @@ bool engine_load(EngineState* engine, const char* path) {
             char* cursor = line + 11;
 
             for (size_t i = 0; i < KINGDOM_COUNT; i++) {
-                engine->run->liberation_at[i] = strtoul(cursor, &cursor, 10);
-                cursor += *cursor == ',';
+                engine->run->liberation_at[i]  = strtoul(cursor, &cursor, 10);
+                cursor                        += *cursor == ',';
             }
         } else if (sscanf(
                        line,

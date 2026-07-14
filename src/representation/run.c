@@ -410,7 +410,7 @@ static MapNode      VORATH_NODE;
 ///
 /// Return: mixed seed
 ///
-size_t              rng_mix(size_t seed, size_t salt) {
+size_t rng_mix(size_t seed, size_t salt) {
     size_t mixed = seed + salt * 0x9E3779B97F4A7C15;
 
     mixed        = (mixed ^ (mixed >> 30)) * 0xBF58476D1CE4E5B9;

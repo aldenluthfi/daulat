@@ -38,6 +38,9 @@
 /// QUERY_PIECE_CAN_FLIP            x: bool*       true; subject candidate
 /// QUERY_PIECE_CAN_MOVE            x: bool*       base true
 /// QUERY_PIECE_CAN_ATTACK          x: bool*       base true
+/// QUERY_PIECE_CAN_BUY             x: bool*       base true; the human buy
+///                                                is refused when set false;
+///                                                piece via battle_buy_piece()
 /// QUERY_PIECE_MOVES               x: Square*     list from mv, edited in
 ///                                                place, SQUARE_END ended
 /// QUERY_PIECE_ATTACKS             x: Square*     list from at, same rule
@@ -56,7 +59,10 @@
 /// QUERY_FLIP_COUNT                x: int*        pieces flipped per meter
 ///                                                empty; base 1, fired for
 ///                                                the emptied side
-/// QUERY_CP_INCOME                 x: int*        base 10
+/// QUERY_CP_INCOME                 x: int*        the acting side's per-turn
+///                                                income, base 10; opening
+///                                                penalties reduce the first
+///                                                turn's amount
 /// QUERY_ENEMY_ARMY_COUNT          x: int*        free enemy reinforcements;
 ///                                                fired for the human seat,
 ///                                                penalties add to the count
@@ -70,6 +76,9 @@
 /// QUERY_BOARD_STATE               x: Board*      board.visible is the human's
 ///                                                per-cell piece read; fog
 ///                                                effects hide enemy pieces
+/// QUERY_HAND_STATE                x: PlayerState* the human seat; blinder
+///                                                effects clear hand_visible[]
+///                                                to mask a card's identity
 /// ON_BOARD_BUILD                  x: Board*      the built board; effects
 ///                                                scatter voids onto it
 /// ON_PIECE_FLIP_PRE               x: PieceInfo** pre-toggle; mutate *x
@@ -93,6 +102,10 @@
 ///                                                card resolves against it
 /// ON_TURN_START                   x: uintptr_t   current turn number
 /// ON_TURN_END                     x: uintptr_t   current turn number
+/// ON_BATTLE_SETUP                 x: MapNode*    battle location node, fired
+///                                                for the human seat before
+///                                                the meters compute so setup
+///                                                actions fold into the maxima
 /// ON_BATTLE_START                 x: MapNode*    battle location node
 /// ON_BATTLE_END                   x: uintptr_t   winning Side
 ///
@@ -114,6 +127,7 @@ enum EffectTrigger {
     QUERY_PIECE_CAN_FLIP,
     QUERY_PIECE_CAN_MOVE,
     QUERY_PIECE_CAN_ATTACK,
+    QUERY_PIECE_CAN_BUY,
 
     QUERY_PIECE_MOVES,
     QUERY_PIECE_ATTACKS,
@@ -134,6 +148,7 @@ enum EffectTrigger {
 
     QUERY_BOARD_DIMENSION,
     QUERY_BOARD_STATE,
+    QUERY_HAND_STATE,
     ON_BOARD_BUILD,
 
     ON_PIECE_FLIP_PRE,
@@ -151,6 +166,7 @@ enum EffectTrigger {
     ON_TURN_START,
     ON_TURN_END,
 
+    ON_BATTLE_SETUP,
     ON_BATTLE_START,
     ON_BATTLE_END,
 };
@@ -1003,6 +1019,28 @@ struct ChainPenalty {
     ChainPenaltyID id;
 };
 
+/// DifficultyMode
+///
+/// A run-long difficulty whose penalties compose through the battle
+/// triggers, attached to the human seat at battle start.
+///
+struct DifficultyMode {
+    EFFECT_ITEM_BASE;
+
+    Difficulty id;
+};
+
+/// ChallengeRun
+///
+/// A run-long challenge whose constraints compose through the battle
+/// triggers, attached to the human seat at battle start.
+///
+struct ChallengeRun {
+    EFFECT_ITEM_BASE;
+
+    ChallengeRunID id;
+};
+
 /*----------------------------------------------------------------------------*\
                                 BATTLE.C STRUCTS
 \*----------------------------------------------------------------------------*/
@@ -1025,6 +1063,7 @@ struct PlayerState {
     int        actions;
 
     Card*      hand[MAX_DRAWN_CARDS];
+    bool       hand_visible[MAX_DRAWN_CARDS];
     LinkedList effects;
 };
 
@@ -1134,7 +1173,6 @@ bool                   battle_card_can_play(BattleState* battle, size_t hand);
 bool                   battle_card_target(BattleState* battle, size_t index);
 const CardTarget*      battle_pending_picks(void);
 bool                   battle_piece_unlocked(PieceID id);
-
 int     battle_piece_moves(BattleState* battle, PieceInfo* piece);
 int     battle_piece_flips(BattleState* battle, PieceInfo* piece);
 size_t  battle_piece_move_turn(PieceInfo* piece);
@@ -1148,7 +1186,6 @@ Square* battle_attacks(BattleState* battle, PieceInfo* piece);
 int     battle_value(BattleState* battle, PieceInfo* piece, PieceInfo* victim);
 int     battle_meter_max(BattleState* battle, Side side);
 Side    battle_territory(BattleState* battle, Square square);
-
 PieceInfo* battle_at(BattleState* battle, Square square);
 bool       battle_in_bounds(BattleState* battle, Square square);
 PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at, Side side);
@@ -1158,6 +1195,8 @@ void       battle_swap(BattleState* battle, PieceInfo* a, PieceInfo* b);
 void       battle_remove(BattleState* battle, PieceInfo* piece);
 void       battle_scatter_voids(BattleState* battle, int percent);
 void       battle_board_view(BattleState* battle);
+void       battle_hand_view(BattleState* battle, Side side);
+void battle_reinforce(BattleState* battle, Side owner, Side half, size_t count);
 
 /// Battle state accessors
 ///
@@ -1194,7 +1233,7 @@ unsigned int battle_rand(void);
 ///
 /// Return: the number of eligible cards written to out
 ///
-size_t       battle_draw_pool(BattleState* battle, Side side, CardID* out);
+size_t battle_draw_pool(BattleState* battle, Side side, CardID* out);
 
 /// Direct damage and single-piece strike
 ///
@@ -1205,8 +1244,8 @@ size_t       battle_draw_pool(BattleState* battle, Side side, CardID* out);
 /// coverage into the enemy meter, cascades, and returns the damage dealt;
 /// it powers multi-strike card choreography such as Crusade.
 ///
-void         battle_damage(BattleState* battle, Side side, int amount);
-int          battle_lunge(BattleState* battle, PieceInfo* piece, Square to);
+void battle_damage(BattleState* battle, Side side, int amount);
+int  battle_lunge(BattleState* battle, PieceInfo* piece, Square to);
 
 /// Subject registers
 ///
@@ -1256,10 +1295,10 @@ extern const Square ALL_DIRECTIONS[];
 /// self's square and side.
 /// threat selects at (coverage) semantics over mv (movement) semantics.
 ///
-void                mg_begin(void);
-void                mg_push(Square square);
-Square*             mg_end(void);
-void                mg_leap(
+void    mg_begin(void);
+void    mg_push(Square square);
+Square* mg_end(void);
+void    mg_leap(
     BattleState*  battle,
     PieceInfo*    self,
     const Square* offsets,
@@ -1323,10 +1362,10 @@ Square    card_square(void* packed);
 /// passes an inline block deciding which pieces, squares, or identities it
 /// accepts, so every filter lives at the card with no named helper.
 ///
-size_t    card_target_count(const CardTarget* list);
-void      card_target_push(CardTarget* list, TargetKind kind, int value);
-Square    card_target_at(int value);
-void      card_targets_piece(
+size_t card_target_count(const CardTarget* list);
+void   card_target_push(CardTarget* list, TargetKind kind, int value);
+Square card_target_at(int value);
+void   card_targets_piece(
     CardTarget*  list,
     BattleState* battle,
     bool (^match)(const PieceInfo* piece)
@@ -1345,8 +1384,8 @@ void card_targets_piece_type(
                                       AI.C
 \*----------------------------------------------------------------------------*/
 
-void   ai_take_turn(BattleState* battle);
-void   ai_plan(BattleState* battle);
+void ai_take_turn(BattleState* battle);
+void ai_plan(BattleState* battle);
 
 /*----------------------------------------------------------------------------*\
                                      RUN.C
@@ -1359,30 +1398,30 @@ void   run_new(
     Difficulty     difficulty,
     ChallengeRunID challenge
 );
-void               run_free(RunState* run);
-void               run_enter_map(EngineState* engine, KingdomID kingdom);
-bool               run_select_node(EngineState* engine, size_t index);
-void               run_battle_result(EngineState* engine, bool won);
-void               run_event_choose(EngineState* engine, EventChoice choice);
-void               run_offering(EngineState* engine, CardID card);
-void               run_relic_pick(EngineState* engine, RelicID relic);
-size_t             run_pressure(RunState* run, KingdomID kingdom);
-bool               run_innate_ready(RunState* run, KingdomID kingdom);
-int                run_value_bonus(RunState* run, const Piece* piece);
-int                run_cost_bonus(RunState* run, const Piece* piece);
-void               run_emit_kingdoms(EngineState* engine);
-void               run_emit_map(EngineState* engine);
-bool               run_enter_vorath(EngineState* engine);
+void   run_free(RunState* run);
+void   run_enter_map(EngineState* engine, KingdomID kingdom);
+bool   run_select_node(EngineState* engine, size_t index);
+void   run_battle_result(EngineState* engine, bool won);
+void   run_event_choose(EngineState* engine, EventChoice choice);
+void   run_offering(EngineState* engine, CardID card);
+void   run_relic_pick(EngineState* engine, RelicID relic);
+size_t run_pressure(RunState* run, KingdomID kingdom);
+bool   run_innate_ready(RunState* run, KingdomID kingdom);
+int    run_value_bonus(RunState* run, const Piece* piece);
+int    run_cost_bonus(RunState* run, const Piece* piece);
+void   run_emit_kingdoms(EngineState* engine);
+void   run_emit_map(EngineState* engine);
+bool   run_enter_vorath(EngineState* engine);
 
 /*----------------------------------------------------------------------------*\
                                    ENGINE.C
 \*----------------------------------------------------------------------------*/
 
-void               engine_init(EngineState* engine);
-void               engine_free(EngineState* engine);
-bool               engine_save(EngineState* engine, const char* path);
-bool               engine_load(EngineState* engine, const char* path);
-void               engine_finalize_run(EngineState* engine, bool vorath_won);
+void engine_init(EngineState* engine);
+void engine_free(EngineState* engine);
+bool engine_save(EngineState* engine, const char* path);
+bool engine_load(EngineState* engine, const char* path);
+void engine_finalize_run(EngineState* engine, bool vorath_won);
 
 /*----------------------------------------------------------------------------*\
                                     RELIC.C
@@ -1406,11 +1445,13 @@ extern const Relic RELIC_REGISTRY[RELIC_COUNT];
 /// KINGDOM_ADJACENT maps each kingdom to its synergy neighbor and the
 /// EVENT_* tables hold narrative strings indexed by EventID.
 ///
-extern const Piece UNIVERSAL_PIECES[];
-extern const Card  UNIVERSAL_CARDS[];
+extern const Piece             UNIVERSAL_PIECES[];
+extern const Card              UNIVERSAL_CARDS[];
 
 extern const BattleModifier    MODIFIER_REGISTRY[MODIFIER_COUNT];
 extern const ChainPenalty      CHAIN_REGISTRY[CHAIN_PENALTY_COUNT];
+extern const DifficultyMode    DIFFICULTY_REGISTRY[DIFFICULTY_NONE];
+extern const ChallengeRun      CHALLENGE_REGISTRY[CHALLENGE_COUNT];
 
 extern const Piece* const      PIECE_REGISTRY[PIECE_COUNT];
 extern const Card* const       CARD_REGISTRY[CARD_COUNT];
@@ -1431,17 +1472,17 @@ void                           vorath_setup(BattleState* battle);
 /// Function pointer tables indexed by KingdomID aggregating each
 /// kingdom's innate, climax, overseer setup, and event handler.
 ///
+extern void (*const KINGDOM_INNATE[KINGDOM_COUNT])(
+    BattleState*,
+    Side,
+    MasteryLevel
+);
 extern void (*const KINGDOM_CLIMAX[KINGDOM_COUNT])(BattleState*, Side);
 extern void (*const KINGDOM_OVERSEER[KINGDOM_COUNT])(BattleState*);
 extern void (*const KINGDOM_EVENT[KINGDOM_COUNT])(
     EngineState*,
     EventID,
     EventChoice
-);
-extern void (*const KINGDOM_INNATE[KINGDOM_COUNT])(
-    BattleState*,
-    Side,
-    MasteryLevel
 );
 
 /*----------------------------------------------------------------------------*\

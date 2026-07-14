@@ -12,11 +12,11 @@
                               DATA_STRUCTURE.H
 \*----------------------------------------------------------------------------*/
 
-typedef struct LLNode         LLNode;
-typedef struct LinkedList     LinkedList;
-typedef struct DGEdge         DGEdge;
-typedef struct DGNode         DGNode;
-typedef struct DirectedGraph  DirectedGraph;
+typedef struct LLNode        LLNode;
+typedef struct LinkedList    LinkedList;
+typedef struct DGEdge        DGEdge;
+typedef struct DGNode        DGNode;
+typedef struct DirectedGraph DirectedGraph;
 
 /*----------------------------------------------------------------------------*\
                                REPRESENTATION.H
@@ -61,6 +61,8 @@ typedef struct MapNode        MapNode;
 typedef struct MapState       MapState;
 typedef struct EventState     EventState;
 typedef struct ChainPenalty   ChainPenalty;
+typedef struct DifficultyMode DifficultyMode;
+typedef struct ChallengeRun   ChallengeRun;
 typedef struct PlayerState    PlayerState;
 typedef struct BattleState    BattleState;
 typedef struct RunState       RunState;
@@ -70,7 +72,7 @@ typedef struct EngineState    EngineState;
                                   PROTOCOL.H
 \*----------------------------------------------------------------------------*/
 
-typedef struct Protocol       Protocol;
+typedef struct Protocol Protocol;
 
-typedef enum ScreenID         ScreenID;
-typedef struct Screen         Screen;
+typedef enum ScreenID   ScreenID;
+typedef struct Screen   Screen;

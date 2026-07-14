@@ -570,11 +570,82 @@ migration ends by deleting the old path.
     `RELIC_SOUL_SHARD`, `CHAIN_SILVER`, or `effect_find_mark` reads remain in
     `src/representation/*` or `src/protocol/*` (only the data registries +
     the `effect_find_mark` definition). Clean rebuild, zero warnings.
-- **Now:** Phase 4 done (5 violations rectified + River Crossing & Trade
-  Route traits built and verified live; Contested Market + Trade Routes
-  relic deferred). Next is Phase 5 (difficulty + challenge as effect items:
-  `QUERY_ENEMY_ARMY_COUNT` already lives, add `QUERY_PIECE_CAN_BUY`;
-  DIFFICULTY/CHALLENGE registries on `RunState.effects`).
+- **Phase 5 — difficulty + challenge as effect items** ✅:
+  - **New structs/registries**: `DifficultyMode` + `ChallengeRun`
+    (EFFECT_ITEM_BASE + id) in representation.h; `DIFFICULTY_REGISTRY[
+    DIFFICULTY_NONE]` and `CHALLENGE_REGISTRY[CHALLENGE_COUNT]` in
+    universal.c. Attached to the **human seat** at battle start by a new
+    `battle_walk_rules` (shared `battle_attach_rule` helper). Difficulties
+    attach **cumulatively** (`for d = FREE..run->difficulty`) mirroring the
+    chain attach — a higher level includes the lower penalties, matching the
+    original `>= / <=` range guards; the challenge is a single choice.
+    Called in `battle_begin` after `battle_walk_traits` (before setup_armies
+    so Bound's QUERY_ENEMY_ARMY_COUNT is present when it fires).
+    Registries indexed by `run->difficulty`/`run->challenge` only — engine
+    names no specific level (like the relic loop).
+  - **3 new triggers** (enum + TRIGGER_NAME[] + §4 x-doc, all index-aligned,
+    clean-rebuilt) — Bronze/Shackled reuse the existing `QUERY_CP_INCOME`
+    seam instead of a bespoke chain trigger (user call):
+    - **`QUERY_PIECE_CAN_BUY`** (x = bool*, base true) fired in `battle_buy`
+      for the human (BUY_PIECE set first). `battle_challenge_allows_buy`
+      DELETED. Pacifist (`eff_pacifist`, value>20 veto via
+      `battle_buy_piece()`) + Solo Vanguard (`eff_solo_vanguard`, veto while
+      a non-king human piece stands).
+    - **`QUERY_HAND_STATE`** (x = PlayerState*) fired by new
+      `battle_hand_view` from `emit_hand`; PlayerState gains
+      `bool hand_visible[MAX_DRAWN_CARDS]` (baked in like Board.visible, no
+      wrapper struct). Blind Draft (`eff_blind_draft`) clears the flags;
+      `emit_hand` is one unified line — `id`/`name` masked (−1/"?") when
+      hidden, `kingdom`+`tier` always shown. screen.c
+      `challenge == CHALLENGE_BLIND_DRAFT` id check DELETED. (A stray
+      hand-edit had reduced emit_hand to a broken `id=%d`←`"?"` ternary that
+      dropped kingdom; corrected to the typed unified form.)
+    - **`ON_BATTLE_SETUP`** (x = MapNode*) fired for HUMAN_SIDE in
+      `battle_begin` after walk_synergies, **before the meters** — the seam
+      for setup actions that must fold into the starting maxima. Enslaved
+      (`eff_enslaved`, attach region `KINGDOM_INNATE[]` to the enemy) +
+      Traitor's Gambit (`eff_traitors_gambit`, 3 enemy pieces in the human
+      half via new public `battle_reinforce`). Chosen over ON_BATTLE_START
+      (post-meter) because Traitor's pieces must count toward enemy
+      meter_max (meter = sum of piece values); the enslaved-innate walk_
+      innates block + the Traitor's setup_armies block both DELETED.
+    - **Bronze + Shackled on `QUERY_CP_INCOME`** (NO new trigger — user:
+      "why use QUERY_CHAIN_PENALTY when QUERY_CP_INCOME already controls
+      per-turn *and* opening cp?"). Bronze (chain item) is now a turn-1
+      `*income -= 10`; Shackled (difficulty) a turn-1 `*income -= 15` gated
+      on `node->kingdom->chain` (so it bites only in a chained region — the
+      only self-gate needed since it can't ride Bronze's magnitude). They
+      compose additively on the income value → −25. `eff_bronze_chain`'s
+      ON_BATTLE_START `cp -=` path + its 0-clamp DELETED; the `battle.c`
+      `penalty = Shackled ? 25 : 10` injection DELETED; setup_armies' chain
+      attach only sets args[0]. `turn_start` gained a `cp >= 0` clamp after
+      income (preserves the old non-negative invariant). **Bonus:** nets
+      into cp with no intermediate clamp, so the true −25 is now observable
+      (cp 5, not the clamp-masked 10 the QUERY_CHAIN_PENALTY draft showed).
+  - **battle_reinforce** exposed (public) — wraps `battle_free_army` +
+    `KINGDOM_BASIC[]` so effects reinforce a side/half without the private
+    basic-piece table; setup_armies routes its enemy army through it too.
+  - **Verified live** (seed-driven protocol): Bound enemy_meter 10→30 (+2
+    Bing, 2 `b` in enemy half); Pacifist (Ma 30 rejected, Xiang 20 allowed,
+    control buys Ma); Solo (2nd non-king buy rejected); Blind Draft (hand
+    id=-1 name="?" keeps kingdom+tier vs full baseline); Traitor's Gambit (3
+    `b` in the human bottom half, enemy_meter=40 = king+3 Bing, pre-meter);
+    Shackled bronze — concede-chained Longwei, battle 2 logs `Bronze Chain`
+    trigger=QUERY_CP_INCOME: baseline income 10−10=0 → cp 20; Shackled
+    income 10−10−15=−15 → cp 5 (the true −25, now fully observable); an
+    unchained Shackled battle stays cp 30 (Shackled self-filters, silent);
+    Bronze fires exactly once (turn 1) across 12 turns. Enslaved attaches,
+    cumulative Bound holds. 20 challenge×difficulty combos × 30 AI turns:
+    zero crashes. Build clean, zero warnings, 80-col clean.
+    grep: no `challenge ==`/`difficulty >=` id checks in
+    `src/representation/*` or `src/protocol/*` (only arg-parse + the generic
+    registry-indexed walk).
+- **Now:** Phase 5 done. Next is Phase 6 (synergy / innate / climax shape
+  unification: reshape `SYNERGY_REGISTRY` to the EffectItem form; convert
+  `KINGDOM_INNATE`/`KINGDOM_CLIMAX` fn tables into data EffectItem
+  registries attached generically, mastery via context). NOTE: Enslaved's
+  `eff_enslaved` still calls `KINGDOM_INNATE[]` — when Phase 6 retires that
+  table, repoint `eff_enslaved` at the new innate registry.
 
 ### Execution phases (gate each: `make debug` zero warnings, 80-col clean, harnesses green)
 

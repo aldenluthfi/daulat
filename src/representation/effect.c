@@ -28,6 +28,7 @@ static const char* const TRIGGER_NAME[] = {
     "QUERY_PIECE_CAN_FLIP",
     "QUERY_PIECE_CAN_MOVE",
     "QUERY_PIECE_CAN_ATTACK",
+    "QUERY_PIECE_CAN_BUY",
 
     "QUERY_PIECE_MOVES",
     "QUERY_PIECE_ATTACKS",
@@ -48,6 +49,7 @@ static const char* const TRIGGER_NAME[] = {
 
     "QUERY_BOARD_DIMENSION",
     "QUERY_BOARD_STATE",
+    "QUERY_HAND_STATE",
     "ON_BOARD_BUILD",
 
     "ON_PIECE_FLIP_PRE",
@@ -65,6 +67,7 @@ static const char* const TRIGGER_NAME[] = {
     "ON_TURN_START",
     "ON_TURN_END",
 
+    "ON_BATTLE_SETUP",
     "ON_BATTLE_START",
     "ON_BATTLE_END",
 };

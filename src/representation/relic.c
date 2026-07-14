@@ -407,9 +407,9 @@ static bool eff_philosophers_stone(EffectContext* context, void* x) {
         return false;
     }
 
-    PieceInfo* piece = x;
+    PieceInfo* piece     = x;
     piece->piece->value += 20;
-    context->args[1] = (void*) 1;
+    context->args[1]     = (void*) 1;
 
     return true;
 }
@@ -428,7 +428,7 @@ static bool eff_philosophers_stone(EffectContext* context, void* x) {
 static bool eff_inherited_power(EffectContext* context, void* x) {
     (void) context;
 
-    PieceInfo* piece = x;
+    PieceInfo* piece     = x;
     piece->piece->value += 5;
 
     return true;

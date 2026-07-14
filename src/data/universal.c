@@ -774,14 +774,10 @@ const Piece UNIVERSAL_PIECES[] = {
 const Card UNIVERSAL_CARDS[] = {
     {
         .effects =
-            {
-                {
-                    .func      = eff_pawn_storm,
-                    .name      = "Pawn Storm",
-                    .trigger   = ON_CARD_PLAY,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_pawn_storm,
+              .name      = "Pawn Storm",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = TURNS_1}},
         .name      = "Pawn Storm",
         .desc      = "Buy up to 3 pawns this turn without action cost; "
                      "the third is free.",
@@ -793,14 +789,10 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_revitalize,
-                    .name      = "Revitalize",
-                    .trigger   = ON_CARD_PLAY,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_revitalize,
+              .name      = "Revitalize",
+              .trigger   = ON_CARD_PLAY,
+              .lasts_for = TURNS_1}},
         .name      = "Revitalize",
         .desc      = "Restore 50 to your meter.",
         .id        = CARD_REVITALIZE,
@@ -811,14 +803,10 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_hostage,
-                    .name      = "Hostage",
-                    .trigger   = ON_PIECE_FLIP,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+            {{.func      = eff_hostage,
+              .name      = "Hostage",
+              .trigger   = ON_PIECE_FLIP,
+              .lasts_for = ENTIRE_BATTLE}},
         .name      = "Hostage",
         .desc      = "Next flip to your side: your meter gains 20 bonus.",
         .id        = CARD_HOSTAGE,
@@ -829,14 +817,10 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_last_stand,
-                    .name      = "Last Stand",
-                    .trigger   = QUERY_PIECE_CAN_FLIP,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_last_stand,
+              .name      = "Last Stand",
+              .trigger   = QUERY_PIECE_CAN_FLIP,
+              .lasts_for = TURNS_1}},
         .name      = "Last Stand",
         .desc      = "This turn your meter cannot trigger a flip. Damage "
                      "still applies.",
@@ -848,20 +832,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_sacrifice_targets,
-                    .name      = "Sacrifice",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_sacrifice_pick,
-                    .name      = "Sacrifice",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_sacrifice_targets,
+              .name      = "Sacrifice",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_sacrifice_pick,
+              .name      = "Sacrifice",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Sacrifice",
         .desc      = "Remove one of your pieces. Gain its value x2 as "
                      "meter.",
@@ -873,14 +851,10 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_reforge,
-                    .name      = "Reforge",
-                    .trigger   = ON_PIECE_FLIP_PRE,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+            {{.func      = eff_reforge,
+              .name      = "Reforge",
+              .trigger   = ON_PIECE_FLIP_PRE,
+              .lasts_for = ENTIRE_BATTLE}},
         .name      = "Reforge",
         .desc      = "Next time a piece flips, its type is 30% cheaper "
                      "to buy next turn.",
@@ -892,20 +866,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_mercy_targets,
-                    .name      = "Mercy",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_mercy_pick,
-                    .name      = "Mercy",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_mercy_targets,
+              .name      = "Mercy",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_mercy_pick,
+              .name      = "Mercy",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Mercy",
         .desc      = "Target which piece flips next, overriding earlier "
                      "uses.",
@@ -917,14 +885,10 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_bloodletting,
-                    .name      = "Bloodletting",
-                    .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_bloodletting,
+              .name      = "Bloodletting",
+              .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+              .lasts_for = TURNS_1}},
         .name      = "Bloodletting",
         .desc      = "This turn your attacks deal extra damage equal to "
                      "50% of your missing meter.",
@@ -936,14 +900,10 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_counter_coup,
-                    .name      = "Counter Coup",
-                    .trigger   = QUERY_METER_DAMAGE_TAKEN,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_counter_coup,
+              .name      = "Counter Coup",
+              .trigger   = QUERY_METER_DAMAGE_TAKEN,
+              .lasts_for = TURNS_1}},
         .name      = "Counter Coup",
         .desc      = "This turn all damage you take echoes back at 50% "
                      "to enemy meter.",
@@ -955,14 +915,10 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_spite,
-                    .name      = "Spite",
-                    .trigger   = ON_PIECE_FLIP_PRE,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+            {{.func      = eff_spite,
+              .name      = "Spite",
+              .trigger   = ON_PIECE_FLIP_PRE,
+              .lasts_for = ENTIRE_BATTLE}},
         .name      = "Spite",
         .desc      = "Next time you lose a piece, deal its value x3 to "
                      "enemy meter.",
@@ -974,20 +930,14 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_chain_break_targets,
-                    .name      = "Chain Break",
-                    .trigger   = QUERY_CARD_TARGETS,
-                    .lasts_for = TURNS_1,
-                },
-                {
-                    .func      = eff_chain_break_pick,
-                    .name      = "Chain Break",
-                    .trigger   = ON_CARD_TARGET_SELECTED,
-                    .lasts_for = TURNS_1,
-                },
-            },
+            {{.func      = eff_chain_break_targets,
+              .name      = "Chain Break",
+              .trigger   = QUERY_CARD_TARGETS,
+              .lasts_for = TURNS_1},
+             {.func      = eff_chain_break_pick,
+              .name      = "Chain Break",
+              .trigger   = ON_CARD_TARGET_SELECTED,
+              .lasts_for = TURNS_1}},
         .name      = "Chain Break",
         .desc      = "Force-flip one enemy piece of your choice.",
         .id        = CARD_CHAIN_BREAK,
@@ -998,14 +948,10 @@ const Card UNIVERSAL_CARDS[] = {
     },
     {
         .effects =
-            {
-                {
-                    .func      = eff_hydra,
-                    .name      = "Hydra",
-                    .trigger   = ON_PIECE_FLIP_PRE,
-                    .lasts_for = ENTIRE_BATTLE,
-                },
-            },
+            {{.func      = eff_hydra,
+              .name      = "Hydra",
+              .trigger   = ON_PIECE_FLIP_PRE,
+              .lasts_for = ENTIRE_BATTLE}},
         .name      = "Hydra",
         .desc      = "Next time a piece flips, 2 friendly pawns spawn "
                      "beside your king.",
@@ -1463,273 +1409,219 @@ static bool eff_fog_of_war(EffectContext* context, void* x) {
 const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT] = {
     [MODIFIER_LEAN_TIMES] =
         {
-            .name = "Lean Times",
-            .desc = "Both sides start with 20 less cp.",
-            .id   = MODIFIER_LEAN_TIMES,
-            .effects =
-                {
-                    {
-                        .func      = eff_lean_times,
-                        .name      = "Lean Times",
-                        .trigger   = ON_BATTLE_START,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Lean Times",
+            .desc    = "Both sides start with 20 less cp.",
+            .id      = MODIFIER_LEAN_TIMES,
+            .effects = {{
+                .func      = eff_lean_times,
+                .name      = "Lean Times",
+                .trigger   = ON_BATTLE_START,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_WINDFALL] =
         {
-            .name = "Windfall",
-            .desc = "Both sides start with 30 more cp.",
-            .id   = MODIFIER_WINDFALL,
-            .effects =
-                {
-                    {
-                        .func      = eff_windfall,
-                        .name      = "Windfall",
-                        .trigger   = ON_BATTLE_START,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Windfall",
+            .desc    = "Both sides start with 30 more cp.",
+            .id      = MODIFIER_WINDFALL,
+            .effects = {{
+                .func      = eff_windfall,
+                .name      = "Windfall",
+                .trigger   = ON_BATTLE_START,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_OPEN_MARKET] =
         {
-            .name = "Open Market",
-            .desc = "All pieces cost 50% this battle.",
-            .id   = MODIFIER_OPEN_MARKET,
-            .effects =
-                {
-                    {
-                        .func      = eff_open_market,
-                        .name      = "Open Market",
-                        .trigger   = QUERY_PIECE_CP_COST_BUY,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Open Market",
+            .desc    = "All pieces cost 50% this battle.",
+            .id      = MODIFIER_OPEN_MARKET,
+            .effects = {{
+                .func      = eff_open_market,
+                .name      = "Open Market",
+                .trigger   = QUERY_PIECE_CP_COST_BUY,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_DEVALUED_CURRENCY] =
         {
-            .name = "Devalued Currency",
-            .desc = "All card sell values are halved.",
-            .id   = MODIFIER_DEVALUED_CURRENCY,
-            .effects =
-                {
-                    {
-                        .func      = eff_devalued,
-                        .name      = "Devalued Currency",
-                        .trigger   = QUERY_CARD_SELL_COST,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Devalued Currency",
+            .desc    = "All card sell values are halved.",
+            .id      = MODIFIER_DEVALUED_CURRENCY,
+            .effects = {{
+                .func      = eff_devalued,
+                .name      = "Devalued Currency",
+                .trigger   = QUERY_CARD_SELL_COST,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_TAX_COLLECTOR] =
         {
-            .name = "Tax Collector",
-            .desc = "+5 cp on top of each card sold.",
-            .id   = MODIFIER_TAX_COLLECTOR,
-            .effects =
-                {
-                    {
-                        .func      = eff_tax_collector,
-                        .name      = "Tax Collector",
-                        .trigger   = ON_CARD_SELL,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Tax Collector",
+            .desc    = "+5 cp on top of each card sold.",
+            .id      = MODIFIER_TAX_COLLECTOR,
+            .effects = {{
+                .func      = eff_tax_collector,
+                .name      = "Tax Collector",
+                .trigger   = ON_CARD_SELL,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_GLASS_CANNON] =
         {
-            .name = "Glass Cannon",
-            .desc = "Both meters refill at only 50% of value.",
-            .id   = MODIFIER_GLASS_CANNON,
-            .effects =
-                {
-                    {
-                        .func      = eff_glass_cannon,
-                        .name      = "Glass Cannon",
-                        .trigger   = QUERY_METER_REFILL,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Glass Cannon",
+            .desc    = "Both meters refill at only 50% of value.",
+            .id      = MODIFIER_GLASS_CANNON,
+            .effects = {{
+                .func      = eff_glass_cannon,
+                .name      = "Glass Cannon",
+                .trigger   = QUERY_METER_REFILL,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_BLOODBATH] =
         {
-            .name = "Bloodbath",
-            .desc = "Each flip triggers 2 pieces instead of 1.",
-            .id   = MODIFIER_BLOODBATH,
-            .effects =
-                {
-                    {
-                        .func      = eff_bloodbath,
-                        .name      = "Bloodbath",
-                        .trigger   = QUERY_FLIP_COUNT,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Bloodbath",
+            .desc    = "Each flip triggers 2 pieces instead of 1.",
+            .id      = MODIFIER_BLOODBATH,
+            .effects = {{
+                .func      = eff_bloodbath,
+                .name      = "Bloodbath",
+                .trigger   = QUERY_FLIP_COUNT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_IRON_WILL] =
         {
-            .name = "Iron Will",
-            .desc = "Damage you deal hits your own meter at 25%.",
-            .id   = MODIFIER_IRON_WILL,
-            .effects =
-                {
-                    {
-                        .func      = eff_iron_will,
-                        .name      = "Iron Will",
-                        .trigger   = QUERY_METER_DAMAGE_TAKEN,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Iron Will",
+            .desc    = "Damage you deal hits your own meter at 25%.",
+            .id      = MODIFIER_IRON_WILL,
+            .effects = {{
+                .func      = eff_iron_will,
+                .name      = "Iron Will",
+                .trigger   = QUERY_METER_DAMAGE_TAKEN,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_OVERFLOW] =
         {
-            .name = "Overflow",
-            .desc = "A flipped piece you gain gets +30 value.",
-            .id   = MODIFIER_OVERFLOW,
-            .effects =
-                {
-                    {
-                        .func      = eff_overflow,
-                        .name      = "Overflow",
-                        .trigger   = ON_PIECE_FLIP,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Overflow",
+            .desc    = "A flipped piece you gain gets +30 value.",
+            .id      = MODIFIER_OVERFLOW,
+            .effects = {{
+                .func      = eff_overflow,
+                .name      = "Overflow",
+                .trigger   = ON_PIECE_FLIP,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_MIRROR] =
         {
-            .name = "Mirror",
-            .desc = "Damage you deal heals your own meter at 25%.",
-            .id   = MODIFIER_MIRROR,
-            .effects =
-                {
-                    {
-                        .func      = eff_mirror,
-                        .name      = "Mirror",
-                        .trigger   = QUERY_METER_DAMAGE_TAKEN,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Mirror",
+            .desc    = "Damage you deal heals your own meter at 25%.",
+            .id      = MODIFIER_MIRROR,
+            .effects = {{
+                .func      = eff_mirror,
+                .name      = "Mirror",
+                .trigger   = QUERY_METER_DAMAGE_TAKEN,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_RICH_HAND] =
         {
-            .name = "Rich Hand",
-            .desc = "Draw 4 cards per turn.",
-            .id   = MODIFIER_RICH_HAND,
-            .effects =
-                {
-                    {
-                        .func      = eff_rich_hand,
-                        .name      = "Rich Hand",
-                        .trigger   = QUERY_CARD_DRAW_COUNT,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Rich Hand",
+            .desc    = "Draw 4 cards per turn.",
+            .id      = MODIFIER_RICH_HAND,
+            .effects = {{
+                .func      = eff_rich_hand,
+                .name      = "Rich Hand",
+                .trigger   = QUERY_CARD_DRAW_COUNT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_SPARSE_HAND] =
         {
-            .name = "Sparse Hand",
-            .desc = "Draw 2 cards per turn.",
-            .id   = MODIFIER_SPARSE_HAND,
-            .effects =
-                {
-                    {
-                        .func      = eff_sparse_hand,
-                        .name      = "Sparse Hand",
-                        .trigger   = QUERY_CARD_DRAW_COUNT,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Sparse Hand",
+            .desc    = "Draw 2 cards per turn.",
+            .id      = MODIFIER_SPARSE_HAND,
+            .effects = {{
+                .func      = eff_sparse_hand,
+                .name      = "Sparse Hand",
+                .trigger   = QUERY_CARD_DRAW_COUNT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_KINGDOM_PURITY] =
         {
-            .name = "Kingdom Purity",
-            .desc = "Only cards of the region being fought in are drawn.",
-            .id   = MODIFIER_KINGDOM_PURITY,
-            .effects =
-                {
-                    {
-                        .func      = eff_kingdom_purity,
-                        .name      = "Kingdom Purity",
-                        .trigger   = QUERY_CARD_CAN_DRAW,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Kingdom Purity",
+            .desc    = "Only cards of the region being fought in are drawn.",
+            .id      = MODIFIER_KINGDOM_PURITY,
+            .effects = {{
+                .func      = eff_kingdom_purity,
+                .name      = "Kingdom Purity",
+                .trigger   = QUERY_CARD_CAN_DRAW,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_LUCKY_STRIKE] =
         {
             .name = "Lucky Strike",
             .desc = "First card drawn each turn is the highest tier available.",
             .id   = MODIFIER_LUCKY_STRIKE,
-            .effects =
-                {
-                    {
-                        .func      = eff_lucky_strike,
-                        .name      = "Lucky Strike",
-                        .trigger   = ON_CARDS_DRAWN,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .effects = {{
+                .func      = eff_lucky_strike,
+                .name      = "Lucky Strike",
+                .trigger   = ON_CARDS_DRAWN,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_FOG_OF_WAR] =
         {
-            .name = "Fog of War",
-            .desc = "Enemy pieces are hidden off squares you attack.",
-            .id   = MODIFIER_FOG_OF_WAR,
-            .effects =
-                {
-                    {
-                        .func      = eff_fog_of_war,
-                        .name      = "Fog of War",
-                        .trigger   = QUERY_BOARD_STATE,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Fog of War",
+            .desc    = "Enemy pieces are hidden off squares you attack.",
+            .id      = MODIFIER_FOG_OF_WAR,
+            .effects = {{
+                .func      = eff_fog_of_war,
+                .name      = "Fog of War",
+                .trigger   = QUERY_BOARD_STATE,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_DENSE_TERRAIN] =
         {
-            .name = "Dense Terrain",
-            .desc = "20% of squares are missing, revealed at start.",
-            .id   = MODIFIER_DENSE_TERRAIN,
-            .effects =
-                {
-                    {
-                        .func      = eff_dense_terrain,
-                        .name      = "Dense Terrain",
-                        .trigger   = ON_BOARD_BUILD,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Dense Terrain",
+            .desc    = "20% of squares are missing, revealed at start.",
+            .id      = MODIFIER_DENSE_TERRAIN,
+            .effects = {{
+                .func      = eff_dense_terrain,
+                .name      = "Dense Terrain",
+                .trigger   = ON_BOARD_BUILD,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_EXTENDED_FRONT] =
         {
-            .name = "Extended Front",
-            .desc = "Board is 2 columns wider.",
-            .id   = MODIFIER_EXTENDED_FRONT,
-            .effects =
-                {
-                    {
-                        .func      = eff_extended_front,
-                        .name      = "Extended Front",
-                        .trigger   = QUERY_BOARD_DIMENSION,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Extended Front",
+            .desc    = "Board is 2 columns wider.",
+            .id      = MODIFIER_EXTENDED_FRONT,
+            .effects = {{
+                .func      = eff_extended_front,
+                .name      = "Extended Front",
+                .trigger   = QUERY_BOARD_DIMENSION,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [MODIFIER_COMPRESSED] =
         {
-            .name = "Compressed",
-            .desc = "Board is 2 columns narrower.",
-            .id   = MODIFIER_COMPRESSED,
-            .effects =
-                {
-                    {
-                        .func      = eff_compressed,
-                        .name      = "Compressed",
-                        .trigger   = QUERY_BOARD_DIMENSION,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Compressed",
+            .desc    = "Board is 2 columns narrower.",
+            .id      = MODIFIER_COMPRESSED,
+            .effects = {{
+                .func      = eff_compressed,
+                .name      = "Compressed",
+                .trigger   = QUERY_BOARD_DIMENSION,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
 };
 
@@ -1740,27 +1632,23 @@ const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT] = {
 /// eff_bronze_chain
 ///
 /// Bronze Chain: the player opens a battle in the chained region with ten
-/// less currency.
+/// less currency, taken from the first turn's income so the opening purse
+/// composes on the shared QUERY_CP_INCOME seam.
 ///
 /// Params:
-/// - context -> args[0] human side, args[1] cp penalty (default 10)
-/// - x       -> unused battle node
+/// - context -> unused
+/// - x       -> int* the acting side's income
 ///
-/// Return: true, the deduction always applies
+/// Return: true when the opening income is reduced
 ///
 static bool eff_bronze_chain(EffectContext* context, void* x) {
-    (void) x;
+    (void) context;
 
-    PlayerState* player =
-        battle_player(battle_current(), (Side) (uintptr_t) context->args[0]);
-
-    int penalty = context->args[1] ? (int) (uintptr_t) context->args[1] : 10;
-
-    player->cp -= penalty;
-
-    if (player->cp < 0) {
-        player->cp = 0;
+    if (battle_current()->turn != 1) {
+        return false;
     }
+
+    *(int*) x -= 10;
 
     return true;
 }
@@ -1787,39 +1675,320 @@ static bool eff_silver_chain(EffectContext* context, void* x) {
 const ChainPenalty CHAIN_REGISTRY[CHAIN_PENALTY_COUNT] = {
     [CHAIN_BRONZE] =
         {
-            .name = "Bronze",
-            .desc = "Battles in this region start with -10 cp.",
-            .id   = CHAIN_BRONZE,
-            .effects =
-                {
-                    {
-                        .func      = eff_bronze_chain,
-                        .name      = "Bronze Chain",
-                        .trigger   = ON_BATTLE_START,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Bronze",
+            .desc    = "Battles in this region start with -10 cp.",
+            .id      = CHAIN_BRONZE,
+            .effects = {{
+                .func      = eff_bronze_chain,
+                .name      = "Bronze Chain",
+                .trigger   = QUERY_CP_INCOME,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [CHAIN_SILVER] =
         {
-            .name = "Silver",
-            .desc = "Enemy gets +1 free starting piece in this region.",
-            .id   = CHAIN_SILVER,
-            .effects =
-                {
-                    {
-                        .func      = eff_silver_chain,
-                        .name      = "Silver Chain",
-                        .trigger   = QUERY_ENEMY_ARMY_COUNT,
-                        .lasts_for = ENTIRE_BATTLE,
-                    },
-                },
+            .name    = "Silver",
+            .desc    = "Enemy gets +1 free starting piece in this region.",
+            .id      = CHAIN_SILVER,
+            .effects = {{
+                .func      = eff_silver_chain,
+                .name      = "Silver Chain",
+                .trigger   = QUERY_ENEMY_ARMY_COUNT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [CHAIN_GOLD] =
         {
             .name = "Gold",
             .desc = "Figurehead Subjugated: the track locks.",
             .id   = CHAIN_GOLD,
+        },
+};
+
+/*----------------------------------------------------------------------------*\
+                             DIFFICULTIES & CHALLENGES
+\*----------------------------------------------------------------------------*/
+
+/// eff_bound
+///
+/// Bound difficulty: Vorath's pressure opens at two extra enemy pieces,
+/// added to the reinforcement count the setup queries.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* enemy reinforcement count
+///
+/// Return: true always
+///
+static bool eff_bound(EffectContext* context, void* x) {
+    (void) context;
+
+    *(int*) x += 2;
+
+    return true;
+}
+
+/// eff_shackled
+///
+/// Shackled difficulty: in a chained region the opening income drops fifteen
+/// further, so the Bronze -10 becomes -25. Reads the region chain rather
+/// than the Bronze effect, so it fires only where a chain applies.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* the acting side's income
+///
+/// Return: true when the opening income is reduced
+///
+static bool eff_shackled(EffectContext* context, void* x) {
+    (void) context;
+
+    BattleState* battle = battle_current();
+
+    if (battle->turn != 1 || !battle->node || !battle->node->kingdom ||
+        !battle->node->kingdom->chain) {
+        return false;
+    }
+
+    *(int*) x -= 15;
+
+    return true;
+}
+
+/// eff_enslaved
+///
+/// Enslaved difficulty: the region kingdom's innate arms the enemy seat
+/// from the first battle, attached at setup like the human's own innates.
+///
+/// Params:
+/// - context -> args[0] human side
+/// - x       -> unused battle node
+///
+/// Return: true when the region has a kingdom to draw the innate from
+///
+static bool eff_enslaved(EffectContext* context, void* x) {
+    (void) x;
+
+    BattleState* battle = battle_current();
+
+    if (!battle->node || !battle->node->kingdom) {
+        return false;
+    }
+
+    Side human = (Side) (uintptr_t) context->args[0];
+
+    KINGDOM_INNATE[battle->node->kingdom->id](
+        battle,
+        battle_enemy(human),
+        MASTERY_NONE
+    );
+
+    return true;
+}
+
+/// eff_solo_vanguard
+///
+/// Solo Vanguard challenge: the human may hold only one non-king piece on
+/// the board, so a buy is refused while one already stands.
+///
+/// Params:
+/// - context -> args[0] human side
+/// - x       -> bool* whether the buy is permitted
+///
+/// Return: true when the buy is vetoed
+///
+static bool eff_solo_vanguard(EffectContext* context, void* x) {
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+
+    for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
+        PieceInfo* cell = battle->board.piece_board[index];
+
+        if (cell && cell != &VOID_CELL && cell->side == side &&
+            cell->piece->id != PIECE_KING) {
+            *(bool*) x = false;
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/// eff_pacifist
+///
+/// Pacifist Doctrine challenge: the human cannot buy a piece valued above
+/// twenty currency.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> bool* whether the buy is permitted
+///
+/// Return: true when the buy is vetoed
+///
+static bool eff_pacifist(EffectContext* context, void* x) {
+    (void) context;
+
+    const Piece* piece = battle_buy_piece();
+
+    if (piece && piece->value > 20) {
+        *(bool*) x = false;
+
+        return true;
+    }
+
+    return false;
+}
+
+/// eff_blind_draft
+///
+/// Blind Draft challenge: the whole hand hides its card identities, leaving
+/// only kingdom and tier visible until a card is played or sold.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> PlayerState* the human seat
+///
+/// Return: true always
+///
+static bool eff_blind_draft(EffectContext* context, void* x) {
+    (void) context;
+
+    PlayerState* player = x;
+
+    for (size_t card = 0; card < MAX_DRAWN_CARDS; card++) {
+        player->hand_visible[card] = false;
+    }
+
+    return true;
+}
+
+/// eff_traitors_gambit
+///
+/// The Traitor's Gambit challenge: the enemy opens with three free pieces
+/// already standing in the human's half of the board.
+///
+/// Params:
+/// - context -> args[0] human side
+/// - x       -> unused battle node
+///
+/// Return: true, the intrusion always spawns
+///
+static bool eff_traitors_gambit(EffectContext* context, void* x) {
+    (void) x;
+
+    Side human = (Side) (uintptr_t) context->args[0];
+
+    battle_reinforce(battle_current(), battle_enemy(human), human, 3);
+
+    return true;
+}
+
+const DifficultyMode DIFFICULTY_REGISTRY[DIFFICULTY_NONE] = {
+    [DIFFICULTY_FREE] =
+        {
+            .name = "Free",
+            .desc = "Baseline campaign with no added penalties.",
+            .id   = DIFFICULTY_FREE,
+        },
+    [DIFFICULTY_BOUND] =
+        {
+            .name    = "Bound",
+            .desc    = "Vorath's Pressure starts at two extra enemy pieces.",
+            .id      = DIFFICULTY_BOUND,
+            .effects = {{
+                .func      = eff_bound,
+                .name      = "Bound",
+                .trigger   = QUERY_ENEMY_ARMY_COUNT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [DIFFICULTY_SHACKLED] =
+        {
+            .name    = "Shackled",
+            .desc    = "The Bronze chain penalty becomes -25 cp.",
+            .id      = DIFFICULTY_SHACKLED,
+            .effects = {{
+                .func      = eff_shackled,
+                .name      = "Shackled",
+                .trigger   = QUERY_CP_INCOME,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [DIFFICULTY_ENSLAVED] =
+        {
+            .name    = "Enslaved",
+            .desc    = "Enemy kingdom innates are active from battle one.",
+            .id      = DIFFICULTY_ENSLAVED,
+            .effects = {{
+                .func      = eff_enslaved,
+                .name      = "Enslaved",
+                .trigger   = ON_BATTLE_SETUP,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+};
+
+const ChallengeRun CHALLENGE_REGISTRY[CHALLENGE_COUNT] = {
+    [CHALLENGE_DAILY_CONQUEST] =
+        {
+            .name = "Daily Conquest",
+            .desc = "A shared daily seed; no battle-side effect.",
+            .id   = CHALLENGE_DAILY_CONQUEST,
+        },
+    [CHALLENGE_SOLO_VANGUARD] =
+        {
+            .name    = "Solo Vanguard",
+            .desc    = "Only one non-king piece may stand at a time.",
+            .id      = CHALLENGE_SOLO_VANGUARD,
+            .effects = {{
+                .func      = eff_solo_vanguard,
+                .name      = "Solo Vanguard",
+                .trigger   = QUERY_PIECE_CAN_BUY,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [CHALLENGE_PACIFIST_DOCTRINE] =
+        {
+            .name    = "Pacifist Doctrine",
+            .desc    = "No piece above 20 cp may be bought.",
+            .id      = CHALLENGE_PACIFIST_DOCTRINE,
+            .effects = {{
+                .func      = eff_pacifist,
+                .name      = "Pacifist Doctrine",
+                .trigger   = QUERY_PIECE_CAN_BUY,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [CHALLENGE_BLIND_DRAFT] =
+        {
+            .name    = "Blind Draft",
+            .desc    = "Card names and effects hide until played or sold.",
+            .id      = CHALLENGE_BLIND_DRAFT,
+            .effects = {{
+                .func      = eff_blind_draft,
+                .name      = "Blind Draft",
+                .trigger   = QUERY_HAND_STATE,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [CHALLENGE_THE_TRAITORS_GAMBIT] =
+        {
+            .name    = "The Traitor's Gambit",
+            .desc    = "The enemy starts with three pieces in your half.",
+            .id      = CHALLENGE_THE_TRAITORS_GAMBIT,
+            .effects = {{
+                .func      = eff_traitors_gambit,
+                .name      = "The Traitor's Gambit",
+                .trigger   = ON_BATTLE_SETUP,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+        },
+    [CHALLENGE_CLOCKWORK] =
+        {
+            .name = "Clockwork",
+            .desc = "A thirty-second turn timer; no battle-side effect.",
+            .id   = CHALLENGE_CLOCKWORK,
         },
 };
 

@@ -340,7 +340,7 @@ chained.
 
 | Chain      | GDD                                | Decomposition                           | Impl                                                     | Status                                                                       |
 | ---------- | ---------------------------------- | --------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Bronze     | −10 cp (−25 Shackled)              | eff_bronze_chain → ON_BATTLE_START      | universal.c + **battle.c:1697** injects the 25 magnitude | ⚠️ effect exists but Shackled magnitude hardcoded by engine (see Difficulty) |
+| Bronze     | −10 cp (−25 Shackled)              | eff_bronze_chain → QUERY_CP_INCOME turn-1 −10 | universal.c; the opening penalty rides the shared cp seam | ✅ opening cp composes on QUERY_CP_INCOME; engine names no chain |
 | Silver     | enemy +1 starting piece            | eff_silver_chain → QUERY_ENEMY_ARMY_COUNT +1 | universal.c (chains attached cumulatively Bronze..level) | ✅ setup fires QUERY_ENEMY_ARMY_COUNT for the human seat; effect adds 1  |
 | Gold       | figurehead subjugated, track locks | run-state (chain cap + liberation node) | run.c chain logic                                        | ✅ run-state (no battle effect) — liberation node deferred                   |
 
@@ -432,31 +432,34 @@ effects (Phase 7).
 | The Deserter            | remove card; all pawns +3 value           | relic (Warlord's Banner / Dead Man's Pact)  | A: run_value_bonus:1303 (removal unimpl); B: unimpl           | ❌                                             |
 | The Archive             | relic (Philosopher's / Inherited)         | relic (Master's Notes / Alchemist's Kit)    | both **unimpl**                                               | ❌                                             |
 
-## Difficulties (4) — no registry, fully hardcoded
+## Difficulties (4) — `DIFFICULTY_REGISTRY` EffectItems ✅
 
-Stored on `RunState.difficulty`; every effect is an inline `if` in the
-engine. → `DIFFICULTY_REGISTRY` EffectItems on `RunState.effects` (Phase 5).
+`DIFFICULTY_REGISTRY[DIFFICULTY_NONE]` (universal.c) attached cumulatively to
+the human seat by `battle_walk_rules` at battle start; every inline `if` in
+the engine is deleted. Difficulties stack (a higher level includes the
+lower penalties), mirroring the cumulative chain attach.
 
-| Difficulty | GDD                                | Decomposition                                   | Impl              | Status       |
-| ---------- | ---------------------------------- | ----------------------------------------------- | ----------------- | ------------ |
-| Free       | baseline                           | —                                               | —                 | ✅ baseline  |
-| Bound      | Vorath pressure starts +2          | QUERY_ENEMY_ARMY_COUNT +2                       | **battle.c:1650** | ❌ hardcoded |
-| Shackled   | Bronze becomes −25 cp              | raise Bronze magnitude                          | **battle.c:1697** | ❌ hardcoded |
-| Enslaved   | enemy innates active from battle 1 | ON_BATTLE_START → attach region innate to enemy | **battle.c:1768** | ❌ hardcoded |
+| Difficulty | GDD                                | Decomposition                                   | Impl                          | Status       |
+| ---------- | ---------------------------------- | ----------------------------------------------- | ----------------------------- | ------------ |
+| Free       | baseline                           | —                                               | registry no-effect entry      | ✅ baseline  |
+| Bound      | Vorath pressure starts +2          | eff_bound → QUERY_ENEMY_ARMY_COUNT +2           | universal.c                   | ✅           |
+| Shackled   | Bronze becomes −25 cp              | eff_shackled → QUERY_CP_INCOME turn-1 −15 in a chained region | universal.c                   | ✅           |
+| Enslaved   | enemy innates active from battle 1 | eff_enslaved → ON_BATTLE_SETUP attach enemy innate | universal.c                | ✅           |
 
-## Challenge Runs (6) — no registry, fully hardcoded
+## Challenge Runs (6) — `CHALLENGE_REGISTRY` EffectItems ✅
 
-Stored on `RunState.challenge`. → `CHALLENGE_REGISTRY` EffectItems on
-`RunState.effects` (Phase 5); two are genuinely non-effect (category G).
+`CHALLENGE_REGISTRY[CHALLENGE_COUNT]` (universal.c) attached to the human
+seat by `battle_walk_rules`; the engine names no challenge. Two remain
+genuinely non-effect (category G) and carry no-effect registry entries.
 
-| Challenge            | GDD                            | Decomposition            | Impl              | Status                          |
-| -------------------- | ------------------------------ | ------------------------ | ----------------- | ------------------------------- |
-| Daily Conquest       | same seed for all players/day  | seed choice              | run_new           | ⬜ G — run setup, not an effect |
-| Solo Vanguard        | max 1 piece on board           | QUERY_PIECE_CAN_BUY veto | **battle.c:706**  | ❌ hardcoded                    |
-| Pacifist Doctrine    | no buy > 20 cp                 | QUERY_PIECE_CAN_BUY veto | **battle.c:702**  | ❌ hardcoded                    |
-| Blind Draft          | hide card id/name until played | QUERY_HAND_STATE         | **screen.c:175**  | ❌ hardcoded — moved to Phase 5 |
-| The Traitor's Gambit | enemy 3 pieces in your half    | ON_BATTLE_START spawn    | **battle.c:1670** | ❌ hardcoded                    |
-| Clockwork            | 30 s/turn                      | real-time timer          | screen/UI         | ⬜ G — timer, not game state    |
+| Challenge            | GDD                            | Decomposition                          | Impl        | Status                          |
+| -------------------- | ------------------------------ | -------------------------------------- | ----------- | ------------------------------- |
+| Daily Conquest       | same seed for all players/day  | seed choice                            | run_new     | ⬜ G — run setup, not an effect |
+| Solo Vanguard        | max 1 piece on board           | eff_solo_vanguard → QUERY_PIECE_CAN_BUY veto | universal.c | ✅                         |
+| Pacifist Doctrine    | no buy > 20 cp                 | eff_pacifist → QUERY_PIECE_CAN_BUY veto | universal.c | ✅                              |
+| Blind Draft          | hide card id/name until played | eff_blind_draft → QUERY_HAND_STATE     | universal.c | ✅                              |
+| The Traitor's Gambit | enemy 3 pieces in your half    | eff_traitors_gambit → ON_BATTLE_SETUP spawn | universal.c | ✅                         |
+| Clockwork            | 30 s/turn                      | real-time timer                        | screen/UI   | ⬜ G — timer, not game state    |
 
 ## Overseers (5) — `KINGDOM_OVERSEER[]` fn dispatch, all stubs
 
