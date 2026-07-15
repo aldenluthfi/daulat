@@ -120,6 +120,34 @@ static bool eff_bulk_buy(EffectContext* context, void* x) {
     return false;
 }
 
+/// eff_trade_routes
+///
+/// Trade Routes: drops the foreign-kingdom buy markup by dividing the
+/// twenty-percent surcharge back out of a foreign piece's cost (a rounding
+/// of at most one currency).
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* buy cost to relieve
+///
+/// Return: true when a foreign piece's markup was removed
+///
+static bool eff_trade_routes(EffectContext* context, void* x) {
+    (void) context;
+
+    BattleState* battle = battle_current();
+    const Piece* piece  = battle_buy_piece();
+
+    if (!piece || piece->kingdom == KINGDOM_NONE || !battle->node ||
+        !battle->node->kingdom || piece->kingdom == battle->node->kingdom->id) {
+        return false;
+    }
+
+    *(int*) x = *(int*) x * 100 / 120;
+
+    return true;
+}
+
 /// eff_war_chest
 ///
 /// War Chest: unspent currency at end of turn adds a fifth of itself to
@@ -680,9 +708,15 @@ const Relic RELIC_REGISTRY[RELIC_COUNT] = {
         },
     [RELIC_TRADE_ROUTES] =
         {
-            .name = "Trade Routes",
-            .desc = "The foreign kingdom markup is removed for the run.",
-            .id   = RELIC_TRADE_ROUTES,
+            .name    = "Trade Routes",
+            .desc    = "The foreign kingdom markup is removed for the run.",
+            .id      = RELIC_TRADE_ROUTES,
+            .effects = {{
+                .func      = eff_trade_routes,
+                .name      = "Trade Routes",
+                .trigger   = QUERY_PIECE_CP_COST_BUY,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [RELIC_SOUL_SHARD] =
         {

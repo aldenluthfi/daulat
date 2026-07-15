@@ -1827,57 +1827,71 @@ static bool eff_bulwark(EffectContext* context, void* x) {
     return true;
 }
 
-/// longwei_innate
+/// eff_longwei_combo
 ///
-/// Attaches the Bulwark innate to the given side at the given mastery
-/// level.
+/// Longwei combo climax: on the kingdom's third same-kingdom card play,
+/// grants the acting side every friendly piece Bulwark for this turn.
 ///
 /// Params:
-/// - battle -> battle to attach into
-/// - side   -> side receiving the innate
-/// - level  -> mastery level scaling the innate
+/// - context -> args[0] acting side
+/// - x       -> KingdomID* of the climaxing kingdom
 ///
-void longwei_innate(BattleState* battle, Side side, MasteryLevel level) {
-    Effect bulwark = {
-        .func      = eff_bulwark,
-        .name      = "Bulwark",
-        .trigger   = QUERY_PIECE_DAMAGE_TAKEN,
-        .lasts_for = ENTIRE_BATTLE,
-    };
-
-    Effect* attached =
-        effect_attach(&battle_player(battle, side)->effects, &bulwark);
-
-    if (attached) {
-        attached->context->args[0] = (void*) (uintptr_t) side;
-        attached->context->args[1] = (void*) (uintptr_t) level;
+/// Return: true when the Longwei climax resolved
+///
+static bool eff_longwei_combo(EffectContext* context, void* x) {
+    if (*(KingdomID*) x != KINGDOM_LONGWEI) {
+        return false;
     }
-}
 
-/// longwei_climax
-///
-/// Fires the Longwei combo climax for the given side, granting every
-/// friendly piece Bulwark this turn.
-///
-/// Params:
-/// - battle -> battle the climax fires in
-/// - side   -> side that completed the combo chain
-///
-void longwei_climax(BattleState* battle, Side side) {
-    static const Effect climax = {
+    Side   side  = (Side) (uintptr_t) context->args[0];
+
+    Effect climax = {
         .func      = eff_longwei_climax,
         .name      = "Longwei Climax",
         .trigger   = QUERY_PIECE_DAMAGE_TAKEN,
         .lasts_for = TURNS_1,
     };
 
-    Effect* attached =
-        effect_attach(&battle_player(battle, side)->effects, &climax);
+    Effect* attached = effect_attach(
+        &battle_player(battle_current(), side)->effects, &climax
+    );
 
     if (attached) {
         attached->context->args[0] = (void*) (uintptr_t) side;
     }
+
+    return true;
 }
+
+/// LONGWEI_INNATE
+///
+/// Bulwark: friendly pieces take reduced damage, scaling with mastery.
+///
+const KingdomPower LONGWEI_INNATE = {
+    .effects = {{
+        .func      = eff_bulwark,
+        .name      = "Bulwark",
+        .trigger   = QUERY_PIECE_DAMAGE_TAKEN,
+        .lasts_for = ENTIRE_BATTLE,
+    }},
+    .name = "Bulwark",
+    .id   = KINGDOM_LONGWEI,
+};
+
+/// LONGWEI_CLIMAX
+///
+/// Grants every friendly piece Bulwark this turn on the combo climax.
+///
+const KingdomPower LONGWEI_CLIMAX = {
+    .effects = {{
+        .func      = eff_longwei_combo,
+        .name      = "Longwei Climax",
+        .trigger   = ON_COMBO_CLIMAX,
+        .lasts_for = ENTIRE_BATTLE,
+    }},
+    .name = "Longwei Climax",
+    .id   = KINGDOM_LONGWEI,
+};
 
 /// longwei_overseer
 ///
@@ -1891,17 +1905,3 @@ void longwei_overseer(BattleState* battle) {
     (void) battle;
 }
 
-/// longwei_event
-///
-/// Resolves a Longwei narrative event with the player's choice.
-///
-/// Params:
-/// - engine -> engine owning the run
-/// - id     -> event being resolved
-/// - choice -> choice taken by the player
-///
-void longwei_event(EngineState* engine, EventID id, EventChoice choice) {
-    (void) engine;
-    (void) id;
-    (void) choice;
-}

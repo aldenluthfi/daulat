@@ -1514,76 +1514,90 @@ const BoardTrait HARUSHIMA_TRAITS[] = {
 /// eff_reclaim_cost
 ///
 /// Tomohito's upgrade to Reclaim: at mastery three the reclaim action
-/// costs twenty currency instead of thirty.
+/// costs twenty currency instead of thirty. Below mastery three the innate
+/// is present but the discount self-filters away.
 ///
 /// Params:
-/// - context -> unused
+/// - context -> args[1] mastery level of the innate
 /// - x       -> int* reclaim cost to lower
 ///
-/// Return: true, the discount always applies
+/// Return: true when the mastery-three discount applied
 ///
 static bool eff_reclaim_cost(EffectContext* context, void* x) {
-    (void) context;
+    if ((MasteryLevel) (uintptr_t) context->args[1] < MASTERY_LEVEL_3) {
+        return false;
+    }
 
     *(int*) x = 20;
 
     return true;
 }
 
-/// harushima_innate
+/// eff_harushima_combo
 ///
-/// Attaches the Reclaim innate. Reclaim itself is the always-available
-/// board action; mastery three lowers its cost to twenty currency through
-/// an attached cost query.
-///
-/// Params:
-/// - battle -> battle to attach into
-/// - side   -> side receiving the innate
-/// - level  -> mastery level scaling the innate
-///
-void harushima_innate(BattleState* battle, Side side, MasteryLevel level) {
-    if (level < MASTERY_LEVEL_3) {
-        return;
-    }
-
-    Effect discount = {
-        .func      = eff_reclaim_cost,
-        .name      = "Reclaim",
-        .trigger   = QUERY_PIECE_CP_COST_RECLAIM,
-        .lasts_for = ENTIRE_BATTLE,
-    };
-
-    Effect* attached =
-        effect_attach(&battle_player(battle, side)->effects, &discount);
-
-    if (attached) {
-        attached->context->args[0] = (void*) (uintptr_t) side;
-    }
-}
-
-/// harushima_climax
-///
-/// Fires the Harushima combo climax for the given side, reclaiming one
-/// flipped enemy piece for free.
+/// Harushima combo climax: on the kingdom's third same-kingdom card play,
+/// reclaims one enemy piece for the acting side for free.
 ///
 /// Params:
-/// - battle -> battle the climax fires in
-/// - side   -> side that completed the combo chain
+/// - context -> args[0] acting side
+/// - x       -> KingdomID* of the climaxing kingdom
 ///
-void harushima_climax(BattleState* battle, Side side) {
+/// Return: true when an enemy piece was reclaimed
+///
+static bool eff_harushima_combo(EffectContext* context, void* x) {
+    if (*(KingdomID*) x != KINGDOM_HARUSHIMA) {
+        return false;
+    }
+
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+
     for (int8_t y = 0; y < battle->board.height; y++) {
-        for (int8_t x = 0; x < battle->board.width; x++) {
-            PieceInfo* cell = battle_at(battle, (Square){x, y});
+        for (int8_t x2 = 0; x2 < battle->board.width; x2++) {
+            PieceInfo* cell = battle_at(battle, (Square){x2, y});
 
             if (cell && cell->side != side && cell->side != SIDE_NEUTRAL &&
                 cell->piece->id != PIECE_KING) {
                 battle_flip(battle, cell);
 
-                return;
+                return true;
             }
         }
     }
+
+    return false;
 }
+
+/// HARUSHIMA_INNATE
+///
+/// Reclaim: the always-available board action, discounted to twenty
+/// currency at mastery three through an attached cost query.
+///
+const KingdomPower HARUSHIMA_INNATE = {
+    .effects = {{
+        .func      = eff_reclaim_cost,
+        .name      = "Reclaim",
+        .trigger   = QUERY_PIECE_CP_COST_RECLAIM,
+        .lasts_for = ENTIRE_BATTLE,
+    }},
+    .name = "Reclaim",
+    .id   = KINGDOM_HARUSHIMA,
+};
+
+/// HARUSHIMA_CLIMAX
+///
+/// Reclaims one enemy piece for free on the combo climax.
+///
+const KingdomPower HARUSHIMA_CLIMAX = {
+    .effects = {{
+        .func      = eff_harushima_combo,
+        .name      = "Harushima Climax",
+        .trigger   = ON_COMBO_CLIMAX,
+        .lasts_for = ENTIRE_BATTLE,
+    }},
+    .name = "Harushima Climax",
+    .id   = KINGDOM_HARUSHIMA,
+};
 
 /// harushima_overseer
 ///
@@ -1597,17 +1611,3 @@ void harushima_overseer(BattleState* battle) {
     (void) battle;
 }
 
-/// harushima_event
-///
-/// Resolves a Harushima narrative event with the player's choice.
-///
-/// Params:
-/// - engine -> engine owning the run
-/// - id     -> event being resolved
-/// - choice -> choice taken by the player
-///
-void harushima_event(EngineState* engine, EventID id, EventChoice choice) {
-    (void) engine;
-    (void) id;
-    (void) choice;
-}

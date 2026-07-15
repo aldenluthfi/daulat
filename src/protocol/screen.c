@@ -500,6 +500,12 @@ static void handle_map(EngineState* engine, ...) {
             argc > 1 && argv[1][0] == 'b' ? CHOICE_B : CHOICE_A;
 
         run_event_choose(engine, choice);
+
+        if (engine->battle) {
+            screen_goto(engine, SCREEN_BATTLE);
+            emit_battle_state(engine);
+        }
+
         protocol_emit("ok");
         return;
     }

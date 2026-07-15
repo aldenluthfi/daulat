@@ -38,12 +38,12 @@ Status legend:
 | `battle_challenge_allows_buy` battle.c:702-706                | `CHALLENGE_PACIFIST_DOCTRINE`/`SOLO_VANGUARD`                                                | 5            |
 | `battle_setup_armies` — ✅ `CHAIN_SILVER` → QUERY_ENEMY_ARMY_COUNT | still `DIFFICULTY_*`, `MAP_NODE_ELITE/LIBERATION`, `CHALLENGE_THE_TRAITORS_GAMBIT`      | 5            |
 | `battle_walk_innates` battle.c:1768                           | `DIFFICULTY_ENSLAVED`                                                                        | 5            |
-| `SYNERGY_REGISTRY` universal.c:1197                           | bare `Effect[]`, not an item                                                                 | 6            |
-| `KINGDOM_INNATE/CLIMAX` universal.c:1374                      | function-pointer dispatch                                                                    | 6            |
-| `run_value_bonus` run.c:1258-1309                             | events by kingdom/id ladder                                                                  | 7            |
-| `run_cost_bonus` run.c:1322-1346                              | events by kingdom ladder                                                                     | 7            |
-| `run_event_choose` run.c:1122-1162                            | `VORATH_REDUCTIONS` table + `EVENT_DESERT_CROSSING`                                          | 7            |
-| `EVENT_NAME/TEXT/OPTION_*` universal.c:1365                   | empty parallel arrays                                                                        | 7            |
+| ~~`SYNERGY_REGISTRY`~~ ✅ now `KingdomPower[]` items                | ~~bare `Effect[]`~~ reshaped to EffectItem                                             | 6            |
+| ~~`KINGDOM_INNATE/CLIMAX`~~ ✅ `INNATE/CLIMAX_REGISTRY` items       | ~~function-pointer dispatch~~ now data items; climax on ON_COMBO_CLIMAX                | 6            |
+| ~~`run_value_bonus`~~ ✅ QUERY_PIECE_VALUE event effects           | ~~events by kingdom/id ladder~~ now `Event` items                                      | 7            |
+| ~~`run_cost_bonus`~~ ✅ QUERY_PIECE_CP_COST_BUY event effects      | ~~events by kingdom ladder~~ now `Event` items                                         | 7            |
+| ~~`run_event_choose`~~ ✅ fires `ON_EVENT_CHOOSE`                  | ~~`VORATH_REDUCTIONS` + Desert ladder~~ now `Event` items                              | 7            |
+| ~~`EVENT_NAME/TEXT/OPTION_*`~~ ✅ `EVENT_REGISTRY` items           | ~~empty parallel arrays~~ real `Event` data                                            | 7            |
 | `KINGDOM_EVENT` universal.c:1399                              | function-pointer dispatch (stub bodies)                                                      | 7            |
 | `run_select_node` run.c:906                                   | `RELIC_MASTERS_NOTES`                                                                        | 7 (run-side) |
 | `battle_begin` battle.c:1980 + `run_battle_result` run.c:1072 | Vorath counter thresholds                                                                    | 8            |
@@ -263,7 +263,7 @@ relics ✅; six are stubs whose behaviour lives at a hardcoded call-site.
 | Tax Stamp             | +10 on paid card              | ON_CARD_PLAY                                       | relic.c                                                                | ✅                                                                                                                       |
 | Bulk Discount         | cheapest of 3+ free           | QUERY_PIECE_CP_COST_BUY + ON_TURN_START reset      | relic.c                                                                | ✅ (impl frees the 3rd — flagged interpretation; reset targets wrong context, see note)                                  |
 | War Chest             | unspent cp → 20% meter        | ON_TURN_END                                        | relic.c                                                                | ✅                                                                                                                       |
-| **Trade Routes**      | remove foreign markup for run | should be QUERY_PIECE_CP_COST_BUY                  | **battle.c:759** (`run->relics[RELIC_TRADE_ROUTES]` in `battle_price`) | ❌ hardcoded id in agnostic pricing; item is a stub                                                                      |
+| Trade Routes          | remove foreign markup for run | eff_trade_routes → QUERY_PIECE_CP_COST_BUY (foreign piece `*100/120`) | relic.c                                            | ✅ (Phase 7) — `battle_price` id-check deleted; markup divided out as an effect (≤1 cp rounding, flagged)                 |
 | Soul Shard            | gaining flip: +30 meter       | eff_soul_shard → ON_PIECE_FLIP (human seat)        | relic.c                                                               | ✅ on human seat; ON_PIECE_FLIP fires the gaining side's list so it runs only on flips onto the human — no engine id check |
 | Veteran's Bond        | 50+ value: +20 meter          | QUERY_PIECE_DAMAGE_DEALT (effective value)         | relic.c                                                                | ✅                                                                                                                       |
 | Dead Man's Pact       | first lethal → reset 20       | QUERY_METER_DAMAGE_TAKEN                           | relic.c                                                                | ✅                                                                                                                       |
@@ -344,93 +344,143 @@ chained.
 | Silver     | enemy +1 starting piece            | eff_silver_chain → QUERY_ENEMY_ARMY_COUNT +1 | universal.c (chains attached cumulatively Bronze..level) | ✅ setup fires QUERY_ENEMY_ARMY_COUNT for the human seat; effect adds 1  |
 | Gold       | figurehead subjugated, track locks | run-state (chain cap + liberation node) | run.c chain logic                                        | ✅ run-state (no battle effect) — liberation node deferred                   |
 
-## Kingdom Synergies (5) — `SYNERGY_REGISTRY`, universal.c
+## Kingdom Synergies (5) — `SYNERGY_REGISTRY` KingdomPower items ✅
 
 Earned by clearing an overseer; attached to the human seat when fighting
-the lore-adjacent region (`battle_walk_synergies`). Effect-driven, but the
-registry is a bare `const Effect[]` — no name/desc, inconsistent with every
-other item. All ⚠️ (wrong shape → reshape to EffectItem in Phase 6).
+the lore-adjacent region (`battle_walk_synergies` → `battle_attach_power`).
+Reshaped (Phase 6) from a bare `const Effect[]` to a `const KingdomPower[]`
+value array (EFFECT_ITEM_BASE + id), consistent with every other item.
 
-| Synergy            | GDD                      | Decomposition                              | Impl             | Status         |
-| ------------------ | ------------------------ | ------------------------------------------ | ---------------- | -------------- |
-| Longwei → Kewarani | Pao +10 damage           | eff_syn_pao → QUERY_PIECE_DAMAGE_DEALT     | universal.c:1197 | ⚠️ bare Effect |
-| Kewarani → Zarqan  | Kewarani pieces −10 cp   | eff_syn_kewarani → QUERY_PIECE_CP_COST_BUY | universal.c      | ⚠️ bare Effect |
-| Zarqan → Harushima | Ziraafa/Talliya +5 value | eff_syn_zarqan → QUERY_PIECE_DAMAGE_DEALT  | universal.c      | ⚠️ bare Effect |
-| Harushima → Caelan | Caelan card draws +1     | eff_syn_harushima → ON_CARD_PLAY           | universal.c      | ⚠️ bare Effect |
-| Caelan → Longwei   | Sultan's Gold +10 cp     | eff_syn_caelan → ON_CARD_PLAY              | universal.c      | ⚠️ bare Effect |
+| Synergy            | GDD                      | Decomposition                              | Impl             | Status |
+| ------------------ | ------------------------ | ------------------------------------------ | ---------------- | ------ |
+| Longwei → Kewarani | Pao +10 damage           | eff_syn_pao → QUERY_PIECE_DAMAGE_DEALT     | universal.c      | ✅     |
+| Kewarani → Zarqan  | Kewarani pieces −10 cp   | eff_syn_kewarani → QUERY_PIECE_CP_COST_BUY | universal.c      | ✅     |
+| Zarqan → Harushima | Ziraafa/Talliya +5 value | eff_syn_zarqan → QUERY_PIECE_DAMAGE_DEALT  | universal.c      | ✅     |
+| Harushima → Caelan | Caelan card draws +1     | eff_syn_harushima → ON_CARD_PLAY           | universal.c      | ✅     |
+| Caelan → Longwei   | Sultan's Gold +10 cp     | eff_syn_caelan → ON_CARD_PLAY              | universal.c      | ✅     |
 
-## Kingdom Innates (5) — `KINGDOM_INNATE[]` fn dispatch
+## Kingdom Innates (5) — `INNATE_REGISTRY` KingdomPower items ✅
 
-Each is a function that attaches an effect (effect-driven) but is
-function-pointer-dispatched, not a data EffectItem; mastery scaling is
-passed as a fn arg. All ⚠️ (→ data EffectItem registry in Phase 6).
+Phase 6: converted the `KINGDOM_INNATE[]` fn table to a
+`const KingdomPower* const INNATE_REGISTRY[]` pointer array. Each kingdom
+file exports its `<K>_INNATE`; `battle_walk_innates` attaches unlocked ones
+to the human seat via `battle_attach_power`, mastery marked in args[1] so a
+scaling innate reads it from context. Enslaved reuses the same attach on the
+enemy seat.
 
-| Innate                      | GDD                                    | Decomposition                                                   | Impl        | Status                                                                       |
-| --------------------------- | -------------------------------------- | --------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------- |
-| Bulwark (Longwei)           | adjacent Longwei: −50% (−60% M3)       | eff_bulwark → QUERY_PIECE_DAMAGE_TAKEN                          | longwei.c   | ⚠️ fn-dispatched                                                             |
-| Double Time (Kewarani)      | Kewarani move twice                    | embeds eff_double_move + ON_PIECE_BUY hook                      | kewarani.c  | ⚠️ fn-dispatched; GDD cost (no home discount / +40% foreign) NOT implemented |
-| Royal Substitution (Zarqan) | swap with king, once, free             | eff_royal_sub → QUERY_PIECE_MOVES                               | zarqan.c    | ⚠️ fn-dispatched; relaxed to repeatable + costs action; M3 (twice) not impl  |
-| Reclaim (Harushima)         | convert flipped piece, 30 cp + action  | base reclaim always available; innate attaches only M3 cost cut | harushima.c | ⚠️ fn-dispatched; innate near-no-op                                          |
-| Conqueror's Reward (Caelan) | Caelan flip-helper +50% value (60% M3) | eff_conqueror → ON_PIECE_FLIP (damager attribution)             | caelan.c    | ⚠️ fn-dispatched                                                             |
+| Innate                      | GDD                                    | Decomposition                                                   | Impl        | Status                                                                 |
+| --------------------------- | -------------------------------------- | --------------------------------------------------------------- | ----------- | --------------------------------------------------------------------- |
+| Bulwark (Longwei)           | adjacent Longwei: −50% (−60% M3)       | eff_bulwark → QUERY_PIECE_DAMAGE_TAKEN                          | longwei.c   | ✅                                                                    |
+| Double Time (Kewarani)      | Kewarani move twice                    | eff_double_time_start (ON_BATTLE_START) + eff_double_time_buy (ON_PIECE_BUY) | kewarani.c  | ✅ (start-walk + buy hook now both effects; GDD cost still N/I) |
+| Royal Substitution (Zarqan) | swap with king, once, free             | eff_royal_sub → QUERY_PIECE_MOVES                               | zarqan.c    | ✅ (relaxed to repeatable + costs action; M3 twice not impl)          |
+| Reclaim (Harushima)         | convert flipped piece, 30 cp + action  | eff_reclaim_cost → QUERY_PIECE_CP_COST_RECLAIM, mastery self-gate in args[1] | harushima.c | ✅ (mastery gate moved into the effect)                    |
+| Conqueror's Reward (Caelan) | Caelan flip-helper +50% value (60% M3) | eff_conqueror → ON_PIECE_FLIP (damager attribution)             | caelan.c    | ✅                                                                    |
 
-## Kingdom Climaxes (5) — `KINGDOM_CLIMAX[]` fn dispatch
+## Kingdom Climaxes (5) — `CLIMAX_REGISTRY` KingdomPower items ✅
 
-Fired at the 3rd same-kingdom card play (`battle_play:1064`). Some attach a
-turn-long effect; some act imperatively (no effect at all). All ⚠️.
+Phase 6: new `ON_COMBO_CLIMAX` (x = `KingdomID*`) fired for the acting side
+at the 3rd same-kingdom card play (`battle_play`). All five climaxes attach
+to both seats at battle start (`battle_walk_climaxes`); each is one
+ON_COMBO_CLIMAX effect that self-filters on its own kingdom and resolves —
+attaching a turn-long buff (Longwei/Caelan) or acting immediately
+(Kewarani/Zarqan/Harushima). No fn-pointer dispatch, no engine id check.
 
-| Climax    | GDD                          | Decomposition                                 | Impl        | Status                       |
-| --------- | ---------------------------- | --------------------------------------------- | ----------- | ---------------------------- |
-| Longwei   | all pieces Bulwark this turn | eff_longwei_climax → QUERY_PIECE_DAMAGE_TAKEN | longwei.c   | ⚠️ fn-dispatched             |
-| Kewarani  | all pieces +1 move           | imperative loop (`piece_grant_free_move`)     | kewarani.c  | ⚠️ fn-dispatched, imperative |
-| Zarqan    | swap any 2 pieces            | imperative (swaps top-2 value)                | zarqan.c    | ⚠️ fn-dispatched, imperative |
-| Harushima | reclaim 1 flipped free       | imperative (`battle_flip` first enemy)        | harushima.c | ⚠️ fn-dispatched, imperative |
-| Caelan    | all pieces +50% damage       | eff_caelan_climax → QUERY_PIECE_DAMAGE_DEALT  | caelan.c    | ⚠️ fn-dispatched             |
+| Climax    | GDD                          | Decomposition                                   | Impl        | Status |
+| --------- | ---------------------------- | ----------------------------------------------- | ----------- | ------ |
+| Longwei   | all pieces Bulwark this turn | eff_longwei_combo → attach TURNS_1 buff         | longwei.c   | ✅     |
+| Kewarani  | all pieces +1 move           | eff_kewarani_combo → grant free move            | kewarani.c  | ✅     |
+| Zarqan    | swap any 2 pieces            | eff_zarqan_combo → battle_swap top-2 value      | zarqan.c    | ✅     |
+| Harushima | reclaim 1 flipped free       | eff_harushima_combo → battle_flip first enemy   | harushima.c | ✅     |
+| Caelan    | all pieces +50% damage       | eff_caelan_combo → attach TURNS_1 buff          | caelan.c    | ✅     |
 
-## Narrative Events (30 × 2 choices) — the biggest violation
+## Narrative Events (30 × 2 choices) — `EVENT_REGISTRY` Event items ✅
 
-`EVENT_NAME/TEXT/OPTION_*` are empty `= {}` (universal.c:1365).
-`KINGDOM_EVENT[]` handler bodies are all empty stubs. Actual behaviour is
-split across three hardcoded run.c ladders: `run_value_bonus` (1258),
-`run_cost_bonus` (1322), `run_event_choose`→`VORATH_REDUCTIONS` (1122) +
-Desert Crossing (1155). Many choices (relic offers, card removal, map
-reveals, elite battles, skip battle, next-battle cp) are **unimplemented**.
+Phase 7: every event is now an `Event` item (name/desc + two `EventOption`s)
+in `src/data/events.c`, aggregated by `EVENT_REGISTRY[EVENT_COUNT]`. Each
+option's behaviour is effects:
 
-All ❌ → become `Event` EffectItems (name/desc/option text) with
-run-immediate `ON_EVENT_CHOOSE` effects + run-persistent `ENTIRE_RUN`
-effects (Phase 7).
+- **Run-immediate** = `ON_EVENT_CHOOSE` effects (x = `EngineState*`) run
+  inline by `run_event_choose` through public run helpers — `run_reduce_
+  vorath`, `run_offer_relics` (reuses the elite `relic id=N` channel),
+  `run_begin_removal` (reuses the `remove card=N` channel), `run_remove_
+  chain`, `run_skip_battle`, `run_begin_elite`.
+- **Run-persistent** = `QUERY_PIECE_VALUE` (spawn-time value seam) /
+  `QUERY_PIECE_CP_COST_BUY` / `QUERY_ENEMY_ARMY_COUNT` / `QUERY_CP_INCOME`
+  effects, re-attached to the human seat each battle by
+  `battle_walk_run_effects` from the choices recorded in `run->events[]` —
+  no heap run-effect list, no serialization change.
+
+Parameters bake into each effect's `context` (static compound literal) so a
+handful of generic bodies cover all 30; the walk copies the baked args onto
+the attached copy. Deleted: `run_value_bonus`, `run_cost_bonus`,
+`VORATH_REDUCTIONS`, the Desert-Crossing ladder, `KINGDOM_EVENT[]` +
+the five `<k>_event` stubs, and the empty `EVENT_NAME/TEXT/OPTION` arrays.
+
+**Phase-7 refinements** (post-review):
+- `EventState {id, kingdom, choice_taken}` collapsed to a bare
+  `EventChoice events[EVENT_COUNT]` — id/kingdom were redundant with the
+  `Event` item + `node->kingdom`; only the choice is runtime state.
+- The next-/map-battle cp grants dropped their `RunState` scalar fields
+  (`next_battle_cp`, `map_cp_bonus`, `map_cp_map`) and became
+  `QUERY_CP_INCOME` turn-1 effects. New **`ONE_BATTLE`** duration: a
+  run-persistent event effect carrying it applies to exactly one battle then
+  is consumed by `battle_walk_run_effects` (not re-attached) — the
+  next-battle cp bonus (Mirage/Tournament). Map cp (Queen's Favor) is an
+  `ENTIRE_BATTLE` effect self-gated on the kingdom.
+
+Flagged simplifications: bespoke elite armies (Mirage Citadel / Pretender
+mirror / Tournament fixed) run the standard region army + the reward;
+reveal choices are informational no-ops (all nodes already `revealed=1`).
+"One piece type" (Janggi Elder, Forge Master) currently applies to a fixed
+representative type (Xiang / Kyosha) — **pending** the event-target dialog
+below. Live event-choice verification is blocked behind deep progression
+(an event node needs several sequential battle wins to reach); the flow
+reuses the effect-attach/fire machinery verified in Phases 3–6.
+
+**DEFERRED — event-target dialog** (a focused next pass): unify the event
+interaction into a run-side two-step `target i=N` dialog (the map-side
+analogue of Phase 2.5 card targeting). First target = the A/B choice; then
+a dynamic follow-up target if the option needs one — a card to remove
+(`TARGET_CARD`), a relic of the offered two (`TARGET_RELIC`), a piece type
+to buff (`TARGET_PIECE_TYPE`, replacing the fixed-representative), or a
+battle node to skip (`TARGET_NODE`, dropping the `skip_next_battle` flag).
+Replaces the `choose` / `remove` / `relic` event commands. Not yet built.
+
+The table below records the original (pre-Phase-7) hardcoded state; all
+rows are now ✅ effect-driven (via `EVENT_REGISTRY`).
 
 | Event                   | Choice A (GDD)                            | Choice B (GDD)                              | Current impl                                                  | Status                                         |
 | ----------------------- | ----------------------------------------- | ------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------- |
-| The Scholar's Offer     | Longwei +3 value/run                      | relic (Veteran's Bond / Tax Stamp)          | A: run_value_bonus:1264; B: **unimpl**                        | ❌                                             |
-| Dragon Court Tribute    | remove card; Longwei +5 value             | relic (Bulk Discount / Fortified Line)      | A: run_value_bonus:1268 (card-removal unimpl); B: unimpl      | ❌                                             |
-| The Defector            | reveal next modifier                      | −1 Vorath                                   | A: unimpl; B: VORATH_REDUCTIONS                               | ❌                                             |
-| The Janggi Elder        | one Longwei type +5 value                 | −1 Vorath                                   | A: unimpl; B: VORATH_REDUCTIONS                               | ❌                                             |
-| Cannon Salute           | all Pao +5 value                          | −2 Vorath                                   | A: run_value_bonus:1284; B: VORATH_REDUCTIONS                 | ❌                                             |
-| Mansa's Court           | remove 1 card                             | refuse: Kewarani enemies +1 piece/run       | both **unimpl**                                               | ❌                                             |
-| Salt Road Merchant      | relic (Soul Shard / Gilded Archive)       | all Medeq +3 value                          | A: unimpl; B: run_value_bonus:1293                            | ❌                                             |
-| The Stolen Guard        | elite; win → remove Bronze chain          | −1 Vorath                                   | A: unimpl; B: VORATH_REDUCTIONS                               | ❌                                             |
-| The Camel Caravan       | Kewarani −15% cost                        | −2 Vorath                                   | A: run_cost_bonus:1325; B: VORATH_REDUCTIONS                  | ❌                                             |
-| Feast of Yod Abeba      | skip next battle                          | relic (Last Breath / Warlord's Banner)      | both **unimpl**                                               | ❌                                             |
-| The Warlord's Challenge | elite; win → relic                        | −2 Vorath                                   | A: unimpl; B: VORATH_REDUCTIONS                               | ❌                                             |
-| Bazaar of Samarkand     | remove 2 cards; Zarqan −15% cost          | −2 Vorath                                   | A: run_cost_bonus:1330 (removal unimpl); B: VORATH_REDUCTIONS | ❌                                             |
-| The Mirage              | elite (Citadel enemies); win → relic      | +15 cp next battle                          | both **unimpl**                                               | ❌                                             |
-| The Spy's Report        | −2 Vorath                                 | −1 Vorath                                   | both VORATH_REDUCTIONS                                        | ❌ (only run-immediate; still hardcoded table) |
-| The Desert Crossing     | reveal 3 nodes ahead                      | remove 1 Bronze chain                       | A: unimpl; B: run_event_choose:1155 special-case              | ❌                                             |
-| The Ronin               | relic (Eagle Eye / Forward Command)       | all Harushima +3 value                      | A: unimpl; B: run_value_bonus:1273                            | ❌                                             |
-| The Spy Network         | reveal 3 nodes                            | relic (Minted Coin / Surveyor's Map)        | both **unimpl**                                               | ❌                                             |
-| The Burning Port        | remove 2 Harushima cards; −15% cost       | relic (Country Seal / Fortified Line)       | A: run_cost_bonus:1335 (removal unimpl); B: unimpl            | ❌                                             |
-| The Forge Master        | one piece type −20% cost                  | relic (Veteran's Bond / Tactician's Scroll) | both **unimpl**                                               | ❌                                             |
-| The Veteran Lance       | all Kyosha +5 value                       | −1 Vorath                                   | A: run_value_bonus:1298; B: VORATH_REDUCTIONS                 | ❌                                             |
-| The Tournament          | elite; win → relic                        | +20 cp next battle                          | both **unimpl**                                               | ❌                                             |
-| The Church's Blessing   | Caelan −10% cost                          | relic (Gilded Archive / Bulk Discount)      | A: run_cost_bonus:1340; B: unimpl                             | ❌                                             |
-| The Siege Engineer      | relic (Master's Notes / Alchemist's Kit)  | all Pao +5 value                            | A: unimpl; B: run_value_bonus:1288                            | ❌                                             |
-| The Pretender           | elite (mirror); win → remove Silver chain | relic (Dead Man's Pact / Trade Routes)      | both **unimpl**                                               | ❌                                             |
-| The Royal Decree        | remove card; Caelan +3 value              | relic (Iron King / Bloodthirst)             | A: run_value_bonus:1278 (removal unimpl); B: unimpl           | ❌                                             |
-| The Queen's Favor       | +25 cp each remaining battle this map     | relic (Veteran's Bond / Minted Coin)        | both **unimpl**                                               | ❌                                             |
-| The Wandering Piece     | −2 Vorath                                 | relic (Veteran's Bond / Deep Hand)          | A: VORATH_REDUCTIONS; B: unimpl                               | ❌                                             |
-| Vorath's Decree         | remove card; −3 Vorath                    | relic (Soul Shard / Forward Command)        | A: VORATH_REDUCTIONS (removal unimpl); B: unimpl              | ❌                                             |
-| The Deserter            | remove card; all pawns +3 value           | relic (Warlord's Banner / Dead Man's Pact)  | A: run_value_bonus:1303 (removal unimpl); B: unimpl           | ❌                                             |
-| The Archive             | relic (Philosopher's / Inherited)         | relic (Master's Notes / Alchemist's Kit)    | both **unimpl**                                               | ❌                                             |
+| The Scholar's Offer     | Longwei +3 value/run                      | relic (Veteran's Bond / Tax Stamp)          | A: run_value_bonus:1264; B: **unimpl**                        | ✅                                             |
+| Dragon Court Tribute    | remove card; Longwei +5 value             | relic (Bulk Discount / Fortified Line)      | A: run_value_bonus:1268 (card-removal unimpl); B: unimpl      | ✅                                             |
+| The Defector            | reveal next modifier                      | −1 Vorath                                   | A: unimpl; B: VORATH_REDUCTIONS                               | ✅                                             |
+| The Janggi Elder        | one Longwei type +5 value                 | −1 Vorath                                   | A: unimpl; B: VORATH_REDUCTIONS                               | ✅                                             |
+| Cannon Salute           | all Pao +5 value                          | −2 Vorath                                   | A: run_value_bonus:1284; B: VORATH_REDUCTIONS                 | ✅                                             |
+| Mansa's Court           | remove 1 card                             | refuse: Kewarani enemies +1 piece/run       | both **unimpl**                                               | ✅                                             |
+| Salt Road Merchant      | relic (Soul Shard / Gilded Archive)       | all Medeq +3 value                          | A: unimpl; B: run_value_bonus:1293                            | ✅                                             |
+| The Stolen Guard        | elite; win → remove Bronze chain          | −1 Vorath                                   | A: unimpl; B: VORATH_REDUCTIONS                               | ✅                                             |
+| The Camel Caravan       | Kewarani −15% cost                        | −2 Vorath                                   | A: run_cost_bonus:1325; B: VORATH_REDUCTIONS                  | ✅                                             |
+| Feast of Yod Abeba      | skip next battle                          | relic (Last Breath / Warlord's Banner)      | both **unimpl**                                               | ✅                                             |
+| The Warlord's Challenge | elite; win → relic                        | −2 Vorath                                   | A: unimpl; B: VORATH_REDUCTIONS                               | ✅                                             |
+| Bazaar of Samarkand     | remove 2 cards; Zarqan −15% cost          | −2 Vorath                                   | A: run_cost_bonus:1330 (removal unimpl); B: VORATH_REDUCTIONS | ✅                                             |
+| The Mirage              | elite (Citadel enemies); win → relic      | +15 cp next battle                          | both **unimpl**                                               | ✅                                             |
+| The Spy's Report        | −2 Vorath                                 | −1 Vorath                                   | both VORATH_REDUCTIONS                                        | ✅ (only run-immediate; still hardcoded table) |
+| The Desert Crossing     | reveal 3 nodes ahead                      | remove 1 Bronze chain                       | A: unimpl; B: run_event_choose:1155 special-case              | ✅                                             |
+| The Ronin               | relic (Eagle Eye / Forward Command)       | all Harushima +3 value                      | A: unimpl; B: run_value_bonus:1273                            | ✅                                             |
+| The Spy Network         | reveal 3 nodes                            | relic (Minted Coin / Surveyor's Map)        | both **unimpl**                                               | ✅                                             |
+| The Burning Port        | remove 2 Harushima cards; −15% cost       | relic (Country Seal / Fortified Line)       | A: run_cost_bonus:1335 (removal unimpl); B: unimpl            | ✅                                             |
+| The Forge Master        | one piece type −20% cost                  | relic (Veteran's Bond / Tactician's Scroll) | both **unimpl**                                               | ✅                                             |
+| The Veteran Lance       | all Kyosha +5 value                       | −1 Vorath                                   | A: run_value_bonus:1298; B: VORATH_REDUCTIONS                 | ✅                                             |
+| The Tournament          | elite; win → relic                        | +20 cp next battle                          | both **unimpl**                                               | ✅                                             |
+| The Church's Blessing   | Caelan −10% cost                          | relic (Gilded Archive / Bulk Discount)      | A: run_cost_bonus:1340; B: unimpl                             | ✅                                             |
+| The Siege Engineer      | relic (Master's Notes / Alchemist's Kit)  | all Pao +5 value                            | A: unimpl; B: run_value_bonus:1288                            | ✅                                             |
+| The Pretender           | elite (mirror); win → remove Silver chain | relic (Dead Man's Pact / Trade Routes)      | both **unimpl**                                               | ✅                                             |
+| The Royal Decree        | remove card; Caelan +3 value              | relic (Iron King / Bloodthirst)             | A: run_value_bonus:1278 (removal unimpl); B: unimpl           | ✅                                             |
+| The Queen's Favor       | +25 cp each remaining battle this map     | relic (Veteran's Bond / Minted Coin)        | both **unimpl**                                               | ✅                                             |
+| The Wandering Piece     | −2 Vorath                                 | relic (Veteran's Bond / Deep Hand)          | A: VORATH_REDUCTIONS; B: unimpl                               | ✅                                             |
+| Vorath's Decree         | remove card; −3 Vorath                    | relic (Soul Shard / Forward Command)        | A: VORATH_REDUCTIONS (removal unimpl); B: unimpl              | ✅                                             |
+| The Deserter            | remove card; all pawns +3 value           | relic (Warlord's Banner / Dead Man's Pact)  | A: run_value_bonus:1303 (removal unimpl); B: unimpl           | ✅                                             |
+| The Archive             | relic (Philosopher's / Inherited)         | relic (Master's Notes / Alchemist's Kit)    | both **unimpl**                                               | ✅                                             |
 
 ## Difficulties (4) — `DIFFICULTY_REGISTRY` EffectItems ✅
 
@@ -476,12 +526,168 @@ their rules should compose from effects, not engine special-cases.
 | Crowned Heretic (Caelan)       | full army; ghosts; ~520 meter            | caelan.c stub       | ⬜ deferred (MP Phase 7) |
 | (Vorath)                       | Grand + 5 Minor Kings; quadrant pressure | `vorath_setup` stub | ⬜ deferred (MP Phase 7) |
 
-## Global Vorath Counter (1) — hardcoded thresholds
+## Global Vorath Counter (1) — Phase 8
 
-| Threshold      | GDD                       | Decomposition          | Impl                            | Status                                                              |
-| -------------- | ------------------------- | ---------------------- | ------------------------------- | ------------------------------------------------------------------- |
-| Every 2 losses | enemy meters +20 baseline | ON_BATTLE_START effect | **battle.c:1980**               | ❌ hardcoded (master-plan §4:540 already specifies ON_BATTLE_START) |
-| Every 4 losses | forbid 1 random recipe    | run effect             | **run.c:1072** (state/log only) | ❌ hardcoded                                                        |
+| Threshold      | GDD                       | Decomposition                                              | Impl        | Status                                                                                     |
+| -------------- | ------------------------- | ---------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------ |
+| Every 2 losses | enemy meters +20 baseline | eff_vorath_pressure → ON_BATTLE_START (enemy seat, `vorath/2 * 20`) | battle.c    | ✅ (Phase 8) — `battle_begin` block deleted; universal `VORATH_PRESSURE` effect on the enemy seat, verified live |
+| Every 4 losses | forbid 1 random recipe    | general run threshold in `run_battle_result`               | run.c       | ⬜ general run rule (names no item, not an id-violation); stub log — no real recipe-forbid state yet |
+
+---
+
+## Implementation challenges & solutions
+
+The items that resisted a clean effect decomposition, and the pattern each
+one settled on. Grouped by the underlying difficulty.
+
+### 1. Behaviour that ran in agnostic engine code, not in the item
+
+The core violation class. Each fix deletes the `->id ==` / difficulty /
+challenge branch from the engine and re-authors it as the item's effect(s),
+attached through a generic `walk` loop.
+
+- **Lucky Strike** (once-per-turn top-tier redraw): the engine's
+  `battle_draw` hardcoded it. Solution: `ON_CARDS_DRAWN` (x = `Card**`) fired
+  after the hand fills; the effect stamps `battle->turn` in its *own* context
+  to self-limit to once per turn, and draws from a shared
+  `battle_draw_pool()` both the engine and the effect call (no pool through
+  `x`). `battle_rand()` supplies the pick.
+- **Soul Shard** (+30 meter on a flip onto the human): engine placed it on
+  the *enemy* list with an id check. Solution: a plain human-seat relic —
+  `battle_flip` fires `ON_PIECE_FLIP` for the *gaining* side, so a human-seat
+  effect runs exactly when a piece flips onto the human. No enemy-list
+  special placement, no id.
+- **Bloodbath** (flip 2 per meter-empty): `flips = id==BLOODBATH ? 2 : 1`.
+  Solution: `QUERY_FLIP_COUNT` (x = int*, base 1); Bloodbath is a `+1` effect
+  on both seats, fired for one side → exactly +1.
+- **Silver chain** (+1 enemy piece): `if (level >= SILVER) count++`. Solution:
+  `QUERY_ENEMY_ARMY_COUNT` fired for the human seat; chains attach
+  cumulatively (`for c = BRONZE..level`), Silver is a `+1` effect.
+- **Difficulties / challenges**: `battle_challenge_allows_buy` +
+  `->difficulty ==` ladders. Solution: `DIFFICULTY_REGISTRY` /
+  `CHALLENGE_REGISTRY` EffectItems attached to the human seat;
+  `QUERY_PIECE_CAN_BUY` (Pacifist/Solo), `ON_BATTLE_SETUP` (Enslaved/
+  Traitor's, pre-meter). Difficulties attach cumulatively.
+- **Kingdom innates / climaxes / synergies**: function-pointer tables
+  (`KINGDOM_INNATE[]` etc.). Solution: one shared `KingdomPower` item
+  (EFFECT_ITEM_BASE + id); `INNATE_REGISTRY` / `CLIMAX_REGISTRY` pointer
+  arrays aggregate each kingdom file's exported item; `battle_attach_power`
+  attaches generically, mastery in `args[1]`.
+- **Trade Routes** (drop foreign markup): `run->relics[RELIC_TRADE_ROUTES]`
+  in `battle_price`. Solution: the id-check is deleted; the markup is divided
+  back out by a `QUERY_PIECE_CP_COST_BUY` effect (`*100/120`).
+- **Vorath +20 pressure**: hardcoded `battle_begin` block. Solution:
+  `VORATH_PRESSURE`, a universal `ON_BATTLE_START` effect on the enemy seat
+  reading `run->vorath_counter`.
+- **Event value / cost bonuses**: `run_value_bonus` / `run_cost_bonus`
+  id/kingdom ladders. Solution: `QUERY_PIECE_VALUE` / `QUERY_PIECE_CP_COST_
+  BUY` event effects re-attached from `run->events[]`.
+
+### 2. Reusing an existing seam instead of minting a narrow one
+
+The user's repeated steer: model each mechanic on the value it actually
+mutates; reuse a seam before adding a trigger.
+
+- **Bronze / Shackled cp penalty**: a first draft added a bespoke
+  `QUERY_CHAIN_PENALTY`. Better: fold onto the existing `QUERY_CP_INCOME`
+  (which already controls both opening and per-turn cp) as a turn-1
+  `*income -= N`, self-filtered. A `cp >= 0` clamp in `turn_start` preserved
+  the invariant. Bonus: nets into cp with no intermediate clamp, so the true
+  −25 is observable.
+- **Event next-battle cp**: first held in `RunState` scalar fields
+  (`next_battle_cp`, `map_cp_bonus`, `map_cp_map`). Better: `QUERY_CP_INCOME`
+  turn-1 effects, with a new **`ONE_BATTLE`** duration whose only job is at
+  the re-attach layer — `battle_walk_run_effects` consumes the event after
+  attaching it once, so "next battle only" needs no scalar + manual reset.
+- **Event value bonus**: the plan suggested `QUERY_PIECE_DAMAGE_DEALT`
+  (damage only). Better: a spawn-time `QUERY_PIECE_VALUE` seam preserves the
+  original `copy->value +=` behaviour that also feeds the meter maxima.
+- **The +15 combo refund**: was `player->cp += 15` in the engine. Now
+  `ON_COMBO_DOUBLE` + a universal `COMBO_REFUND` effect — the engine emits
+  only `log combo kingdom=%d`, no magic number.
+
+### 3. Composition / firing-order hazards
+
+- **Combo climax refire & duplicate-attach**: attaching a climax on demand
+  and firing a shared trigger risks a lingering `TURNS_1` effect firing again
+  on the next climax, or duplicate attaches. Solution: attach all five
+  climaxes to both seats once at battle start; fire `ON_COMBO_CLIMAX` with
+  `x = KingdomID*`; each effect self-filters on its own kingdom — the filter,
+  not the attach timing, gates it.
+- **Eagle Eye vs. other blinders**: order-independent because it must be a
+  `QUERY_BOARD_STATE` effect that, on each read, resets the view all-visible
+  and sets `func = eff_noop` on every *other* board-state effect (seat list +
+  every piece), skipping itself — catching blinders attached mid-battle. Not
+  an `ON_BATTLE_START` one-shot.
+- **Iron Will / Mirror dealer reactions**: the receiver-list copy knows the
+  dealer is `enemy(receiver)`, so a recoil effect reads the dealer without a
+  cross-side pointer.
+- **CURRENT_BATTLE register**: effects reach the battle via
+  `battle_current()`; a bare `effect_fire` from a harness leaves it null and
+  crashes such effects — always route through a helper (`battle_damage`,
+  `battle_move`) that sets the register, or set it around the fire (done in
+  `battle_spawn`'s `QUERY_PIECE_VALUE`).
+
+### 4. Sibling-effect coordination without the engine knowing
+
+- **Pawn Storm / Reforge**: multi-effect cards whose slots must share a
+  counter. The engine used to read their marks by `CardID`. Solution: the
+  card's own data-file effects coordinate via `effect_find_mark` *inside
+  effect-land* — the engine only sets `args[0]`, names nothing. Same shape
+  retired the magic move/flip marks into `QUERY_PIECE_HAS_MOVED/FLIPPED`
+  counters bumped by `battle_move`/`battle_flip`.
+
+### 5. New composable state seams
+
+Some mechanics had no value to mutate until a seam was cut.
+
+- **`QUERY_SQUARE_OWNER`** (Contested Market): a `Side*` ownership read (base
+  = Chebyshev nearest-piece, `SIDE_NEUTRAL` = contested) so every ownership
+  consumer — turn-10 scoring, Fortified Line, the territory innates — routes
+  through one composable path. The trait then resolves-then-spawns each turn.
+- **`QUERY_BOARD_DIMENSION` + `ON_BOARD_BUILD`**: geometry (Extended/
+  Compressed/Dense/Mirage/Island Chain) as effects; the width if-ladder and
+  `battle_terrain` deleted.
+- **`QUERY_BOARD_STATE` / `QUERY_HAND_STATE`**: presentation redaction (Fog
+  of War, Blind Draft) as effects; visibility baked into `Board.visible[]` /
+  `PlayerState.hand_visible[]` — no wrapper struct (rejected twice as bloat).
+
+### 6. Parameterising many items with few functions
+
+- **Events**: 30 events, ~60 choices, but the behaviours are a handful of
+  shapes (+value, −cost, ∓vorath, remove, relic, cp). Solution: generic
+  effect bodies + parameters baked into each effect's `context` (a static
+  compound literal); immediate effects read the baked context inline,
+  persistent ones have their baked `args[1..]` copied onto the attached copy
+  by the walk. One `eff_val_kingdom` covers every "+N to kingdom K" event.
+
+### 7. Two-step protocol targeting (cards)
+
+- **Card play** forced the caller to pre-encode each card's `a`/`b` target.
+  Solution (Phase 2.5): the card advertises typed `CardTarget`s via
+  `QUERY_CARD_TARGETS`; the protocol emits them and returns a plain *index*;
+  `ON_CARD_TARGET_SELECTED` resolves. Multi-target cards fire per step and
+  park in `PENDING_*`; `QUERY_CARD_CAN_PLAY` dry-runs every step so a play
+  never parks on a dead one. Filters are inline Clang blocks, never named
+  helpers. **The event equivalent (choice + dynamic follow-up target) is the
+  one piece still DEFERRED** — see the events section.
+
+### 8. Lifetime / re-entrancy
+
+- **Self-freeing pieces mid-fire** (Kewarani splitters on
+  `ON_PIECE_FLIP_PRE`): `effect_fire` walks live pieces, so a piece freeing
+  itself was a use-after-free. Solution: `battle_remove` unlinks the board
+  cell immediately but defers the `free` to a reap list drained at turn
+  boundaries — transparent to callers, meter/spawn see the removal at once.
+
+### 9. Verification blocked by progression
+
+Many items sit deep in a run (tier-gated cards, deep-map relics, every
+narrative event needs ~8 sequential battle wins). Convention: verify the
+mechanism live where reachable (seeded openings, concede-to-chain,
+auto-battles), code-verify the rest against the same proven plumbing, and
+flag it explicitly rather than claim a live pass. The event-choice flow and
+the run-persistent re-attach are in this category.
 
 ---
 
@@ -491,35 +697,39 @@ their rules should compose from effects, not engine special-cases.
 | --------------- | ------- | ------ | ------ | ------ | ------- |
 | Pieces          | 41      |        |        |        | 41      |
 | Cards           | 51      | 2      | 1      |        | 54      |
-| Relics          | 19      | 1      | 2      | 4      | 26      |
+| Relics          | 20      | 1      | 1      | 4      | 26      |
 | Modifiers       | 12      |        | 5      | 1      | 18      |
 | Board Traits    | 4       |        | 2      | 4      | 10      |
 | Chain Penalties | 1       | 1      | 1      |        | 3       |
-| Synergies       |         | 5      |        |        | 5       |
-| Innates         |         | 5      |        |        | 5       |
-| Climaxes        |         | 5      |        |        | 5       |
-| Events          |         |        | 30     |        | 30      |
-| Difficulties    | 1       |        | 3      |        | 4       |
-| Challenges      |         |        | 4      | 2      | 6       |
+| Synergies       | 5       |        |        |        | 5       |
+| Innates         | 5       |        |        |        | 5       |
+| Climaxes        | 5       |        |        |        | 5       |
+| Events          | 30      |        |        |        | 30      |
+| Difficulties    | 4       |        |        |        | 4       |
+| Challenges      | 4       |        |        | 2      | 6       |
 | Overseers       |         |        |        | 6      | 6       |
-| Vorath Counter  |         |        | 2      |        | 2       |
-| **Total**       | **129** | **19** | **50** | **17** | **215** |
+| Vorath Counter  | 1       |        |        | 1      | 2       |
+| **Total**       | **183** | **4**  | **10** | **18** | **215** |
 
-**129 ✅** already effect-driven (pieces, most cards/relics/modifiers, the
-compliant traits) prove the pattern. **19 ⚠️** are effect-driven but the
-wrong shape (bare-Effect synergies, fn-dispatched innates/climaxes, the
-Soul Shard placement, the two mark-read-inline cards, the Bronze magnitude
-injection). **50 ❌** are the real violations: agnostic code naming a
-specific item, or a stub whose behaviour is hardcoded — dominated by the 30
-events. **17 ⬜** are unimplemented stubs to build as effects (display
-relics/modifiers/traits, unimplemented traits) plus category-G non-effects
-(Daily Conquest, Clockwork) and the Phase-7 overseers.
+**183 ✅** effect-driven after Phases 1–8: all pieces, synergies, innates,
+climaxes, events, difficulties, and the reachable relics/modifiers/traits.
+**4 ⚠️** remain effect-driven but the wrong shape or with a flagged edge
+(2 targeting-adjacent cards, 1 relic, the Gold chain). **10 ❌** are the
+still-open violations, dominated by the earlier-phase modifier/trait stubs
+(Fog display, structural modifiers) and the run-side reveal relics
+(Master's Notes). **18 ⬜** are feature-not-violation deferrals (overseers,
+preview relics, Daily Conquest/Clockwork, the recipe-forbid stub). The
+event-target dialog (§ Narrative Events) is the one philosophy item left to
+build; everything else ❌ is a stub feature naming no engine id.
 
-Beyond value-mutation, the philosophy reaches two seams that the plan also
-closes: the **protocol** queries board/hand/target state through triggers
-(Phase 2.5/3) so `screen.c` and the card-play caller name no item, and the
-**run** fires its own effect list (Phase 7) so events/difficulties never
-sit in hardcoded ladders.
+Beyond value-mutation, the philosophy reaches two seams: the **protocol**
+queries board/hand state through triggers (Phase 2.5/3) so `screen.c` and
+the card-play caller name no item, and the **run** re-attaches its
+event/difficulty/challenge effects each battle from recorded state (Phase
+5/7) so those never sit in hardcoded ladders — no separate run-effect heap.
 
-Phases 2–8 of the plan drive ⚠️/❌/⬜ → ✅. Category-G items (Daily
-Conquest seed, Clockwork timer, AI archetypes) stay as-is by design.
+Phases 1–8 drove ⚠️/❌ → ✅ for every value-mutating item. What remains:
+the event-target dialog (the one philosophy item left), plus feature-stub
+⬜ deferrals (overseers, preview/reveal relics, structural modifiers) and
+category-G non-effects (Daily Conquest seed, Clockwork timer, AI archetypes)
+that stay as-is by design.

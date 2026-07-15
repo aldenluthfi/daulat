@@ -35,6 +35,7 @@ static const char* const TRIGGER_NAME[] = {
 
     "QUERY_PIECE_DAMAGE_DEALT",
     "QUERY_PIECE_DAMAGE_TAKEN",
+    "QUERY_PIECE_VALUE",
 
     "QUERY_PIECE_HAS_MOVED",
     "QUERY_PIECE_HAS_FLIPPED",
@@ -63,6 +64,8 @@ static const char* const TRIGGER_NAME[] = {
     "ON_CARD_SELL",
     "ON_CARDS_DRAWN",
     "ON_CARD_TARGET_SELECTED",
+    "ON_COMBO_DOUBLE",
+    "ON_COMBO_CLIMAX",
 
     "ON_TURN_START",
     "ON_TURN_END",
@@ -70,6 +73,8 @@ static const char* const TRIGGER_NAME[] = {
     "ON_BATTLE_SETUP",
     "ON_BATTLE_START",
     "ON_BATTLE_END",
+
+    "ON_EVENT_CHOOSE",
 };
 
 /// effect_run

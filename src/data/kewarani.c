@@ -1154,19 +1154,22 @@ static bool eff_double_time_buy(EffectContext* context, void* x) {
     return true;
 }
 
-/// kewarani_innate
+/// eff_double_time_start
 ///
-/// Attaches Double Time: every Kewarani piece may move twice per move
-/// action. The effect is embedded on the side's Kewarani pieces present at
-/// the start and on any bought later through an ON_PIECE_BUY hook.
+/// Embeds Double Time on the side's Kewarani pieces present at battle
+/// start, the companion to the ON_PIECE_BUY hook covering reinforcements.
 ///
 /// Params:
-/// - battle -> battle to attach into
-/// - side   -> side receiving the innate
-/// - level  -> mastery level scaling the innate
+/// - context -> args[0] owning side
+/// - x       -> unused battle node
 ///
-void kewarani_innate(BattleState* battle, Side side, MasteryLevel level) {
-    (void) level;
+/// Return: true, the start-of-battle grant always runs
+///
+static bool eff_double_time_start(EffectContext* context, void* x) {
+    (void) x;
+
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
 
     for (size_t index = 0; index < MAX_BOARD_SIZE; index++) {
         PieceInfo* cell = battle->board.piece_board[index];
@@ -1176,41 +1179,82 @@ void kewarani_innate(BattleState* battle, Side side, MasteryLevel level) {
         }
     }
 
-    Effect hook = {
-        .func      = eff_double_time_buy,
-        .name      = "Double Time",
-        .trigger   = ON_PIECE_BUY,
-        .lasts_for = ENTIRE_BATTLE,
-    };
-
-    Effect* attached =
-        effect_attach(&battle_player(battle, side)->effects, &hook);
-
-    if (attached) {
-        attached->context->args[0] = (void*) (uintptr_t) side;
-    }
+    return true;
 }
 
-/// kewarani_climax
+/// eff_kewarani_combo
 ///
-/// Fires the Kewarani combo climax for the given side, granting every
-/// friendly piece one extra move this turn.
+/// Kewarani combo climax: on the kingdom's third same-kingdom card play,
+/// grants every friendly piece one extra move this turn.
 ///
 /// Params:
-/// - battle -> battle the climax fires in
-/// - side   -> side that completed the combo chain
+/// - context -> args[0] acting side
+/// - x       -> KingdomID* of the climaxing kingdom
 ///
-void kewarani_climax(BattleState* battle, Side side) {
-    for (int8_t y = 0; y < battle->board.height; y++) {
-        for (int8_t x = 0; x < battle->board.width; x++) {
-            PieceInfo* cell = battle_at(battle, (Square){x, y});
+/// Return: true when the extra moves were granted
+///
+static bool eff_kewarani_combo(EffectContext* context, void* x) {
+    if (*(KingdomID*) x != KINGDOM_KEWARANI) {
+        return false;
+    }
 
-            if (cell && cell->side == side) {
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+
+    for (int8_t y = 0; y < battle->board.height; y++) {
+        for (int8_t x2 = 0; x2 < battle->board.width; x2++) {
+            PieceInfo* cell = battle_at(battle, (Square){x2, y});
+
+            if (cell && cell != &VOID_CELL && cell->side == side) {
                 piece_grant_free_move(cell, "Extra Move");
             }
         }
     }
+
+    return true;
 }
+
+/// KEWARANI_INNATE
+///
+/// Double Time: every Kewarani piece may move twice per move action. One
+/// effect embeds it on the pieces present at start, another grants it to
+/// reinforcements as they are bought.
+///
+const KingdomPower KEWARANI_INNATE = {
+    .effects =
+        {
+            {
+                .func      = eff_double_time_start,
+                .name      = "Double Time",
+                .trigger   = ON_BATTLE_START,
+                .lasts_for = ENTIRE_BATTLE,
+            },
+            {
+                .func      = eff_double_time_buy,
+                .name      = "Double Time",
+                .trigger   = ON_PIECE_BUY,
+                .lasts_for = ENTIRE_BATTLE,
+            },
+        },
+    .name = "Double Time",
+    .id   = KINGDOM_KEWARANI,
+};
+
+/// KEWARANI_CLIMAX
+///
+/// Grants every friendly piece one extra move this turn on the combo
+/// climax.
+///
+const KingdomPower KEWARANI_CLIMAX = {
+    .effects = {{
+        .func      = eff_kewarani_combo,
+        .name      = "Kewarani Climax",
+        .trigger   = ON_COMBO_CLIMAX,
+        .lasts_for = ENTIRE_BATTLE,
+    }},
+    .name = "Kewarani Climax",
+    .id   = KINGDOM_KEWARANI,
+};
 
 /// kewarani_overseer
 ///
@@ -1224,17 +1268,3 @@ void kewarani_overseer(BattleState* battle) {
     (void) battle;
 }
 
-/// kewarani_event
-///
-/// Resolves a Kewarani narrative event with the player's choice.
-///
-/// Params:
-/// - engine -> engine owning the run
-/// - id     -> event being resolved
-/// - choice -> choice taken by the player
-///
-void kewarani_event(EngineState* engine, EventID id, EventChoice choice) {
-    (void) engine;
-    (void) id;
-    (void) choice;
-}

@@ -541,7 +541,17 @@ PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at, Side side) {
     *copy = *template;
 
     if (BATTLE_ENGINE && side == HUMAN_SIDE) {
-        copy->value += run_value_bonus(BATTLE_ENGINE->run, copy);
+        const Piece* saved_buy    = BUY_PIECE;
+        BattleState* saved_battle = CURRENT_BATTLE;
+        int          value        = copy->value;
+
+        BUY_PIECE      = copy;
+        CURRENT_BATTLE = battle;
+        effect_fire(battle, side, QUERY_PIECE_VALUE, &value);
+        CURRENT_BATTLE = saved_battle;
+        BUY_PIECE      = saved_buy;
+
+        copy->value    = value;
     }
 
     info->piece  = copy;
@@ -868,24 +878,18 @@ bool battle_move(BattleState* battle, Square from, Square to) {
 /// Computes the base currency cost of a piece before the buy queries,
 /// applying the region rule: pieces native to the battle's home kingdom
 /// cost forty percent less, foreign pieces twenty percent more. The king
-/// and kingdomless pieces price at face value. The human's Trade Routes
-/// relic drops the foreign markup for its own purchases.
+/// and kingdomless pieces price at face value. The foreign markup is a
+/// QUERY_PIECE_CP_COST_BUY seam; the Trade Routes relic drops it as an
+/// effect there, naming no item here.
 ///
 /// Params:
 /// - battle   -> battle whose node fixes the home kingdom
 /// - template -> piece template being priced
-/// - side     -> side making the purchase
 ///
 /// Return: the region-adjusted base cost
 ///
-static int battle_price(BattleState* battle, const Piece* template, Side side) {
+static int battle_price(BattleState* battle, const Piece* template) {
     int cost = template->value;
-
-    if (side == HUMAN_SIDE && BATTLE_ENGINE) {
-        int discount = run_cost_bonus(BATTLE_ENGINE->run, template);
-
-        cost         = cost * (100 - discount) / 100;
-    }
 
     if (template->kingdom == KINGDOM_NONE || !battle->node ||
         !battle->node->kingdom) {
@@ -896,10 +900,7 @@ static int battle_price(BattleState* battle, const Piece* template, Side side) {
         return cost * 60 / 100;
     }
 
-    bool trade_routes = side == HUMAN_SIDE && BATTLE_ENGINE &&
-                        BATTLE_ENGINE->run->relics[RELIC_TRADE_ROUTES];
-
-    return trade_routes ? cost : cost * 120 / 100;
+    return cost * 120 / 100;
 }
 
 /// battle_buy
@@ -981,7 +982,7 @@ bool battle_buy(BattleState* battle, PieceID id, Square at) {
 
     PlayerState* player      = battle_player(battle, ACTING_SIDE);
 
-    int          cost        = battle_price(battle, template, ACTING_SIDE);
+    int          cost        = battle_price(battle, template);
     int          action_cost = 1;
 
     CURRENT_BATTLE           = battle;
@@ -1348,15 +1349,14 @@ bool battle_play(BattleState* battle, size_t hand) {
     if (card->kingdom < KINGDOM_COUNT) {
         KINGDOM_PLAYS[card->kingdom]++;
 
+        KingdomID combo = card->kingdom;
+
         if (KINGDOM_PLAYS[card->kingdom] == 2) {
-            player->cp += 15;
-            protocol_emit(
-                "log combo kingdom=%d refund=15",
-                (int) card->kingdom
-            );
+            protocol_emit("log combo kingdom=%d", (int) card->kingdom);
+            effect_fire(battle, ACTING_SIDE, ON_COMBO_DOUBLE, &combo);
         } else if (KINGDOM_PLAYS[card->kingdom] == 3) {
             protocol_emit("log climax kingdom=%d", (int) card->kingdom);
-            KINGDOM_CLIMAX[card->kingdom](battle, ACTING_SIDE);
+            effect_fire(battle, ACTING_SIDE, ON_COMBO_CLIMAX, &combo);
         }
     }
 
@@ -1942,6 +1942,70 @@ static void battle_walk_run(BattleState* battle) {
     }
 }
 
+/// battle_walk_run_effects
+///
+/// Re-attaches each chosen event's run-persistent effects to the human seat
+/// at battle start, rebuilt from the choices recorded in run->events so the
+/// bonuses need no separate run-side effect list. An event effect's baked
+/// context parameters copy onto the attached copy; args[0] marks the human
+/// as beneficiary. Runs before the meters so value bonuses fold into them.
+///
+/// Params:
+/// - battle -> battle being set up
+///
+static void battle_walk_run_effects(BattleState* battle) {
+    RunState* run = BATTLE_ENGINE ? BATTLE_ENGINE->run : nullptr;
+
+    if (!run) {
+        return;
+    }
+
+    for (size_t id = 0; id < EVENT_COUNT; id++) {
+        EventChoice choice = run->events[id];
+
+        if (choice == NO_CHOICE) {
+            continue;
+        }
+
+        const EventOption* option =
+            &EVENT_REGISTRY[id]->options[choice == CHOICE_A ? 0 : 1];
+
+        bool consume = false;
+
+        for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+            const Effect* effect = &option->effects[slot];
+
+            if (!effect->func || effect->trigger == ON_EVENT_CHOOSE) {
+                continue;
+            }
+
+            Effect* attached = effect_attach(
+                &battle_player(battle, HUMAN_SIDE)->effects, effect
+            );
+
+            if (!attached) {
+                continue;
+            }
+
+            if (effect->context) {
+                for (size_t arg = 1; arg < MAX_EFFECT_ARGS; arg++) {
+                    attached->context->args[arg] = effect->context->args[arg];
+                }
+            }
+
+            attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
+
+            if (effect->lasts_for == ONE_BATTLE) {
+                consume = true;
+            }
+        }
+
+        if (consume) {
+            run->events[id] = NO_CHOICE;
+        }
+    }
+}
+
 static const PieceID KINGDOM_BASIC[KINGDOM_COUNT] = {
     [KINGDOM_LONGWEI]   = PIECE_BING,
     [KINGDOM_KEWARANI]  = PIECE_MEDEQ,
@@ -2087,6 +2151,42 @@ static void battle_setup_armies(BattleState* battle) {
     battle_reinforce(battle, enemy, enemy, (size_t) count);
 }
 
+/// battle_attach_power
+///
+/// Attaches a kingdom power's effects to the given seat, marking each with
+/// the seat as beneficiary in args[0] and the mastery level in args[1] so a
+/// scaling innate reads its strength from context rather than a call
+/// argument. Shared by the synergy, innate, and climax walks.
+///
+/// Params:
+/// - battle -> battle being set up
+/// - side   -> seat receiving the power
+/// - power  -> kingdom power whose effects attach
+/// - level  -> mastery level marked on each attached effect
+///
+void battle_attach_power(
+    BattleState*        battle,
+    Side                side,
+    const KingdomPower* power,
+    MasteryLevel        level
+) {
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        if (!power->effects[slot].func) {
+            continue;
+        }
+
+        Effect* attached = effect_attach(
+            &battle_player(battle, side)->effects,
+            &power->effects[slot]
+        );
+
+        if (attached) {
+            attached->context->args[0] = (void*) (uintptr_t) side;
+            attached->context->args[1] = (void*) (uintptr_t) level;
+        }
+    }
+}
+
 /// battle_walk_synergies
 ///
 /// Attaches the human's overseer synergies that apply in this region: a
@@ -2110,20 +2210,17 @@ static void battle_walk_synergies(BattleState* battle) {
             continue;
         }
 
-        Effect* attached = effect_attach(
-            &battle_player(battle, HUMAN_SIDE)->effects,
-            &SYNERGY_REGISTRY[source]
+        battle_attach_power(
+            battle, HUMAN_SIDE, &SYNERGY_REGISTRY[source], MASTERY_NONE
         );
-
-        if (attached) {
-            attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
-        }
     }
 }
 
 /// battle_walk_innates
 ///
-/// Attaches each kingdom innate the human has unlocked to the human seat.
+/// Attaches each kingdom innate the human has unlocked to the human seat,
+/// passing the kingdom's mastery so a scaling innate reads its strength
+/// from context.
 ///
 /// Params:
 /// - battle -> battle being set up
@@ -2137,10 +2234,76 @@ static void battle_walk_innates(BattleState* battle) {
 
     for (size_t kingdom = 0; kingdom < KINGDOM_COUNT; kingdom++) {
         if (run_innate_ready(run, kingdom)) {
-            KINGDOM_INNATE[kingdom](
+            battle_attach_power(
                 battle,
                 HUMAN_SIDE,
+                INNATE_REGISTRY[kingdom],
                 run->kingdoms[kingdom].mastery
+            );
+        }
+    }
+}
+
+/// eff_combo_double
+///
+/// The universal combo refund: a second same-kingdom card play in a turn
+/// returns fifteen currency to the acting side. Kingdom-agnostic, so it
+/// ignores the played kingdom carried in x.
+///
+/// Params:
+/// - context -> args[0] acting side
+/// - x       -> KingdomID* of the doubled kingdom (unused)
+///
+/// Return: true, the refund always applies
+///
+static bool eff_combo_double(EffectContext* context, void* x) {
+    (void) x;
+
+    Side side = (Side) (uintptr_t) context->args[0];
+
+    battle_player(battle_current(), side)->cp += 15;
+
+    return true;
+}
+
+/// COMBO_REFUND
+///
+/// The universal combo refund template, one copy per seat.
+///
+static const Effect COMBO_REFUND = {
+    .func      = eff_combo_double,
+    .name      = "Combo Refund",
+    .trigger   = ON_COMBO_DOUBLE,
+    .lasts_for = ENTIRE_BATTLE,
+};
+
+/// battle_walk_combos
+///
+/// Attaches the combo-fired seat effects to both seats: the universal combo
+/// refund and every kingdom's climax. Each lies dormant until a second or
+/// third same-kingdom card play fires ON_COMBO_DOUBLE / ON_COMBO_CLIMAX for
+/// the acting seat. Both seats hold every one so either player can chain a
+/// combo; the refund is kingdom-agnostic, each climax self-filters on the
+/// played kingdom.
+///
+/// Params:
+/// - battle -> battle being set up
+///
+static void battle_walk_combos(BattleState* battle) {
+    Side sides[2] = {SIDE_WHITE, SIDE_BLACK};
+
+    for (size_t seat = 0; seat < 2; seat++) {
+        Effect* refund = effect_attach(
+            &battle_player(battle, sides[seat])->effects, &COMBO_REFUND
+        );
+
+        if (refund) {
+            refund->context->args[0] = (void*) (uintptr_t) sides[seat];
+        }
+
+        for (size_t kingdom = 0; kingdom < KINGDOM_COUNT; kingdom++) {
+            battle_attach_power(
+                battle, sides[seat], CLIMAX_REGISTRY[kingdom], MASTERY_NONE
             );
         }
     }
@@ -2343,6 +2506,50 @@ static void battle_walk_rules(BattleState* battle) {
     }
 }
 
+/// eff_vorath_pressure
+///
+/// The Global Vorath Counter's battle pressure: every two accumulated
+/// losses add twenty to the enemy's opening meter. Attached to the enemy
+/// seat and fired on ON_BATTLE_START so the pressure composes through the
+/// trigger rather than a hardcoded battle_begin block.
+///
+/// Params:
+/// - context -> args[0] the pressured (enemy) side
+/// - x       -> unused battle node
+///
+/// Return: true when pressure was applied
+///
+static bool eff_vorath_pressure(EffectContext* context, void* x) {
+    (void) x;
+
+    RunState* run    = BATTLE_ENGINE ? BATTLE_ENGINE->run : nullptr;
+    size_t    stacks = run ? run->vorath_counter / 2 : 0;
+
+    if (stacks == 0) {
+        return false;
+    }
+
+    battle_meter_gain(
+        battle_current(),
+        (Side) (uintptr_t) context->args[0],
+        (int) (stacks * 20)
+    );
+
+    return true;
+}
+
+/// VORATH_PRESSURE
+///
+/// The Global Vorath Counter's opening-meter pressure template, attached to
+/// the enemy seat each battle.
+///
+static const Effect VORATH_PRESSURE = {
+    .func      = eff_vorath_pressure,
+    .name      = "Vorath Pressure",
+    .trigger   = ON_BATTLE_START,
+    .lasts_for = ENTIRE_BATTLE,
+};
+
 /// battle_begin
 ///
 /// Sets up a battle on the given campaign node: the human's seat from
@@ -2390,6 +2597,7 @@ void battle_begin(EngineState* engine, MapNode* node) {
     battle->black.cp = 20;
 
     battle_walk_run(battle);
+    battle_walk_run_effects(battle);
     battle_walk_modifiers(battle);
     battle_walk_traits(battle);
     battle_walk_rules(battle);
@@ -2418,6 +2626,7 @@ void battle_begin(EngineState* engine, MapNode* node) {
     battle_setup_armies(battle);
     battle_walk_innates(battle);
     battle_walk_synergies(battle);
+    battle_walk_combos(battle);
 
     CURRENT_BATTLE = battle;
     effect_fire(battle, HUMAN_SIDE, ON_BATTLE_SETUP, node);
@@ -2426,14 +2635,14 @@ void battle_begin(EngineState* engine, MapNode* node) {
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);
 
-    size_t vorath       = engine->run->vorath_counter / 2;
+    Effect* pressure    = effect_attach(
+        &battle_player(battle, battle_enemy(HUMAN_SIDE))->effects,
+        &VORATH_PRESSURE
+    );
 
-    if (vorath > 0) {
-        battle_meter_gain(
-            battle,
-            battle_enemy(HUMAN_SIDE),
-            (int) (vorath * 20)
-        );
+    if (pressure) {
+        pressure->context->args[0] =
+            (void*) (uintptr_t) battle_enemy(HUMAN_SIDE);
     }
 
     ACTING_SIDE    = SIDE_WHITE;

@@ -49,6 +49,9 @@
 ///                                                effective-value query
 /// QUERY_PIECE_DAMAGE_TAKEN        x: int*        post-offense damage;
 ///                                                subject is the victim
+/// QUERY_PIECE_VALUE               x: int*        a spawning piece's value;
+///                                                run value bonuses add to it,
+///                                                fired for the piece's side
 /// QUERY_PIECE_HAS_MOVED           x: int*        subject's move count is
 ///                                                added; base 0
 /// QUERY_PIECE_HAS_FLIPPED         x: int*        subject's flip count is
@@ -100,6 +103,16 @@
 ///                                                cards in place
 /// ON_CARD_TARGET_SELECTED         x: CardTarget* the chosen target; the
 ///                                                card resolves against it
+/// ON_COMBO_DOUBLE                 x: KingdomID*  the kingdom whose second
+///                                                same-kingdom card just
+///                                                played; the acting side's
+///                                                combo refund and any
+///                                                double-combo effects fire
+/// ON_COMBO_CLIMAX                 x: KingdomID*  the kingdom whose third
+///                                                same-kingdom card just
+///                                                played; the acting side's
+///                                                climax for that kingdom
+///                                                fires and resolves
 /// ON_TURN_START                   x: uintptr_t   current turn number
 /// ON_TURN_END                     x: uintptr_t   current turn number
 /// ON_BATTLE_SETUP                 x: MapNode*    battle location node, fired
@@ -108,6 +121,9 @@
 ///                                                actions fold into the maxima
 /// ON_BATTLE_START                 x: MapNode*    battle location node
 /// ON_BATTLE_END                   x: uintptr_t   winning Side
+/// ON_EVENT_CHOOSE                 x: EngineState* the run; the chosen event
+///                                                option's run-immediate
+///                                                effects act on run state
 ///
 enum EffectTrigger {
     QUERY_CARD_DRAW_COUNT,
@@ -134,6 +150,7 @@ enum EffectTrigger {
 
     QUERY_PIECE_DAMAGE_DEALT,
     QUERY_PIECE_DAMAGE_TAKEN,
+    QUERY_PIECE_VALUE,
 
     QUERY_PIECE_HAS_MOVED,
     QUERY_PIECE_HAS_FLIPPED,
@@ -162,6 +179,8 @@ enum EffectTrigger {
     ON_CARD_SELL,
     ON_CARDS_DRAWN,
     ON_CARD_TARGET_SELECTED,
+    ON_COMBO_DOUBLE,
+    ON_COMBO_CLIMAX,
 
     ON_TURN_START,
     ON_TURN_END,
@@ -169,12 +188,16 @@ enum EffectTrigger {
     ON_BATTLE_SETUP,
     ON_BATTLE_START,
     ON_BATTLE_END,
+
+    ON_EVENT_CHOOSE,
 };
 
 /// EffectDuration
 ///
 /// This enum enumerates all possible effect durations. Effects persist for
-/// their duration and are automatically removed when they expire.
+/// their duration and are automatically removed when they expire. ONE_BATTLE
+/// lasts a whole battle like ENTIRE_BATTLE, but a run-persistent event effect
+/// carrying it is consumed after that one battle (not re-attached again).
 ///
 enum EffectDuration {
     TURNS_1,
@@ -188,6 +211,7 @@ enum EffectDuration {
     TURNS_9,
     TURNS_10,
     ENTIRE_BATTLE,
+    ONE_BATTLE,
     ENTIRE_RUN,
 };
 
@@ -994,15 +1018,31 @@ struct MapState {
     DirectedGraph nodes;
 };
 
-/// EventState
+/// EventOption
 ///
-/// Tracks the state of a narrative event including the choice made.
+/// One choice of a narrative event: its option text and the effects it
+/// carries. An ON_EVENT_CHOOSE effect acts on run state the instant the
+/// option is taken (x = EngineState*); any other trigger is a run-persistent
+/// effect re-attached to the human seat each battle from the recorded
+/// choice.
 ///
-struct EventState {
-    EventID     id;
-    KingdomID   kingdom;
+struct EventOption {
+    const char* text;
+    Effect      effects[MAX_EFFECT_COUNT];
+};
 
-    EventChoice choice_taken;
+/// Event
+///
+/// A narrative event as a data item: name, flavour text, and its two
+/// options, replacing the empty EVENT_NAME/TEXT/OPTION parallel arrays and
+/// the KINGDOM_EVENT stub dispatch.
+///
+struct Event {
+    const char* name;
+    const char* desc;
+
+    EventID     id;
+    EventOption options[2];
 };
 
 /*----------------------------------------------------------------------------*\
@@ -1039,6 +1079,20 @@ struct ChallengeRun {
     EFFECT_ITEM_BASE;
 
     ChallengeRunID id;
+};
+
+/// KingdomPower
+///
+/// A kingdom's synergy, innate, or combo climax as an effect item indexed
+/// by kingdom and attached generically at battle start. A synergy or innate
+/// attaches to a seat (innate carries its mastery in args[1]); a climax
+/// attaches to both seats and self-filters on the played kingdom carried in
+/// ON_COMBO_CLIMAX.
+///
+struct KingdomPower {
+    EFFECT_ITEM_BASE;
+
+    KingdomID id;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -1104,7 +1158,7 @@ struct RunState {
     bool           synergies[KINGDOM_COUNT];
 
     KingdomState   kingdoms[KINGDOM_COUNT];
-    EventState     events[EVENT_COUNT];
+    EventChoice    events[EVENT_COUNT];
 
     Difficulty     difficulty;
     ChallengeRunID challenge;
@@ -1113,6 +1167,8 @@ struct RunState {
     size_t         vorath_counter;
     size_t         battles_fought;
     size_t         liberation_at[KINGDOM_COUNT];
+
+    bool           skip_next_battle;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -1197,6 +1253,12 @@ void       battle_scatter_voids(BattleState* battle, int percent);
 void       battle_board_view(BattleState* battle);
 void       battle_hand_view(BattleState* battle, Side side);
 void battle_reinforce(BattleState* battle, Side owner, Side half, size_t count);
+void battle_attach_power(
+    BattleState*        battle,
+    Side                side,
+    const KingdomPower* power,
+    MasteryLevel        level
+);
 
 /// Battle state accessors
 ///
@@ -1407,8 +1469,12 @@ void   run_offering(EngineState* engine, CardID card);
 void   run_relic_pick(EngineState* engine, RelicID relic);
 size_t run_pressure(RunState* run, KingdomID kingdom);
 bool   run_innate_ready(RunState* run, KingdomID kingdom);
-int    run_value_bonus(RunState* run, const Piece* piece);
-int    run_cost_bonus(RunState* run, const Piece* piece);
+void   run_offer_relics(EngineState* engine, RelicID first, RelicID second);
+void   run_begin_removal(EngineState* engine, size_t count);
+void   run_reduce_vorath(RunState* run, size_t amount);
+void   run_remove_chain(RunState* run);
+void   run_skip_battle(RunState* run);
+void   run_begin_elite(EngineState* engine, int reward, RelicID a, RelicID b);
 void   run_emit_kingdoms(EngineState* engine);
 void   run_emit_map(EngineState* engine);
 bool   run_enter_vorath(EngineState* engine);
@@ -1457,95 +1523,78 @@ extern const Piece* const      PIECE_REGISTRY[PIECE_COUNT];
 extern const Card* const       CARD_REGISTRY[CARD_COUNT];
 extern const BoardTrait* const TRAIT_REGISTRY[BOARD_TRAIT_COUNT];
 
-extern const KingdomID         KINGDOM_ADJACENT[KINGDOM_COUNT];
-extern const Effect            SYNERGY_REGISTRY[KINGDOM_COUNT];
+extern const KingdomID            KINGDOM_ADJACENT[KINGDOM_COUNT];
+extern const KingdomPower         SYNERGY_REGISTRY[KINGDOM_COUNT];
+extern const KingdomPower* const  INNATE_REGISTRY[KINGDOM_COUNT];
+extern const KingdomPower* const  CLIMAX_REGISTRY[KINGDOM_COUNT];
 
-extern const char* const       EVENT_NAME[EVENT_COUNT];
-extern const char* const       EVENT_TEXT[EVENT_COUNT];
-extern const char* const       EVENT_OPTION_A[EVENT_COUNT];
-extern const char* const       EVENT_OPTION_B[EVENT_COUNT];
+extern const Event* const      EVENT_REGISTRY[EVENT_COUNT];
 
 void                           vorath_setup(BattleState* battle);
 
 /// Kingdom dispatch tables
 ///
-/// Function pointer tables indexed by KingdomID aggregating each
-/// kingdom's innate, climax, overseer setup, and event handler.
+/// Function pointer table indexed by KingdomID aggregating each kingdom's
+/// overseer setup.
 ///
-extern void (*const KINGDOM_INNATE[KINGDOM_COUNT])(
-    BattleState*,
-    Side,
-    MasteryLevel
-);
-extern void (*const KINGDOM_CLIMAX[KINGDOM_COUNT])(BattleState*, Side);
 extern void (*const KINGDOM_OVERSEER[KINGDOM_COUNT])(BattleState*);
-extern void (*const KINGDOM_EVENT[KINGDOM_COUNT])(
-    EngineState*,
-    EventID,
-    EventChoice
-);
 
 /*----------------------------------------------------------------------------*\
                                KINGDOM/LONGWEI.C
 \*----------------------------------------------------------------------------*/
 
-extern const Piece      LONGWEI_PIECES[];
-extern const Card       LONGWEI_CARDS[];
-extern const BoardTrait LONGWEI_TRAITS[];
+extern const Piece        LONGWEI_PIECES[];
+extern const Card         LONGWEI_CARDS[];
+extern const BoardTrait   LONGWEI_TRAITS[];
+extern const KingdomPower LONGWEI_INNATE;
+extern const KingdomPower LONGWEI_CLIMAX;
 
-void longwei_innate(BattleState* battle, Side side, MasteryLevel level);
-void longwei_climax(BattleState* battle, Side side);
 void longwei_overseer(BattleState* battle);
-void longwei_event(EngineState* engine, EventID id, EventChoice choice);
 
 /*----------------------------------------------------------------------------*\
                               KINGDOM/KEWARANI.C
 \*----------------------------------------------------------------------------*/
 
-extern const Piece      KEWARANI_PIECES[];
-extern const Card       KEWARANI_CARDS[];
-extern const BoardTrait KEWARANI_TRAITS[];
+extern const Piece        KEWARANI_PIECES[];
+extern const Card         KEWARANI_CARDS[];
+extern const BoardTrait   KEWARANI_TRAITS[];
+extern const KingdomPower KEWARANI_INNATE;
+extern const KingdomPower KEWARANI_CLIMAX;
 
-void kewarani_innate(BattleState* battle, Side side, MasteryLevel level);
-void kewarani_climax(BattleState* battle, Side side);
 void kewarani_overseer(BattleState* battle);
-void kewarani_event(EngineState* engine, EventID id, EventChoice choice);
 
 /*----------------------------------------------------------------------------*\
                                KINGDOM/ZARQAN.C
 \*----------------------------------------------------------------------------*/
 
-extern const Piece      ZARQAN_PIECES[];
-extern const Card       ZARQAN_CARDS[];
-extern const BoardTrait ZARQAN_TRAITS[];
+extern const Piece        ZARQAN_PIECES[];
+extern const Card         ZARQAN_CARDS[];
+extern const BoardTrait   ZARQAN_TRAITS[];
+extern const KingdomPower ZARQAN_INNATE;
+extern const KingdomPower ZARQAN_CLIMAX;
 
-void zarqan_innate(BattleState* battle, Side side, MasteryLevel level);
-void zarqan_climax(BattleState* battle, Side side);
 void zarqan_overseer(BattleState* battle);
-void zarqan_event(EngineState* engine, EventID id, EventChoice choice);
 
 /*----------------------------------------------------------------------------*\
                              KINGDOM/HARUSHIMA.C
 \*----------------------------------------------------------------------------*/
 
-extern const Piece      HARUSHIMA_PIECES[];
-extern const Card       HARUSHIMA_CARDS[];
-extern const BoardTrait HARUSHIMA_TRAITS[];
+extern const Piece        HARUSHIMA_PIECES[];
+extern const Card         HARUSHIMA_CARDS[];
+extern const BoardTrait   HARUSHIMA_TRAITS[];
+extern const KingdomPower HARUSHIMA_INNATE;
+extern const KingdomPower HARUSHIMA_CLIMAX;
 
-void harushima_innate(BattleState* battle, Side side, MasteryLevel level);
-void harushima_climax(BattleState* battle, Side side);
 void harushima_overseer(BattleState* battle);
-void harushima_event(EngineState* engine, EventID id, EventChoice choice);
 
 /*----------------------------------------------------------------------------*\
                                KINGDOM/CAELAN.C
 \*----------------------------------------------------------------------------*/
 
-extern const Piece      CAELAN_PIECES[];
-extern const Card       CAELAN_CARDS[];
-extern const BoardTrait CAELAN_TRAITS[];
+extern const Piece        CAELAN_PIECES[];
+extern const Card         CAELAN_CARDS[];
+extern const BoardTrait   CAELAN_TRAITS[];
+extern const KingdomPower CAELAN_INNATE;
+extern const KingdomPower CAELAN_CLIMAX;
 
-void caelan_innate(BattleState* battle, Side side, MasteryLevel level);
-void caelan_climax(BattleState* battle, Side side);
 void caelan_overseer(BattleState* battle);
-void caelan_event(EngineState* engine, EventID id, EventChoice choice);

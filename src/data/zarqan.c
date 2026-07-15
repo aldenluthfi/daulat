@@ -1492,51 +1492,31 @@ static bool eff_royal_sub(EffectContext* context, void* x) {
     return true;
 }
 
-/// zarqan_innate
+/// eff_zarqan_combo
 ///
-/// Attaches Royal Substitution so any Zarqan piece can swap with the
-/// friendly king. The once-per-battle and free-action limits are relaxed:
-/// the swap is repeatable and costs a normal move action.
+/// Zarqan combo climax: on the kingdom's third same-kingdom card play,
+/// swaps the acting side's two highest-value pieces.
 ///
 /// Params:
-/// - battle -> battle to attach into
-/// - side   -> side receiving the innate
-/// - level  -> mastery level scaling the innate
+/// - context -> args[0] acting side
+/// - x       -> KingdomID* of the climaxing kingdom
 ///
-void zarqan_innate(BattleState* battle, Side side, MasteryLevel level) {
-    (void) level;
-
-    Effect substitution = {
-        .func      = eff_royal_sub,
-        .name      = "Royal Substitution",
-        .trigger   = QUERY_PIECE_MOVES,
-        .lasts_for = ENTIRE_BATTLE,
-    };
-
-    Effect* attached =
-        effect_attach(&battle_player(battle, side)->effects, &substitution);
-
-    if (attached) {
-        attached->context->args[0] = (void*) (uintptr_t) side;
+/// Return: true when the swap resolved
+///
+static bool eff_zarqan_combo(EffectContext* context, void* x) {
+    if (*(KingdomID*) x != KINGDOM_ZARQAN) {
+        return false;
     }
-}
 
-/// zarqan_climax
-///
-/// Fires the Zarqan combo climax for the given side, swapping its two
-/// highest-value pieces.
-///
-/// Params:
-/// - battle -> battle the climax fires in
-/// - side   -> side that completed the combo chain
-///
-void zarqan_climax(BattleState* battle, Side side) {
-    PieceInfo* best   = nullptr;
-    PieceInfo* second = nullptr;
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+
+    PieceInfo*   best   = nullptr;
+    PieceInfo*   second = nullptr;
 
     for (int8_t y = 0; y < battle->board.height; y++) {
-        for (int8_t x = 0; x < battle->board.width; x++) {
-            PieceInfo* cell = battle_at(battle, (Square) {x, y});
+        for (int8_t x2 = 0; x2 < battle->board.width; x2++) {
+            PieceInfo* cell = battle_at(battle, (Square) {x2, y});
 
             if (!cell || cell->side != side || cell->piece->id == PIECE_KING) {
                 continue;
@@ -1552,18 +1532,44 @@ void zarqan_climax(BattleState* battle, Side side) {
     }
 
     if (!best || !second) {
-        return;
+        return false;
     }
 
-    Square bsq                                    = best->square;
-    Square ssq                                    = second->square;
+    battle_swap(battle, best, second);
 
-    battle->board.piece_board[ssq.y * 20 + ssq.x] = best;
-    battle->board.piece_board[bsq.y * 20 + bsq.x] = second;
-
-    best->square                                  = ssq;
-    second->square                                = bsq;
+    return true;
 }
+
+/// ZARQAN_INNATE
+///
+/// Royal Substitution: any Zarqan piece can swap with the friendly king,
+/// repeatable and costing a normal move action.
+///
+const KingdomPower ZARQAN_INNATE = {
+    .effects = {{
+        .func      = eff_royal_sub,
+        .name      = "Royal Substitution",
+        .trigger   = QUERY_PIECE_MOVES,
+        .lasts_for = ENTIRE_BATTLE,
+    }},
+    .name = "Royal Substitution",
+    .id   = KINGDOM_ZARQAN,
+};
+
+/// ZARQAN_CLIMAX
+///
+/// Swaps the acting side's two highest-value pieces on the combo climax.
+///
+const KingdomPower ZARQAN_CLIMAX = {
+    .effects = {{
+        .func      = eff_zarqan_combo,
+        .name      = "Zarqan Climax",
+        .trigger   = ON_COMBO_CLIMAX,
+        .lasts_for = ENTIRE_BATTLE,
+    }},
+    .name = "Zarqan Climax",
+    .id   = KINGDOM_ZARQAN,
+};
 
 /// zarqan_overseer
 ///
@@ -1577,17 +1583,3 @@ void zarqan_overseer(BattleState* battle) {
     (void) battle;
 }
 
-/// zarqan_event
-///
-/// Resolves a Zarqan narrative event with the player's choice.
-///
-/// Params:
-/// - engine -> engine owning the run
-/// - id     -> event being resolved
-/// - choice -> choice taken by the player
-///
-void zarqan_event(EngineState* engine, EventID id, EventChoice choice) {
-    (void) engine;
-    (void) id;
-    (void) choice;
-}

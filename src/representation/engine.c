@@ -193,12 +193,12 @@ bool engine_save(EngineState* engine, const char* path) {
     }
 
     for (size_t i = 0; i < EVENT_COUNT; i++) {
-        if (run->events[i].choice_taken != NO_CHOICE) {
+        if (run->events[i] != NO_CHOICE) {
             fprintf(
                 file,
                 "event i=%zu choice=%d\n",
                 i,
-                run->events[i].choice_taken
+                run->events[i]
             );
         }
     }
@@ -351,8 +351,7 @@ bool engine_load(EngineState* engine, const char* path) {
                 node->revealed = revealed[i] == '1';
             }
         } else if (sscanf(line, "event i=%d choice=%d", &k, &choice) == 2) {
-            engine->run->events[k].id           = (EventID) k;
-            engine->run->events[k].choice_taken = (EventChoice) choice;
+            engine->run->events[k] = (EventChoice) choice;
         }
     }
 

@@ -640,12 +640,144 @@ migration ends by deleting the old path.
     grep: no `challenge ==`/`difficulty >=` id checks in
     `src/representation/*` or `src/protocol/*` (only arg-parse + the generic
     registry-indexed walk).
-- **Now:** Phase 5 done. Next is Phase 6 (synergy / innate / climax shape
-  unification: reshape `SYNERGY_REGISTRY` to the EffectItem form; convert
-  `KINGDOM_INNATE`/`KINGDOM_CLIMAX` fn tables into data EffectItem
-  registries attached generically, mastery via context). NOTE: Enslaved's
-  `eff_enslaved` still calls `KINGDOM_INNATE[]` — when Phase 6 retires that
-  table, repoint `eff_enslaved` at the new innate registry.
+- **Phase 6 — synergy / innate / climax shape unification** ✅:
+  - **One shared item struct `KingdomPower`** (EFFECT_ITEM_BASE + KingdomID
+    id) backs all three registries (no per-kingdom struct duplication).
+    `SYNERGY_REGISTRY` reshaped from bare `const Effect[]` to a
+    `const KingdomPower[]` value array; `INNATE_REGISTRY` /`CLIMAX_REGISTRY`
+    are new `const KingdomPower* const[]` pointer arrays aggregating each
+    kingdom file's exported `<K>_INNATE` / `<K>_CLIMAX` (mirrors
+    PIECE/CARD/TRAIT registries). `KINGDOM_INNATE`/`KINGDOM_CLIMAX` fn-ptr
+    tables + all `<k>_innate`/`<k>_climax` public fns DELETED
+    (`KINGDOM_OVERSEER` stays — Phase 7).
+  - **Shared attach `battle_attach_power(battle, side, power, level)`**
+    (public — eff_enslaved needs it) sets args[0]=side, args[1]=mastery on
+    each effect. Used by `battle_walk_synergies` (human seat),
+    `battle_walk_innates` (human seat, mastery = `run->kingdoms[k].mastery`),
+    and the new `battle_walk_climaxes`.
+  - **Climax via 1 new trigger `ON_COMBO_CLIMAX`** (x = `KingdomID*`).
+    `battle_walk_climaxes` attaches all 5 climaxes to BOTH seats at battle
+    start; the 3rd same-kingdom play fires `effect_fire(ACTING_SIDE,
+    ON_COMBO_CLIMAX, &kingdom)` (replaced the `KINGDOM_CLIMAX[k](...)` call).
+    Each climax is one ON_COMBO_CLIMAX effect that self-filters on its own
+    kingdom (`*(KingdomID*)x != KINGDOM_<K>`) — attach-once + per-fire
+    kingdom filter avoids the lingering-refire and duplicate-attach bugs of
+    on-demand attach. Longwei/Caelan attach a TURNS_1 buff; Kewarani/Zarqan/
+    Harushima act immediately (free move / battle_swap top-2 / battle_flip
+    first enemy — bodies relocated verbatim, Zarqan now uses `battle_swap`,
+    the void-cell guard added to both board walks).
+  - **Mastery/immediate reshapes into effects:** harushima Reclaim's
+    `level < M3` gate moved INTO `eff_reclaim_cost` (reads args[1],
+    self-filters) so the innate is uniform-attached; kewarani's immediate
+    existing-piece double-move walk became `eff_double_time_start`
+    (ON_BATTLE_START) alongside the `eff_double_time_buy` (ON_PIECE_BUY)
+    hook. Enslaved repointed: `eff_enslaved` now `battle_attach_power(...,
+    INNATE_REGISTRY[region], MASTERY_NONE)` on the enemy seat.
+  - **Verified live** (seed-driven): Longwei climax (seed=16, 3×Formation)
+    logs `climax kingdom=0` + `effect name="Longwei Climax"
+    trigger=ON_COMBO_CLIMAX`; Kewarani immediate climax (seed=43 enter=1)
+    logs `Kewarani Climax` on ON_COMBO_CLIMAX (grants the king its extra
+    move); Enslaved in the Kewarani region logs `Enslaved`
+    (ON_BATTLE_SETUP) then the enemy's `Double Time` on ON_BATTLE_START —
+    confirming the repointed enemy-innate attach + the new start-walk. 96
+    seed×difficulty×challenge lifecycle runs: zero crashes. Build clean,
+    zero warnings, 80-col clean. grep: no `KINGDOM_INNATE`/`KINGDOM_CLIMAX`
+    /`<k>_innate`/`<k>_climax` fns remain; only the private `eff_*_climax`
+    buff bodies (effect-land, own kingdom files). Zarqan/Harushima immediate
+    climaxes + human innates/synergies code-verified (same plumbing; live
+    paths need board pieces / unlock progression no harness reaches).
+- **ON_COMBO_DOUBLE** ✅ (user follow-up): the 2nd same-kingdom-play +15 cp
+  refund is now an effect, not a hardcoded `player->cp += 15`. New trigger
+  `ON_COMBO_DOUBLE` (x = `KingdomID*`, mirrors ON_COMBO_CLIMAX) fired at the
+  2nd play; universal `eff_combo_double` (in battle.c, `COMBO_REFUND`
+  template) attached to both seats by `battle_walk_combos` (renamed from
+  battle_walk_climaxes) grants +15 to the acting side. Engine emits only
+  `log combo kingdom=%d`. Verified seed=16 (cp 30→45 on 2nd Formation).
+  Also renamed the Longwei synergy body `eff_syn_pao` → `eff_syn_longwei`
+  for consistency with the other four `eff_syn_<kingdom>`.
+- **Phase 7 — events + run-side model** ✅ (decisions: re-attach from
+  `run->events[]` NOT a `RunState.effects` heap; build all 60 choices):
+  - **Two new triggers**: `QUERY_PIECE_VALUE` (x = int*, fired at
+    battle_spawn for the human piece with BUY_PIECE set — preserves the old
+    spawn-time value bump so it still folds into meter AND damage, unlike the
+    plan's damage-only suggestion) and `ON_EVENT_CHOOSE` (x = `EngineState*`,
+    run-immediate).
+  - **Data model**: `struct Event { name/desc/id + EventOption options[2] }`,
+    `struct EventOption { text + Effect effects[] }`; all 30 in new
+    `src/data/events.c`, `EVENT_REGISTRY[EVENT_COUNT]`. An option's effects
+    mix ON_EVENT_CHOOSE (run-immediate) and QUERY_* (run-persistent). Params
+    bake into each effect's `context` via a static compound literal; ~15
+    generic effect bodies + `EV_*` shorthand macros cover everything.
+  - **run-immediate** (`run_event_choose` runs the option's ON_EVENT_CHOOSE
+    effects inline with the baked context, x=engine) → public helpers
+    `run_offer_relics` (reuses elite `relic id=N`), `run_begin_removal`
+    (reuses `remove card=N`, PENDING_REMOVALS count), `run_reduce_vorath`,
+    `run_remove_chain`, `run_grant_next_cp`/`run_grant_map_cp`,
+    `run_skip_battle`, `run_begin_elite` (starts a battle on the event node,
+    reward applied by run_battle_result on win).
+  - **run-persistent**: `battle_walk_run_effects` walks `run->events[]`,
+    re-attaches each chosen option's non-ON_EVENT_CHOOSE effects to the human
+    seat each battle, copying the baked context args (args[0]=HUMAN). No heap
+    run list, no save/load change (choices already persisted in run->events).
+  - **RunState fields**: next_battle_cp, map_cp_bonus, map_cp_map,
+    skip_next_battle. cp bonuses seeded in battle_begin; skip in
+    run_select_node.
+  - **DELETED**: run_value_bonus, run_cost_bonus, VORATH_REDUCTIONS,
+    Desert-Crossing ladder, KINGDOM_EVENT[] + 5 `<k>_event` stubs, empty
+    EVENT_NAME/TEXT/OPTION arrays. **Bug found + fixed by self-review**: the
+    map `choose` handler didn't screen_goto(BATTLE) when run_begin_elite
+    started a battle (only `select` did) — fixed in screen.c.
+  - **Flagged simplifications**: bespoke elite armies (Mirage/Pretender/
+    Tournament) = standard region army + reward; "one piece type" (Janggi
+    Elder/Forge Master) = fixed representative (Xiang/Kyosha); reveal choices
+    = informational no-op (all nodes already revealed).
+  - **Verified**: build clean/zero-warn/80-col; QUERY_PIECE_VALUE buy-value
+    correct (Ma +30 meter); 60 seed×diff×challenge lifecycle runs + post-fix
+    sweeps zero crashes; choose/remove/relic no-op-safe with nothing pending;
+    grep: no value/cost ladder, VORATH_REDUCTIONS, or KINGDOM_EVENT left.
+    LIVE EVENT-CHOICE UNVERIFIED — an event node needs ~8 sequential battle
+    wins to reach (not scriptable; AI opponent + meter attrition); the flow
+    reuses effect machinery proven in Phases 3–6. Same deep-progression
+    limitation as tier-gated cards (2.5) / deep-map relics (3/4).
+- **Phase 7 refinements** ✅ (post-review, user-driven):
+  - Trade Routes de-hardcoded (relic-table gap the user flagged): the
+    `battle_price` `RELIC_TRADE_ROUTES` id-check deleted; `eff_trade_routes`
+    (QUERY_PIECE_CP_COST_BUY) divides the foreign markup back out
+    (`*100/120`, ≤1 cp rounding). `battle_price` lost its `side` param.
+  - `EventState{id,kingdom,choice_taken}` collapsed to bare
+    `EventChoice events[EVENT_COUNT]` (id/kingdom were redundant); struct +
+    typedef deleted; run/engine/save-load updated.
+  - next-/map-battle cp: dropped `RunState.next_battle_cp/map_cp_bonus/
+    map_cp_map`; now QUERY_CP_INCOME turn-1 effects. New **`ONE_BATTLE`**
+    duration — a run-persistent event effect carrying it is consumed by
+    `battle_walk_run_effects` after one battle (next-battle cp: Mirage/
+    Tournament). Map cp (Queen's Favor) = ENTIRE_BATTLE, kingdom-gated.
+  - EV_NEXT_CP/EV_MAP_CP macros inlined (only 3 uses).
+- **Phase 8 — Vorath counter** ✅: `eff_vorath_pressure` + `VORATH_PRESSURE`
+  (universal, ON_BATTLE_START, enemy seat) replaces the `battle_begin`
+  `vorath/2 * 20` block; reads run->vorath_counter, self-filters at 0.
+  Verified live (concede×2 → enemy meter +20, `log effect name="Vorath
+  Pressure"`). The 4-losses recipe-forbid stays a general run threshold in
+  run_battle_result (names no item, stub log — not an id-violation; no
+  run-effect infra to justify a conversion).
+- **DEFERRED — event-target dialog** (a focused next pass, user asked):
+  unify the event interaction into a run-side two-step `target i=N` dialog
+  (map-side analogue of Phase 2.5). Step 0 = A/B choice; then a dynamic
+  follow-up target: TARGET_CARD (removal), TARGET_RELIC (of the offered 2),
+  TARGET_PIECE_TYPE (replaces the fixed Xiang/Kyosha representative),
+  TARGET_NODE (skip — drops the `skip_next_battle` flag). Replaces the
+  `choose`/`remove`/`relic` event commands; reuses run_offering/
+  run_relic_pick as index-mapped resolvers. Not built (would be rushed +
+  untestable — events need ~8 wins to reach — bundled with Phase 8/analysis;
+  design captured here).
+- **Analysis (excruciating)** ✅: added a full "Implementation challenges &
+  solutions" retrospective (9 challenge classes); flipped Trade Routes,
+  Vorath +20, and the 30 event rows to ✅; refreshed the Summary tally
+  (183✅/4⚠️/10❌/18⬜).
+- **Now:** Phases 1–8 done bar the deferred event-target dialog. Remaining
+  ❌/⬜ are feature stubs (overseers, preview/reveal relics, structural
+  modifiers, recipe-forbid) + category-G non-effects — no value-mutating
+  philosophy violations left except the event-target dialog.
 
 ### Execution phases (gate each: `make debug` zero warnings, 80-col clean, harnesses green)
 

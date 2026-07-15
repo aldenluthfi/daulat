@@ -1777,9 +1777,10 @@ static bool eff_enslaved(EffectContext* context, void* x) {
 
     Side human = (Side) (uintptr_t) context->args[0];
 
-    KINGDOM_INNATE[battle->node->kingdom->id](
+    battle_attach_power(
         battle,
         battle_enemy(human),
+        INNATE_REGISTRY[battle->node->kingdom->id],
         MASTERY_NONE
     );
 
@@ -1996,7 +1997,7 @@ const ChallengeRun CHALLENGE_REGISTRY[CHALLENGE_COUNT] = {
                                    SYNERGIES
 \*----------------------------------------------------------------------------*/
 
-/// eff_syn_pao
+/// eff_syn_longwei
 ///
 /// Longwei synergy in Kewarani: Pao attacks deal ten extra damage.
 ///
@@ -2006,7 +2007,7 @@ const ChallengeRun CHALLENGE_REGISTRY[CHALLENGE_COUNT] = {
 ///
 /// Return: true when a Pao struck an enemy
 ///
-static bool eff_syn_pao(EffectContext* context, void* x) {
+static bool eff_syn_longwei(EffectContext* context, void* x) {
     Side       side    = (Side) (uintptr_t) context->args[0];
     PieceInfo* subject = battle_subject();
 
@@ -2120,42 +2121,78 @@ static bool eff_syn_caelan(EffectContext* context, void* x) {
     return true;
 }
 
-const Effect SYNERGY_REGISTRY[KINGDOM_COUNT] = {
+const KingdomPower SYNERGY_REGISTRY[KINGDOM_COUNT] = {
     [KINGDOM_LONGWEI] =
         {
-            .func      = eff_syn_pao,
-            .name      = "Longwei Synergy",
-            .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-            .lasts_for = ENTIRE_BATTLE,
+            .effects = {{
+                .func      = eff_syn_longwei,
+                .name      = "Longwei Synergy",
+                .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+            .name = "Longwei Synergy",
+            .id   = KINGDOM_LONGWEI,
         },
     [KINGDOM_KEWARANI] =
         {
-            .func      = eff_syn_kewarani,
-            .name      = "Kewarani Synergy",
-            .trigger   = QUERY_PIECE_CP_COST_BUY,
-            .lasts_for = ENTIRE_BATTLE,
+            .effects = {{
+                .func      = eff_syn_kewarani,
+                .name      = "Kewarani Synergy",
+                .trigger   = QUERY_PIECE_CP_COST_BUY,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+            .name = "Kewarani Synergy",
+            .id   = KINGDOM_KEWARANI,
         },
     [KINGDOM_ZARQAN] =
         {
-            .func      = eff_syn_zarqan,
-            .name      = "Zarqan Synergy",
-            .trigger   = QUERY_PIECE_DAMAGE_DEALT,
-            .lasts_for = ENTIRE_BATTLE,
+            .effects = {{
+                .func      = eff_syn_zarqan,
+                .name      = "Zarqan Synergy",
+                .trigger   = QUERY_PIECE_DAMAGE_DEALT,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+            .name = "Zarqan Synergy",
+            .id   = KINGDOM_ZARQAN,
         },
     [KINGDOM_HARUSHIMA] =
         {
-            .func      = eff_syn_harushima,
-            .name      = "Harushima Synergy",
-            .trigger   = ON_CARD_PLAY,
-            .lasts_for = ENTIRE_BATTLE,
+            .effects = {{
+                .func      = eff_syn_harushima,
+                .name      = "Harushima Synergy",
+                .trigger   = ON_CARD_PLAY,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+            .name = "Harushima Synergy",
+            .id   = KINGDOM_HARUSHIMA,
         },
     [KINGDOM_CAELAN] =
         {
-            .func      = eff_syn_caelan,
-            .name      = "Caelan Synergy",
-            .trigger   = ON_CARD_PLAY,
-            .lasts_for = ENTIRE_BATTLE,
+            .effects = {{
+                .func      = eff_syn_caelan,
+                .name      = "Caelan Synergy",
+                .trigger   = ON_CARD_PLAY,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
+            .name = "Caelan Synergy",
+            .id   = KINGDOM_CAELAN,
         },
+};
+
+const KingdomPower* const INNATE_REGISTRY[KINGDOM_COUNT] = {
+    [KINGDOM_LONGWEI]   = &LONGWEI_INNATE,
+    [KINGDOM_KEWARANI]  = &KEWARANI_INNATE,
+    [KINGDOM_ZARQAN]    = &ZARQAN_INNATE,
+    [KINGDOM_HARUSHIMA] = &HARUSHIMA_INNATE,
+    [KINGDOM_CAELAN]    = &CAELAN_INNATE,
+};
+
+const KingdomPower* const CLIMAX_REGISTRY[KINGDOM_COUNT] = {
+    [KINGDOM_LONGWEI]   = &LONGWEI_CLIMAX,
+    [KINGDOM_KEWARANI]  = &KEWARANI_CLIMAX,
+    [KINGDOM_ZARQAN]    = &ZARQAN_CLIMAX,
+    [KINGDOM_HARUSHIMA] = &HARUSHIMA_CLIMAX,
+    [KINGDOM_CAELAN]    = &CAELAN_CLIMAX,
 };
 
 const Piece* const PIECE_REGISTRY[PIECE_COUNT] = {
@@ -2293,31 +2330,9 @@ const KingdomID KINGDOM_ADJACENT[KINGDOM_COUNT] = {
     [KINGDOM_CAELAN]    = KINGDOM_LONGWEI,
 };
 
-const char* const EVENT_NAME[EVENT_COUNT]     = {};
-const char* const EVENT_TEXT[EVENT_COUNT]     = {};
-const char* const EVENT_OPTION_A[EVENT_COUNT] = {};
-const char* const EVENT_OPTION_B[EVENT_COUNT] = {};
-
 /*----------------------------------------------------------------------------*\
                                DISPATCH TABLES
 \*----------------------------------------------------------------------------*/
-
-void (*const KINGDOM_INNATE[KINGDOM_COUNT])(BattleState*, Side, MasteryLevel) =
-    {
-        longwei_innate,
-        kewarani_innate,
-        zarqan_innate,
-        harushima_innate,
-        caelan_innate,
-};
-
-void (*const KINGDOM_CLIMAX[KINGDOM_COUNT])(BattleState*, Side) = {
-    longwei_climax,
-    kewarani_climax,
-    zarqan_climax,
-    harushima_climax,
-    caelan_climax,
-};
 
 void (*const KINGDOM_OVERSEER[KINGDOM_COUNT])(BattleState*) = {
     longwei_overseer,
@@ -2325,15 +2340,6 @@ void (*const KINGDOM_OVERSEER[KINGDOM_COUNT])(BattleState*) = {
     zarqan_overseer,
     harushima_overseer,
     caelan_overseer,
-};
-
-void (*const KINGDOM_EVENT[KINGDOM_COUNT])(EngineState*, EventID, EventChoice) =
-    {
-        longwei_event,
-        kewarani_event,
-        zarqan_event,
-        harushima_event,
-        caelan_event,
 };
 
 /*----------------------------------------------------------------------------*\

@@ -1400,57 +1400,73 @@ static bool eff_conqueror(EffectContext* context, void* x) {
     return applied;
 }
 
-/// caelan_innate
+/// eff_caelan_combo
 ///
-/// Attaches Conqueror's Reward: when a Caelan piece contributes to a flip,
-/// its value permanently gains half (sixty percent at mastery three,
-/// rounded up) for the rest of the battle.
+/// Caelan combo climax: on the kingdom's third same-kingdom card play,
+/// raises the acting side's attack damage by half for this turn.
 ///
 /// Params:
-/// - battle -> battle to attach into
-/// - side   -> side receiving the innate
-/// - level  -> mastery level scaling the innate
+/// - context -> args[0] acting side
+/// - x       -> KingdomID* of the climaxing kingdom
 ///
-void caelan_innate(BattleState* battle, Side side, MasteryLevel level) {
-    Effect conqueror = {
-        .func      = eff_conqueror,
-        .name      = "Conqueror's Reward",
-        .trigger   = ON_PIECE_FLIP,
-        .lasts_for = ENTIRE_BATTLE,
-    };
-
-    Effect* attached =
-        effect_attach(&battle_player(battle, side)->effects, &conqueror);
-
-    if (attached) {
-        attached->context->args[0] = (void*) (uintptr_t) side;
-        attached->context->args[1] = (void*) (uintptr_t) level;
+/// Return: true when the Caelan climax resolved
+///
+static bool eff_caelan_combo(EffectContext* context, void* x) {
+    if (*(KingdomID*) x != KINGDOM_CAELAN) {
+        return false;
     }
-}
 
-/// caelan_climax
-///
-/// Fires the Caelan combo climax for the given side.
-///
-/// Params:
-/// - battle -> battle the climax fires in
-/// - side   -> side that completed the combo chain
-///
-void caelan_climax(BattleState* battle, Side side) {
-    static const Effect climax = {
+    Side   side  = (Side) (uintptr_t) context->args[0];
+
+    Effect climax = {
         .func      = eff_caelan_climax,
         .name      = "Caelan Climax",
         .trigger   = QUERY_PIECE_DAMAGE_DEALT,
         .lasts_for = TURNS_1,
     };
 
-    Effect* attached =
-        effect_attach(&battle_player(battle, side)->effects, &climax);
+    Effect* attached = effect_attach(
+        &battle_player(battle_current(), side)->effects, &climax
+    );
 
     if (attached) {
         attached->context->args[0] = (void*) (uintptr_t) side;
     }
+
+    return true;
 }
+
+/// CAELAN_INNATE
+///
+/// Conqueror's Reward: a Caelan piece that contributes to a flip gains half
+/// its value (sixty percent at mastery three) for the rest of the battle.
+///
+const KingdomPower CAELAN_INNATE = {
+    .effects = {{
+        .func      = eff_conqueror,
+        .name      = "Conqueror's Reward",
+        .trigger   = ON_PIECE_FLIP,
+        .lasts_for = ENTIRE_BATTLE,
+    }},
+    .name = "Conqueror's Reward",
+    .id   = KINGDOM_CAELAN,
+};
+
+/// CAELAN_CLIMAX
+///
+/// Raises the acting side's attack damage by half this turn on the combo
+/// climax.
+///
+const KingdomPower CAELAN_CLIMAX = {
+    .effects = {{
+        .func      = eff_caelan_combo,
+        .name      = "Caelan Climax",
+        .trigger   = ON_COMBO_CLIMAX,
+        .lasts_for = ENTIRE_BATTLE,
+    }},
+    .name = "Caelan Climax",
+    .id   = KINGDOM_CAELAN,
+};
 
 /// caelan_overseer
 ///
@@ -1464,17 +1480,3 @@ void caelan_overseer(BattleState* battle) {
     (void) battle;
 }
 
-/// caelan_event
-///
-/// Resolves a Caelan narrative event with the player's choice.
-///
-/// Params:
-/// - engine -> engine owning the run
-/// - id     -> event being resolved
-/// - choice -> choice taken by the player
-///
-void caelan_event(EngineState* engine, EventID id, EventChoice choice) {
-    (void) engine;
-    (void) id;
-    (void) choice;
-}

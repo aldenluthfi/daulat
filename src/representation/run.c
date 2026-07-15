@@ -397,6 +397,9 @@ static MapNode*     PENDING_NODE;
 static RelicID      PENDING_RELICS[2];
 static bool         RELIC_OFFER;
 static MapNode      VORATH_NODE;
+static size_t       PENDING_REMOVALS;
+static int          EVENT_REWARD;
+static bool         EVENT_REWARD_ACTIVE;
 
 /// rng_mix
 ///
@@ -923,6 +926,16 @@ bool run_select_node(EngineState* engine, size_t index) {
         break;
 
     default:
+        if (run->skip_next_battle && node->type == MAP_NODE_BATTLE) {
+            run->skip_next_battle = false;
+            node->cleared         = true;
+            PENDING_NODE          = nullptr;
+
+            protocol_emit("log skip node=%zu", index);
+            run_emit_map(engine);
+            break;
+        }
+
         battle_begin(engine, node);
         break;
     }
@@ -1084,6 +1097,22 @@ void run_battle_result(EngineState* engine, bool won) {
             PENDING_RELICS[1]
         );
     }
+
+    if (EVENT_REWARD_ACTIVE) {
+        EVENT_REWARD_ACTIVE = false;
+
+        if (won && EVENT_REWARD == 1) {
+            run_remove_chain(run);
+        } else if (won) {
+            RELIC_OFFER = true;
+
+            protocol_emit(
+                "offer relic_a=%d relic_b=%d",
+                PENDING_RELICS[0],
+                PENDING_RELICS[1]
+            );
+        }
+    }
 }
 
 /// run_event_choose
@@ -1103,61 +1132,41 @@ void run_event_choose(EngineState* engine, EventChoice choice) {
         return;
     }
 
-    RunState* run                   = engine->run;
-    KingdomID king                  = node->kingdom->id;
-    EventID   event                 = (EventID) node->content;
+    RunState* run      = engine->run;
+    EventID   event    = (EventID) node->content;
 
-    run->events[event].id           = event;
-    run->events[event].kingdom      = king;
-    run->events[event].choice_taken = choice;
+    run->events[event] = choice;
 
-    KINGDOM_EVENT[king](engine, event, choice);
+    const EventOption* option =
+        &EVENT_REGISTRY[event]->options[choice == CHOICE_A ? 0 : 1];
 
-    static const struct {
-        EventID     event;
-        EventChoice choice;
-        size_t      reduce;
-    } VORATH_REDUCTIONS[] = {
-        {EVENT_DEFECTOR, CHOICE_B, 1},
-        {EVENT_JANGGI_ELDER, CHOICE_B, 1},
-        {EVENT_CANNON_SALUTE, CHOICE_B, 2},
-        {EVENT_STOLEN_GUARD, CHOICE_B, 1},
-        {EVENT_CAMEL_CARAVAN, CHOICE_B, 2},
-        {EVENT_WARLORDS_CHALLENGE, CHOICE_B, 2},
-        {EVENT_BAZAAR_OF_SAMARKAND, CHOICE_B, 2},
-        {EVENT_SPY_REPORT, CHOICE_A, 2},
-        {EVENT_SPY_REPORT, CHOICE_B, 1},
-        {EVENT_VETERAN_LANCE, CHOICE_B, 1},
-        {EVENT_WANDERING_PIECE, CHOICE_A, 2},
-        {EVENT_VORATHS_DECREE, CHOICE_A, 3},
-        {EVENT_SCHOLARS_OFFER, NO_CHOICE, 0},
-    };
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        const Effect* effect = &option->effects[slot];
 
-    for (size_t i = 0; VORATH_REDUCTIONS[i].reduce != 0; i++) {
-        if (VORATH_REDUCTIONS[i].event != event ||
-            VORATH_REDUCTIONS[i].choice != choice) {
+        if (!effect->func || effect->trigger != ON_EVENT_CHOOSE) {
             continue;
         }
 
-        size_t reduce = VORATH_REDUCTIONS[i].reduce;
+        EffectContext ctx =
+            effect->context ? *effect->context : (EffectContext){};
 
-        run->vorath_counter =
-            run->vorath_counter > reduce ? run->vorath_counter - reduce : 0;
+        if (effect->func(&ctx, engine) && effect->name) {
+            protocol_emit(
+                "log effect name=\"%s\" trigger=ON_EVENT_CHOOSE",
+                effect->name
+            );
+        }
     }
 
-    if (event == EVENT_DESERT_CROSSING && choice == CHOICE_B) {
-        for (size_t kingdom = 0; kingdom < KINGDOM_COUNT; kingdom++) {
-            if (run->kingdoms[kingdom].chain) {
-                chain_remove(&run->kingdoms[kingdom]);
-                break;
-            }
-        }
+    protocol_emit("log event id=%d choice=%d", event, choice);
+
+    if (engine->battle || RELIC_OFFER || PENDING_REMOVALS > 0) {
+        return;
     }
 
     node->cleared = true;
     PENDING_NODE  = nullptr;
 
-    protocol_emit("log event id=%d choice=%d", event, choice);
     run_emit_map(engine);
 }
 
@@ -1173,16 +1182,26 @@ void run_event_choose(EngineState* engine, EventChoice choice) {
 void run_offering(EngineState* engine, CardID card) {
     MapNode* node = PENDING_NODE;
 
-    if (!node || node->type != MAP_NODE_OFFERING) {
+    if (!node ||
+        (node->type != MAP_NODE_OFFERING && node->type != MAP_NODE_EVENT)) {
         return;
     }
 
     engine->run->cards[card] = false;
 
-    node->cleared            = true;
-    PENDING_NODE             = nullptr;
-
     protocol_emit("log offering removed=%d", card);
+
+    if (node->type == MAP_NODE_EVENT && PENDING_REMOVALS > 0) {
+        PENDING_REMOVALS--;
+
+        if (PENDING_REMOVALS > 0) {
+            return;
+        }
+    }
+
+    node->cleared = true;
+    PENDING_NODE  = nullptr;
+
     run_emit_map(engine);
 }
 
@@ -1203,6 +1222,13 @@ void run_relic_pick(EngineState* engine, RelicID relic) {
     RELIC_OFFER                = false;
 
     protocol_emit("log relic id=%d", relic);
+
+    if (PENDING_NODE && PENDING_NODE->type == MAP_NODE_EVENT) {
+        PENDING_NODE->cleared = true;
+        PENDING_NODE          = nullptr;
+
+        run_emit_map(engine);
+    }
 }
 
 /// run_pressure
@@ -1237,105 +1263,105 @@ bool run_innate_ready(RunState* run, KingdomID kingdom) {
     return map_complete(run->kingdoms[kingdom].town_map);
 }
 
-/// run_value_bonus
+/// run_offer_relics
 ///
-/// Sums the permanent value bonuses a piece has earned from narrative
-/// events chosen this run, keyed by the piece's kingdom or id.
+/// Opens a two-relic choice, reusing the elite relic-offer channel so an
+/// event's relic option resolves through the same `relic id=N` command.
 ///
 /// Params:
-/// - run   -> run holding the chosen events
-/// - piece -> piece template being valued
+/// - engine -> engine owning the run (unused)
+/// - first  -> first offered relic
+/// - second -> second offered relic
 ///
-/// Return: the added value from run events
-///
-int run_value_bonus(RunState* run, const Piece* piece) {
-    int       bonus   = 0;
-    KingdomID kingdom = piece->kingdom;
-    PieceID   id      = piece->id;
+void run_offer_relics(EngineState* engine, RelicID first, RelicID second) {
+    (void) engine;
 
-    if (kingdom == KINGDOM_LONGWEI) {
-        if (run->events[EVENT_SCHOLARS_OFFER].choice_taken == CHOICE_A) {
-            bonus += 3;
-        }
+    PENDING_RELICS[0] = first;
+    PENDING_RELICS[1] = second;
+    RELIC_OFFER       = true;
 
-        if (run->events[EVENT_DRAGON_COURT_TRIBUTE].choice_taken == CHOICE_A) {
-            bonus += 5;
-        }
-    }
-
-    if (kingdom == KINGDOM_HARUSHIMA &&
-        run->events[EVENT_RONIN].choice_taken == CHOICE_B) {
-        bonus += 3;
-    }
-
-    if (kingdom == KINGDOM_CAELAN &&
-        run->events[EVENT_ROYAL_DECREE].choice_taken == CHOICE_A) {
-        bonus += 3;
-    }
-
-    if (id == PIECE_PAO) {
-        if (run->events[EVENT_CANNON_SALUTE].choice_taken == CHOICE_A) {
-            bonus += 5;
-        }
-
-        if (run->events[EVENT_SIEGE_ENGINEER].choice_taken == CHOICE_B) {
-            bonus += 5;
-        }
-    }
-
-    if (id == PIECE_MEDEQ &&
-        run->events[EVENT_SALT_ROAD_MERCHANT].choice_taken == CHOICE_B) {
-        bonus += 3;
-    }
-
-    if (id == PIECE_KYOSHA &&
-        run->events[EVENT_VETERAN_LANCE].choice_taken == CHOICE_A) {
-        bonus += 5;
-    }
-
-    if (piece_is_pawn(id) &&
-        run->events[EVENT_DESERTER].choice_taken == CHOICE_A) {
-        bonus += 3;
-    }
-
-    return bonus;
+    protocol_emit("offer relic_a=%d relic_b=%d", first, second);
 }
 
-/// run_cost_bonus
+/// run_begin_removal
 ///
-/// Returns the percent buy discount a piece has earned from cost-reducing
-/// events chosen this run, keyed by the piece's kingdom.
+/// Arms a card removal of the given count, resolved through the map's
+/// `remove card=N` command; the event node clears once the count is met.
 ///
 /// Params:
-/// - run   -> run holding the chosen events
-/// - piece -> piece template being priced
+/// - engine -> engine owning the run (unused)
+/// - count  -> number of cards to remove
 ///
-/// Return: the percent discount from run events
+void run_begin_removal(EngineState* engine, size_t count) {
+    (void) engine;
+
+    PENDING_REMOVALS = count;
+
+    protocol_emit("offer remove=%zu", count);
+}
+
+/// run_reduce_vorath
 ///
-int run_cost_bonus(RunState* run, const Piece* piece) {
-    KingdomID kingdom = piece->kingdom;
+/// Lowers the Global Vorath Counter, clamped at zero.
+///
+/// Params:
+/// - run    -> run whose counter drops
+/// - amount -> reduction amount
+///
+void run_reduce_vorath(RunState* run, size_t amount) {
+    run->vorath_counter =
+        run->vorath_counter > amount ? run->vorath_counter - amount : 0;
+}
 
-    if (kingdom == KINGDOM_KEWARANI &&
-        run->events[EVENT_CAMEL_CARAVAN].choice_taken == CHOICE_A) {
-        return 15;
+/// run_remove_chain
+///
+/// Removes one accumulated chain penalty from the first chained figurehead.
+///
+/// Params:
+/// - run -> run holding the figureheads
+///
+void run_remove_chain(RunState* run) {
+    for (size_t kingdom = 0; kingdom < KINGDOM_COUNT; kingdom++) {
+        if (run->kingdoms[kingdom].chain) {
+            chain_remove(&run->kingdoms[kingdom]);
+            return;
+        }
+    }
+}
+
+/// run_skip_battle
+///
+/// Arms a skip of the next battle node the player selects.
+///
+/// Params:
+/// - run -> run to arm
+///
+void run_skip_battle(RunState* run) {
+    run->skip_next_battle = true;
+}
+
+/// run_begin_elite
+///
+/// Begins an elite battle on the pending event node, stashing the reward a
+/// win grants: a two-relic offer or a chain removal.
+///
+/// Params:
+/// - engine -> engine owning the run
+/// - reward -> 0 for a relic offer, 1 for a chain removal
+/// - a      -> first offered relic when the reward is a relic offer
+/// - b      -> second offered relic when the reward is a relic offer
+///
+void run_begin_elite(EngineState* engine, int reward, RelicID a, RelicID b) {
+    if (!PENDING_NODE) {
+        return;
     }
 
-    if (kingdom == KINGDOM_ZARQAN &&
-        run->events[EVENT_BAZAAR_OF_SAMARKAND].choice_taken == CHOICE_A) {
-        return 15;
-    }
+    EVENT_REWARD        = reward;
+    EVENT_REWARD_ACTIVE = true;
+    PENDING_RELICS[0]   = a;
+    PENDING_RELICS[1]   = b;
 
-    if (kingdom == KINGDOM_HARUSHIMA &&
-        run->events[EVENT_BURNING_PORT].choice_taken == CHOICE_A) {
-        return 15;
-    }
-
-    if (kingdom == KINGDOM_CAELAN &&
-        run->events[EVENT_CHURCH_BLESSING].choice_taken == CHOICE_A) {
-        return 10;
-    }
-
-    return 0;
+    battle_begin(engine, PENDING_NODE);
 }
 
 size_t run_pressure(RunState* run, KingdomID kingdom) {
