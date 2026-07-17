@@ -23,30 +23,30 @@ Status legend:
 
 ## Violation index (agnostic code naming specific items)
 
-| Site                                                          | Item(s) named                                                                                | Fix phase    |
-| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------ |
-| ~~`battle_draw` battle.c:328~~ ✅ deleted                      | ~~`MODIFIER_LUCKY_STRIKE`~~ now `ON_CARDS_DRAWN` effect + `battle_draw_pool`                 | 2            |
-| `screen.c`:175 (`emit_hand` blind mask)                       | `CHALLENGE_BLIND_DRAFT` — moved to `QUERY_HAND_STATE`                                        | 5            |
-| ~~`battle_play` a/b codec + protocol~~ ✅ STRIPPED             | ~~every targeting card~~ now two-step QUERY_CARD_TARGETS / ON_CARD_TARGET_SELECTED           | 2.5          |
-| ~~`battle_play` battle.c:1049~~ ✅ deleted                     | ~~`CARD_QUEENS_GAMBIT`~~ draws in its own effect                                             | 2.5          |
-| ~~`battle_buy` mark reads~~ ✅ deleted                        | ~~`CARD_PAWN_STORM`, `CARD_REFORGE`~~ now self-contained ACTION/CP_COST_BUY + ON_PIECE_BUY effects | 4      |
-| ~~`battle_begin` width if-ladder~~ ✅ QUERY_BOARD_DIMENSION    | ~~`MODIFIER_EXTENDED_FRONT`/`COMPRESSED`~~ done                                              | 3            |
-| ~~`battle_terrain`~~ ✅ deleted; ON_BOARD_BUILD                | ~~`MODIFIER_DENSE_TERRAIN`, `BOARD_TRAIT_MIRAGE`, `BOARD_TRAIT_ISLAND_CHAIN`~~ done          | 3            |
-| ~~`battle_walk_run` list placement~~ ✅ deleted               | ~~`RELIC_SOUL_SHARD`~~ now human-seat ON_PIECE_FLIP (gaining side fires)                     | 4            |
-| ~~`battle_cascade` flip count~~ ✅ QUERY_FLIP_COUNT           | ~~`MODIFIER_BLOODBATH`~~ now +1 flip effect                                                  | 4            |
-| `battle_price` battle.c:759                                   | `RELIC_TRADE_ROUTES` (+ `run_cost_bonus`) — defer w/ Phase 7 pricing cleanup                 | 7            |
-| `battle_challenge_allows_buy` battle.c:702-706                | `CHALLENGE_PACIFIST_DOCTRINE`/`SOLO_VANGUARD`                                                | 5            |
-| `battle_setup_armies` — ✅ `CHAIN_SILVER` → QUERY_ENEMY_ARMY_COUNT | still `DIFFICULTY_*`, `MAP_NODE_ELITE/LIBERATION`, `CHALLENGE_THE_TRAITORS_GAMBIT`      | 5            |
-| `battle_walk_innates` battle.c:1768                           | `DIFFICULTY_ENSLAVED`                                                                        | 5            |
-| ~~`SYNERGY_REGISTRY`~~ ✅ now `KingdomPower[]` items                | ~~bare `Effect[]`~~ reshaped to EffectItem                                             | 6            |
-| ~~`KINGDOM_INNATE/CLIMAX`~~ ✅ `INNATE/CLIMAX_REGISTRY` items       | ~~function-pointer dispatch~~ now data items; climax on ON_COMBO_CLIMAX                | 6            |
-| ~~`run_value_bonus`~~ ✅ QUERY_PIECE_VALUE event effects           | ~~events by kingdom/id ladder~~ now `Event` items                                      | 7            |
-| ~~`run_cost_bonus`~~ ✅ QUERY_PIECE_CP_COST_BUY event effects      | ~~events by kingdom ladder~~ now `Event` items                                         | 7            |
-| ~~`run_event_choose`~~ ✅ fires `ON_EVENT_CHOOSE`                  | ~~`VORATH_REDUCTIONS` + Desert ladder~~ now `Event` items                              | 7            |
-| ~~`EVENT_NAME/TEXT/OPTION_*`~~ ✅ `EVENT_REGISTRY` items           | ~~empty parallel arrays~~ real `Event` data                                            | 7            |
-| `KINGDOM_EVENT` universal.c:1399                              | function-pointer dispatch (stub bodies)                                                      | 7            |
-| `run_select_node` run.c:906                                   | `RELIC_MASTERS_NOTES`                                                                        | 7 (run-side) |
-| `battle_begin` battle.c:1980 + `run_battle_result` run.c:1072 | Vorath counter thresholds                                                                    | 8            |
+| Site                                                               | Item(s) named                                                                                      | Fix phase    |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- | ------------ |
+| ~~`battle_draw` battle.c:328~~ ✅ deleted                          | ~~`MODIFIER_LUCKY_STRIKE`~~ now `ON_CARDS_DRAWN` effect + `battle_draw_pool`                       | 2            |
+| `screen.c`:175 (`emit_hand` blind mask)                            | `CHALLENGE_BLIND_DRAFT` — moved to `QUERY_HAND_STATE`                                              | 5            |
+| ~~`battle_play` a/b codec + protocol~~ ✅ STRIPPED                 | ~~every targeting card~~ now two-step QUERY_CARD_TARGETS / ON_CARD_TARGET_SELECTED                 | 2.5          |
+| ~~`battle_play` battle.c:1049~~ ✅ deleted                         | ~~`CARD_QUEENS_GAMBIT`~~ draws in its own effect                                                   | 2.5          |
+| ~~`battle_buy` mark reads~~ ✅ deleted                             | ~~`CARD_PAWN_STORM`, `CARD_REFORGE`~~ now self-contained ACTION/CP_COST_BUY + ON_PIECE_BUY effects | 4            |
+| ~~`battle_begin` width if-ladder~~ ✅ QUERY_BOARD_DIMENSION        | ~~`MODIFIER_EXTENDED_FRONT`/`COMPRESSED`~~ done                                                    | 3            |
+| ~~`battle_terrain`~~ ✅ deleted; ON_BOARD_BUILD                    | ~~`MODIFIER_DENSE_TERRAIN`, `BOARD_TRAIT_MIRAGE`, `BOARD_TRAIT_ISLAND_CHAIN`~~ done                | 3            |
+| ~~`battle_walk_run` list placement~~ ✅ deleted                    | ~~`RELIC_SOUL_SHARD`~~ now human-seat ON_PIECE_FLIP (gaining side fires)                           | 4            |
+| ~~`battle_cascade` flip count~~ ✅ QUERY_FLIP_COUNT                | ~~`MODIFIER_BLOODBATH`~~ now +1 flip effect                                                        | 4            |
+| `battle_price` battle.c:759                                        | `RELIC_TRADE_ROUTES` (+ `run_cost_bonus`) — defer w/ Phase 7 pricing cleanup                       | 7            |
+| `battle_challenge_allows_buy` battle.c:702-706                     | `CHALLENGE_PACIFIST_DOCTRINE`/`SOLO_VANGUARD`                                                      | 5            |
+| `battle_setup_armies` — ✅ `CHAIN_SILVER` → QUERY_ENEMY_ARMY_COUNT | still `DIFFICULTY_*`, `MAP_NODE_ELITE/LIBERATION`, `CHALLENGE_THE_TRAITORS_GAMBIT`                 | 5            |
+| `battle_walk_innates` battle.c:1768                                | `DIFFICULTY_ENSLAVED`                                                                              | 5            |
+| ~~`SYNERGY_REGISTRY`~~ ✅ now `KingdomPower[]` items               | ~~bare `Effect[]`~~ reshaped to EffectItem                                                         | 6            |
+| ~~`KINGDOM_INNATE/CLIMAX`~~ ✅ `INNATE/CLIMAX_REGISTRY` items      | ~~function-pointer dispatch~~ now data items; climax on ON_COMBO_CLIMAX                            | 6            |
+| ~~`run_value_bonus`~~ ✅ QUERY_PIECE_VALUE event effects           | ~~events by kingdom/id ladder~~ now `Event` items                                                  | 7            |
+| ~~`run_cost_bonus`~~ ✅ QUERY_PIECE_CP_COST_BUY event effects      | ~~events by kingdom ladder~~ now `Event` items                                                     | 7            |
+| ~~`run_event_choose`~~ ✅ fires `ON_EVENT_CHOOSE`                  | ~~`VORATH_REDUCTIONS` + Desert ladder~~ now `Event` items                                          | 7            |
+| ~~`EVENT_NAME/TEXT/OPTION_*`~~ ✅ `EVENT_REGISTRY` items           | ~~empty parallel arrays~~ real `Event` data                                                        | 7            |
+| `KINGDOM_EVENT` universal.c:1399                                   | function-pointer dispatch (stub bodies)                                                            | 7            |
+| `run_select_node` run.c:906                                        | `RELIC_MASTERS_NOTES`                                                                              | 7 (run-side) |
+| `battle_begin` battle.c:1980 + `run_battle_result` run.c:1072      | Vorath counter thresholds                                                                          | 8            |
 
 ## Pieces (41) — `PIECE_REGISTRY`, kingdom data files
 
@@ -112,62 +112,62 @@ Phase 2.5 **replaced** that with the two-step `QUERY_CARD_TARGETS` /
 **Card Targeting** section below records it. Targeting-card rows stay ✅;
 their decomposition now names those triggers.
 
-| Card                       | GDD                                            | Decomposition                                                                                                            | Impl                         | Status                                                                                                                                                                                     |
-| -------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Pawn Storm                 | 3 free-action pawns, third free                | ON_CARD_PLAY attaches counter mark + ACTION_COST_BUY / CP_COST_BUY / ON_PIECE_BUY effects                                | universal.c                  | ✅ self-contained; engine reads gone (verified seed=18: 3 free-action, 3rd free cp, 4th full+action)                                                                                       |
-| Revitalize                 | +50 meter                                      | ON_CARD_PLAY                                                                                                             | universal.c                  | ✅                                                                                                                                                                                         |
-| Hostage                    | next flip to you: +20 meter                    | ON_PIECE_FLIP                                                                                                            | universal.c                  | ✅                                                                                                                                                                                         |
-| Last Stand                 | no flip this turn                              | QUERY_PIECE_CAN_FLIP veto                                                                                                | universal.c                  | ✅                                                                                                                                                                                         |
-| Sacrifice                  | remove piece, +2× value meter                  | QUERY_CARD_TARGETS + ON_CARD_TARGET_SELECTED (own non-king piece)                                                        | universal.c                  | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Reforge                    | next flip discounts that type                  | ON_PIECE_FLIP_PRE attaches mark + QUERY_PIECE_CP_COST_BUY (30% off) + ON_PIECE_BUY (spend) effects                       | universal.c                  | ✅ self-contained; engine reads gone (code-verified — needs a flip to exercise)                                                                                                            |
-| Mercy                      | retarget next flip                             | QUERY_CARD_TARGETS (own piece) → ON_CARD_TARGET_SELECTED attaches ON_PIECE_FLIP_PRE observer                             | universal.c                  | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Bloodletting               | +50% missing-meter damage                      | QUERY_PIECE_DAMAGE_DEALT                                                                                                 | universal.c                  | ✅                                                                                                                                                                                         |
-| Counter Coup               | echo 50% taken damage                          | QUERY_METER_DAMAGE_TAKEN                                                                                                 | universal.c                  | ✅                                                                                                                                                                                         |
-| Spite                      | next loss: 3× value to enemy                   | ON_PIECE_FLIP_PRE                                                                                                        | universal.c                  | ✅                                                                                                                                                                                         |
-| Chain Break                | force-flip 1 enemy                             | QUERY_CARD_TARGETS (enemy non-king) + ON_CARD_TARGET_SELECTED                                                            | universal.c                  | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Hydra                      | next flip: 2 pawns by king                     | ON_PIECE_FLIP_PRE                                                                                                        | universal.c                  | ✅                                                                                                                                                                                         |
-| River Wade                 | pawn gains sideways                            | QUERY_CARD_TARGETS (pawn) + ON_CARD_TARGET_SELECTED → embeds QUERY_PIECE_MOVES                                           | longwei.c                    | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Charge                     | slider passes one blocker                      | QUERY_CARD_TARGETS (`class == MOVE_SLIDER` only, NOT king) + ON_CARD_TARGET_SELECTED → attaches QUERY_PIECE_MOVES        | longwei.c                    | ✅ (2.5b) — earlier hallucination offered any own piece incl. king; fixed to slider-class                                                                                                  |
-| Formation                  | line of 3: +50% damage                         | QUERY_PIECE_DAMAGE_DEALT                                                                                                 | longwei.c                    | ✅                                                                                                                                                                                         |
-| Divination                 | reveal enemy plan                              | ON_CARD_PLAY → `ai_plan`                                                                                                 | longwei.c                    | ✅ (preview relies on QUERY_NEXT_HAND / plan store — Phase 2)                                                                                                                              |
-| Cannon Volley              | Pao hits row+column                            | QUERY_CARD_TARGETS (Pao) + ON_CARD_TARGET_SELECTED → `battle_damage` (flip cascade, not raw meter -=)                    | longwei.c                    | ✅ (2.5d)                                                                                                                                                                                  |
-| Palace Decree              | enemy king in 3×3, 2 turns                     | ON_CARD_PLAY → attaches QUERY_PIECE_MOVES (auto: enemy king)                                                             | longwei.c                    | ✅                                                                                                                                                                                         |
-| Mandate                    | remove piece, 3× value to enemy                | QUERY_CARD_TARGETS (own non-king) + ON_CARD_TARGET_SELECTED → remove + `battle_damage` (flip cascade)                    | longwei.c                    | ✅ (2.5d)                                                                                                                                                                                  |
-| Mingzhu's Seal (M2)        | 1 enemy can't move 3 turns                     | QUERY_CARD_TARGETS (enemy) + ON_CARD_TARGET_SELECTED → attaches QUERY_PIECE_CAN_MOVE                                     | longwei.c                    | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Sultan's Gold              | +60 cp                                         | ON_CARD_PLAY                                                                                                             | kewarani.c                   | ✅                                                                                                                                                                                         |
-| March                      | pawns move fwd 1 free                          | ON_CARD_PLAY                                                                                                             | kewarani.c                   | ✅                                                                                                                                                                                         |
-| Double Time                | +1 move (3rd if innate active)                 | QUERY_CARD_TARGETS (own incl. king) + ON_CARD_TARGET_SELECTED → grant free move; 2nd free move if piece carries the innate's `eff_double_move`                                             | kewarani.c                   | ✅ (2.5d) — third-move clause added                                                                                                                                                        |
-| Salt Road                  | +10 cp each turn                               | ON_TURN_START                                                                                                            | kewarani.c                   | ✅                                                                                                                                                                                         |
-| Caravan                    | line moves fwd together                        | ON_CARD_PLAY                                                                                                             | kewarani.c                   | ✅                                                                                                                                                                                         |
-| Doublestrike               | move 2 pieces, 1 action                        | ON_CARD_PLAY                                                                                                             | kewarani.c                   | ✅                                                                                                                                                                                         |
-| Hajj                       | teleport piece anywhere                        | QUERY_CARD_TARGETS ×2 (piece, dest) + ON_CARD_TARGET_SELECTED                                                            | kewarani.c                   | ✅ (multi-target → 2.5)                                                                                                                                                                    |
-| Selassie's March (M2)      | Kewarani move 3×                               | ON_CARD_PLAY                                                                                                             | kewarani.c                   | ✅                                                                                                                                                                                         |
-| Ronin                      | passive: target's next flip refunds its value  | QUERY_CARD_TARGETS (own piece) + ON_CARD_TARGET_SELECTED → attaches ON_PIECE_FLIP observer                               | harushima.c                  | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Resurrection               | reclaim any flipped piece free                 | QUERY_CARD_TARGETS (`battle_piece_flips > 0`, cumulative counter not MARK) + ON_CARD_TARGET_SELECTED → `battle_flip`     | harushima.c                  | ✅ (2.5c)                                                                                                                                                                                  |
-| Gold Standard              | target moves as Kinsho this turn               | QUERY_CARD_TARGETS (piece) + ON_CARD_TARGET_SELECTED → attaches QUERY_PIECE_MOVES (`mg_compound` Kinsho)                 | harushima.c                  | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Promotion                  | target gains Ginsho movement this battle       | QUERY_CARD_TARGETS (piece) + ON_CARD_TARGET_SELECTED → attaches QUERY_PIECE_MOVES                                        | harushima.c                  | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Dual Drop                  | reclaim ≤2 flipped @30cp; else free Fuhyo      | **dynamic** per-step: offers flipped enemies (`battle_piece_flips > 0`), or empty squares to drop a Fuhyo when none remain, so always playable + Fuhyo location chosen                     | harushima.c                  | ✅ (2.5c)                                                                                                                                                                                  |
-| Force Drop                 | place unlocked piece ≤50 on empty square       | QUERY_CARD_TARGETS ×2 (**PIECE_TYPE** `battle_piece_unlocked` & ≤50, then **SQUARE** empty) + ON_CARD_TARGET_SELECTED; spawn "for free", NO meter gain                                     | harushima.c                  | ✅ (2.5d) — spurious `meter += value` removed                                                                                                                                              |
-| Bushido                    | passive: target's flip deals 2× value to enemy | QUERY_CARD_TARGETS (piece) + ON_CARD_TARGET_SELECTED → attaches ON_PIECE_FLIP observer → `battle_damage` (flip cascade)  | harushima.c                  | ✅ (2.5d)                                                                                                                                                                                  |
-| Tomohito's Patience (M2)   | reclaim ≤3 flipped @15cp each                  | QUERY_CARD_TARGETS ×≤3 (flipped pieces) + ON_CARD_TARGET_SELECTED                                                        | harushima.c                  | ✅ (multi-target → 2.5)                                                                                                                                                                    |
-| Counsel                    | peek next 3, discard 1                         | QUERY_CARD_TARGETS advertises 3 **NEXT_CARD** targets (from QUERY_NEXT_HAND) + ON_CARD_TARGET_SELECTED discards the pick | zarqan.c                     | ✅ (targeting → 2.5; preview data Phase 2)                                                                                                                                                 |
-| Pillage                    | +5 cp per friendly piece                       | ON_CARD_PLAY                                                                                                             | zarqan.c                     | ✅                                                                                                                                                                                         |
-| Royal Decoy                | swap 2 friendly                                | QUERY_CARD_TARGETS ×2 (own pieces) + ON_CARD_TARGET_SELECTED                                                             | zarqan.c                     | ✅ (multi-target → 2.5)                                                                                                                                                                    |
-| Bazaar                     | sell piece for 150%                            | QUERY_CARD_TARGETS (own piece) + ON_CARD_TARGET_SELECTED                                                                 | zarqan.c                     | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Steppe Riders              | knights/jamals/cataphracts move 2×             | ON_CARD_PLAY                                                                                                             | zarqan.c                     | ✅                                                                                                                                                                                         |
-| Ambition                   | copy movement 1 turn                           | QUERY_CARD_TARGETS ×2 (piece, copied) + ON_CARD_TARGET_SELECTED (`mg_compound`)                                          | zarqan.c                     | ✅ (multi-target → 2.5)                                                                                                                                                                    |
-| Citadel                    | piece immobile+immune 2 turns                  | QUERY_CARD_TARGETS (piece) + ON_CARD_TARGET_SELECTED → attaches CAN_MOVE/ATTACK/CAN_FLIP                                 | zarqan.c                     | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Conquest                   | permanently copy movement                      | QUERY_CARD_TARGETS ×2 (piece, copied) + ON_CARD_TARGET_SELECTED                                                          | zarqan.c                     | ✅ (multi-target → 2.5)                                                                                                                                                                    |
-| Timur's Conquest (M2)      | auto Royal Sub < 20 meter                      | attaches observer                                                                                                        | zarqan.c                     | ✅                                                                                                                                                                                         |
-| Castling                   | king ↔ rook swap                               | QUERY_CARD_TARGETS (own rook) + ON_CARD_TARGET_SELECTED                                                                  | caelan.c                     | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Queen's Gambit             | sacrifice pawn (any-kingdom); draw 3           | QUERY_CARD_TARGETS (`piece_is_pawn`) + ON_CARD_TARGET_SELECTED → remove pawn + `battle_draw(3)`                          | caelan.c                     | ✅ (2.5) — battle.c:1049 3-draw hardcode DELETED; draws in its own effect so `battle_draw` fires ON_CARDS_DRAWN and Lucky Strike composes free                                            |
-| Vengeance                  | 2× to enemy that moved adjacent last turn      | **automatic** ON_CARD_PLAY scan (no target): sums 2× value of each enemy with `battle_piece_move_turn == turn-1` adjacent to a friendly, one `battle_damage`                                                                       | caelan.c                     | ✅ (2.5d) — was wrongly a targeting card ("way off"); GDD has no "Target", the condition is the selector                                                                                    |
-| Queen's Decree             | next attack ×2                                 | QUERY_PIECE_DAMAGE_DEALT                                                                                                 | caelan.c                     | ✅                                                                                                                                                                                         |
-| Cathedral                  | bishop-defended: −40%                          | QUERY_PIECE_DAMAGE_TAKEN                                                                                                 | caelan.c                     | ✅                                                                                                                                                                                         |
-| Coronation                 | promote pawn → queen                           | QUERY_CARD_TARGETS (`piece_is_pawn`, any kingdom — not just PIECE_PAWN) + ON_CARD_TARGET_SELECTED                        | caelan.c                     | ✅ (2.5b)                                                                                                                                                                                  |
-| Crusade                    | knight 3 lunges                                | QUERY_CARD_TARGETS (own knight) + ON_CARD_TARGET_SELECTED → `battle_lunge`                                               | caelan.c                     | ✅ (targeting → 2.5)                                                                                                                                                                       |
-| Divine Right               | king attacks as queen                          | QUERY_PIECE_ATTACKS                                                                                                      | caelan.c                     | ✅                                                                                                                                                                                         |
-| Isabella's Coronation (M2) | all pawns → queens                             | ON_CARD_PLAY                                                                                                             | caelan.c                     | ✅                                                                                                                                                                                         |
+| Card                       | GDD                                            | Decomposition                                                                                                                                                          | Impl        | Status                                                                                                                                               |
+| -------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pawn Storm                 | 3 free-action pawns, third free                | ON_CARD_PLAY attaches counter mark + ACTION_COST_BUY / CP_COST_BUY / ON_PIECE_BUY effects                                                                              | universal.c | ✅ self-contained; engine reads gone (verified seed=18: 3 free-action, 3rd free cp, 4th full+action)                                                 |
+| Revitalize                 | +50 meter                                      | ON_CARD_PLAY                                                                                                                                                           | universal.c | ✅                                                                                                                                                   |
+| Hostage                    | next flip to you: +20 meter                    | ON_PIECE_FLIP                                                                                                                                                          | universal.c | ✅                                                                                                                                                   |
+| Last Stand                 | no flip this turn                              | QUERY_PIECE_CAN_FLIP veto                                                                                                                                              | universal.c | ✅                                                                                                                                                   |
+| Sacrifice                  | remove piece, +2× value meter                  | QUERY_CARD_TARGETS + ON_CARD_TARGET_SELECTED (own non-king piece)                                                                                                      | universal.c | ✅ (targeting → 2.5)                                                                                                                                 |
+| Reforge                    | next flip discounts that type                  | ON_PIECE_FLIP_PRE attaches mark + QUERY_PIECE_CP_COST_BUY (30% off) + ON_PIECE_BUY (spend) effects                                                                     | universal.c | ✅ self-contained; engine reads gone (code-verified — needs a flip to exercise)                                                                      |
+| Mercy                      | retarget next flip                             | QUERY_CARD_TARGETS (own piece) → ON_CARD_TARGET_SELECTED attaches ON_PIECE_FLIP_PRE observer                                                                           | universal.c | ✅ (targeting → 2.5)                                                                                                                                 |
+| Bloodletting               | +50% missing-meter damage                      | QUERY_PIECE_DAMAGE_DEALT                                                                                                                                               | universal.c | ✅                                                                                                                                                   |
+| Counter Coup               | echo 50% taken damage                          | QUERY_METER_DAMAGE_TAKEN                                                                                                                                               | universal.c | ✅                                                                                                                                                   |
+| Spite                      | next loss: 3× value to enemy                   | ON_PIECE_FLIP_PRE                                                                                                                                                      | universal.c | ✅                                                                                                                                                   |
+| Chain Break                | force-flip 1 enemy                             | QUERY_CARD_TARGETS (enemy non-king) + ON_CARD_TARGET_SELECTED                                                                                                          | universal.c | ✅ (targeting → 2.5)                                                                                                                                 |
+| Hydra                      | next flip: 2 pawns by king                     | ON_PIECE_FLIP_PRE                                                                                                                                                      | universal.c | ✅                                                                                                                                                   |
+| River Wade                 | pawn gains sideways                            | QUERY_CARD_TARGETS (pawn) + ON_CARD_TARGET_SELECTED → embeds QUERY_PIECE_MOVES                                                                                         | longwei.c   | ✅ (targeting → 2.5)                                                                                                                                 |
+| Charge                     | slider passes one blocker                      | QUERY_CARD_TARGETS (`class == MOVE_SLIDER` only, NOT king) + ON_CARD_TARGET_SELECTED → attaches QUERY_PIECE_MOVES                                                      | longwei.c   | ✅ (2.5b) — earlier hallucination offered any own piece incl. king; fixed to slider-class                                                            |
+| Formation                  | line of 3: +50% damage                         | QUERY_PIECE_DAMAGE_DEALT                                                                                                                                               | longwei.c   | ✅                                                                                                                                                   |
+| Divination                 | reveal enemy plan                              | eff_divination → ON_CARD_PLAY → `ai_plan`                                                                                                                              | longwei.c   | ⚠️ wired but `ai_plan` is an empty stub (`ai.c:207`) — the card plays but reveals nothing (AI preview not built)                                     |
+| Cannon Volley              | Pao hits row+column                            | QUERY_CARD_TARGETS (Pao) + ON_CARD_TARGET_SELECTED → `battle_damage` (flip cascade, not raw meter -=)                                                                  | longwei.c   | ✅ (2.5d)                                                                                                                                            |
+| Palace Decree              | enemy king in 3×3, 2 turns                     | ON_CARD_PLAY → attaches QUERY_PIECE_MOVES (auto: enemy king)                                                                                                           | longwei.c   | ✅                                                                                                                                                   |
+| Mandate                    | remove piece, 3× value to enemy                | QUERY_CARD_TARGETS (own non-king) + ON_CARD_TARGET_SELECTED → remove + `battle_damage` (flip cascade)                                                                  | longwei.c   | ✅ (2.5d)                                                                                                                                            |
+| Mingzhu's Seal (M2)        | 1 enemy can't move 3 turns                     | QUERY_CARD_TARGETS (enemy) + ON_CARD_TARGET_SELECTED → attaches QUERY_PIECE_CAN_MOVE                                                                                   | longwei.c   | ✅ (targeting → 2.5)                                                                                                                                 |
+| Sultan's Gold              | +60 cp                                         | ON_CARD_PLAY                                                                                                                                                           | kewarani.c  | ✅                                                                                                                                                   |
+| March                      | pawns move fwd 1 free                          | ON_CARD_PLAY                                                                                                                                                           | kewarani.c  | ✅                                                                                                                                                   |
+| Double Time                | +1 move (3rd if innate active)                 | QUERY_CARD_TARGETS (own incl. king) + ON_CARD_TARGET_SELECTED → grant free move; 2nd free move if piece carries the innate's `eff_double_move`                         | kewarani.c  | ✅ (2.5d) — third-move clause added                                                                                                                  |
+| Salt Road                  | +10 cp each turn                               | ON_TURN_START                                                                                                                                                          | kewarani.c  | ✅                                                                                                                                                   |
+| Caravan                    | line moves fwd together                        | ON_CARD_PLAY                                                                                                                                                           | kewarani.c  | ✅                                                                                                                                                   |
+| Doublestrike               | move 2 pieces, 1 action                        | ON_CARD_PLAY                                                                                                                                                           | kewarani.c  | ✅                                                                                                                                                   |
+| Hajj                       | teleport piece anywhere                        | QUERY_CARD_TARGETS ×2 (piece, dest) + ON_CARD_TARGET_SELECTED                                                                                                          | kewarani.c  | ✅ (multi-target → 2.5)                                                                                                                              |
+| Selassie's March (M2)      | Kewarani move 3×                               | ON_CARD_PLAY                                                                                                                                                           | kewarani.c  | ✅                                                                                                                                                   |
+| Ronin                      | passive: target's next flip refunds its value  | QUERY_CARD_TARGETS (own piece) + ON_CARD_TARGET_SELECTED → attaches ON_PIECE_FLIP observer                                                                             | harushima.c | ✅ (targeting → 2.5)                                                                                                                                 |
+| Resurrection               | reclaim any flipped piece free                 | QUERY_CARD_TARGETS (`battle_piece_flips > 0`, cumulative counter not MARK) + ON_CARD_TARGET_SELECTED → `battle_flip`                                                   | harushima.c | ✅ (2.5c)                                                                                                                                            |
+| Gold Standard              | target moves as Kinsho this turn               | QUERY_CARD_TARGETS (piece) + ON_CARD_TARGET_SELECTED → attaches QUERY_PIECE_MOVES (`mg_compound` Kinsho)                                                               | harushima.c | ✅ (targeting → 2.5)                                                                                                                                 |
+| Promotion                  | target gains Ginsho movement this battle       | QUERY_CARD_TARGETS (piece) + ON_CARD_TARGET_SELECTED → attaches QUERY_PIECE_MOVES                                                                                      | harushima.c | ✅ (targeting → 2.5)                                                                                                                                 |
+| Dual Drop                  | reclaim ≤2 flipped @30cp; else free Fuhyo      | **dynamic** per-step: offers flipped enemies (`battle_piece_flips > 0`), or empty squares to drop a Fuhyo when none remain, so always playable + Fuhyo location chosen | harushima.c | ✅ (2.5c)                                                                                                                                            |
+| Force Drop                 | place unlocked piece ≤50 on empty square       | QUERY_CARD_TARGETS ×2 (**PIECE_TYPE** `battle_piece_unlocked` & ≤50, then **SQUARE** empty) + ON_CARD_TARGET_SELECTED; spawn "for free", NO meter gain                 | harushima.c | ✅ (2.5d) — spurious `meter += value` removed                                                                                                        |
+| Bushido                    | passive: target's flip deals 2× value to enemy | QUERY_CARD_TARGETS (piece) + ON_CARD_TARGET_SELECTED → attaches ON_PIECE_FLIP observer → `battle_damage` (flip cascade)                                                | harushima.c | ✅ (2.5d)                                                                                                                                            |
+| Tomohito's Patience (M2)   | reclaim ≤3 flipped @15cp each                  | QUERY_CARD_TARGETS ×≤3 (flipped pieces) + ON_CARD_TARGET_SELECTED                                                                                                      | harushima.c | ✅ (multi-target → 2.5)                                                                                                                              |
+| Counsel                    | peek next 3, discard 1                         | eff_counsel → QUERY_CARD_CAN_DRAW veto (drops the first drawable card once next turn)                                                                                  | zarqan.c    | ⚠️ simplified — discards one card next turn, but no peek and no player choice of which; the GDD "peek 3, pick 1" needs `QUERY_NEXT_HAND` (not built) |
+| Pillage                    | +5 cp per friendly piece                       | ON_CARD_PLAY                                                                                                                                                           | zarqan.c    | ✅                                                                                                                                                   |
+| Royal Decoy                | swap 2 friendly                                | QUERY_CARD_TARGETS ×2 (own pieces) + ON_CARD_TARGET_SELECTED                                                                                                           | zarqan.c    | ✅ (multi-target → 2.5)                                                                                                                              |
+| Bazaar                     | sell piece for 150%                            | QUERY_CARD_TARGETS (own piece) + ON_CARD_TARGET_SELECTED                                                                                                               | zarqan.c    | ✅ (targeting → 2.5)                                                                                                                                 |
+| Steppe Riders              | knights/jamals/cataphracts move 2×             | ON_CARD_PLAY                                                                                                                                                           | zarqan.c    | ✅                                                                                                                                                   |
+| Ambition                   | copy movement 1 turn                           | QUERY_CARD_TARGETS ×2 (piece, copied) + ON_CARD_TARGET_SELECTED (`mg_compound`)                                                                                        | zarqan.c    | ✅ (multi-target → 2.5)                                                                                                                              |
+| Citadel                    | piece immobile+immune 2 turns                  | QUERY_CARD_TARGETS (piece) + ON_CARD_TARGET_SELECTED → attaches CAN_MOVE/ATTACK/CAN_FLIP                                                                               | zarqan.c    | ✅ (targeting → 2.5)                                                                                                                                 |
+| Conquest                   | permanently copy movement                      | QUERY_CARD_TARGETS ×2 (piece, copied) + ON_CARD_TARGET_SELECTED                                                                                                        | zarqan.c    | ✅ (multi-target → 2.5)                                                                                                                              |
+| Timur's Conquest (M2)      | auto Royal Sub < 20 meter                      | attaches observer                                                                                                                                                      | zarqan.c    | ✅                                                                                                                                                   |
+| Castling                   | king ↔ rook swap                               | QUERY_CARD_TARGETS (own rook) + ON_CARD_TARGET_SELECTED                                                                                                                | caelan.c    | ✅ (targeting → 2.5)                                                                                                                                 |
+| Queen's Gambit             | sacrifice pawn (any-kingdom); draw 3           | QUERY_CARD_TARGETS (`piece_is_pawn`) + ON_CARD_TARGET_SELECTED → remove pawn + `battle_draw(3)`                                                                        | caelan.c    | ✅ (2.5) — battle.c:1049 3-draw hardcode DELETED; draws in its own effect so `battle_draw` fires ON_CARDS_DRAWN and Lucky Strike composes free       |
+| Vengeance                  | 2× to enemy that moved adjacent last turn      | **automatic** ON_CARD_PLAY scan (no target): sums 2× value of each enemy with `battle_piece_move_turn == turn-1` adjacent to a friendly, one `battle_damage`           | caelan.c    | ✅ (2.5d) — was wrongly a targeting card ("way off"); GDD has no "Target", the condition is the selector                                             |
+| Queen's Decree             | next attack ×2                                 | QUERY_PIECE_DAMAGE_DEALT                                                                                                                                               | caelan.c    | ✅                                                                                                                                                   |
+| Cathedral                  | bishop-defended: −40%                          | QUERY_PIECE_DAMAGE_TAKEN                                                                                                                                               | caelan.c    | ✅                                                                                                                                                   |
+| Coronation                 | promote pawn → queen                           | QUERY_CARD_TARGETS (`piece_is_pawn`, any kingdom — not just PIECE_PAWN) + ON_CARD_TARGET_SELECTED                                                                      | caelan.c    | ✅ (2.5b)                                                                                                                                            |
+| Crusade                    | knight 3 lunges                                | QUERY_CARD_TARGETS (own knight) + ON_CARD_TARGET_SELECTED → `battle_lunge`                                                                                             | caelan.c    | ✅ (targeting → 2.5)                                                                                                                                 |
+| Divine Right               | king attacks as queen                          | QUERY_PIECE_ATTACKS                                                                                                                                                    | caelan.c    | ✅                                                                                                                                                   |
+| Isabella's Coronation (M2) | all pawns → queens                             | ON_CARD_PLAY                                                                                                                                                           | caelan.c    | ✅                                                                                                                                                   |
 
 ## Card Targeting — two-step play (`QUERY_CARD_TARGETS` / `ON_CARD_TARGET_SELECTED`)
 
@@ -253,37 +253,39 @@ protocol holds zero per-card target knowledge.
 
 ## Relics (26) — `RELIC_REGISTRY`, relic.c
 
-Attached to the human seat at `battle_begin` (`battle_walk_run`). Effect
-relics ✅; six are stubs whose behaviour lives at a hardcoded call-site.
+Attached to the human seat at `battle_begin` (`battle_walk_run`). 22 effect
+relics ✅ (incl. Trade Routes, Phase 7); 4 name-only stubs — Master's Notes
+(❌ hardcoded in `run_select_node`) + Librarian's Notes / Deep Hand /
+Surveyor's Map (⬜ need the preview / map-reveal seam, not built).
 
-| Relic                 | GDD                           | Decomposition                                      | Impl                                                                   | Status                                                                                                                   |
-| --------------------- | ----------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Merchant's Ledger     | +5 sell                       | QUERY_CARD_SELL_COST                               | relic.c                                                                | ✅                                                                                                                       |
-| Minted Coin           | +5 income/turn                | QUERY_CP_INCOME                                    | relic.c                                                                | ✅                                                                                                                       |
-| Tax Stamp             | +10 on paid card              | ON_CARD_PLAY                                       | relic.c                                                                | ✅                                                                                                                       |
-| Bulk Discount         | cheapest of 3+ free           | QUERY_PIECE_CP_COST_BUY + ON_TURN_START reset      | relic.c                                                                | ✅ (impl frees the 3rd — flagged interpretation; reset targets wrong context, see note)                                  |
-| War Chest             | unspent cp → 20% meter        | ON_TURN_END                                        | relic.c                                                                | ✅                                                                                                                       |
-| Trade Routes          | remove foreign markup for run | eff_trade_routes → QUERY_PIECE_CP_COST_BUY (foreign piece `*100/120`) | relic.c                                            | ✅ (Phase 7) — `battle_price` id-check deleted; markup divided out as an effect (≤1 cp rounding, flagged)                 |
-| Soul Shard            | gaining flip: +30 meter       | eff_soul_shard → ON_PIECE_FLIP (human seat)        | relic.c                                                               | ✅ on human seat; ON_PIECE_FLIP fires the gaining side's list so it runs only on flips onto the human — no engine id check |
-| Veteran's Bond        | 50+ value: +20 meter          | QUERY_PIECE_DAMAGE_DEALT (effective value)         | relic.c                                                                | ✅                                                                                                                       |
-| Dead Man's Pact       | first lethal → reset 20       | QUERY_METER_DAMAGE_TAKEN                           | relic.c                                                                | ✅                                                                                                                       |
-| Iron King             | king +10 meter                | QUERY_PIECE_DAMAGE_DEALT (effective value)         | relic.c                                                                | ✅                                                                                                                       |
-| Bloodthirst           | leading: +5 meter             | ON_TURN_START                                      | relic.c                                                                | ✅                                                                                                                       |
-| Last Breath           | friendly flip → enemy damage  | ON_PIECE_FLIP                                      | relic.c                                                                | ✅                                                                                                                       |
-| Tactician's Scroll    | draw 4                        | QUERY_CARD_DRAW_COUNT                              | relic.c                                                                | ✅                                                                                                                       |
-| **Librarian's Notes** | peek + skip top card          | QUERY_NEXT_HAND (needs deterministic next-hand pre-roll) | relic.c (stub)                                              | ⬜ Phase 2 preview slice — deferred with Counsel data + `QUERY_NEXT_HAND`; not yet built                                 |
-| Country Seal          | +20 sell (country)            | QUERY_CARD_SELL_COST                               | relic.c                                                                | ✅                                                                                                                       |
-| **Deep Hand**         | +2 draw once/battle           | should be QUERY_CARD_DRAW_COUNT (player-triggered) | relic.c (stub)                                                         | ⬜ Phase 2                                                                                                               |
-| Gilded Archive        | +10 sell (district)           | QUERY_CARD_SELL_COST                               | relic.c                                                                | ✅                                                                                                                       |
-| Alchemist's Kit       | combine 0 actions             | QUERY_PIECE_ACTION_COST_COMBINE                    | relic.c                                                                | ✅                                                                                                                       |
-| **Master's Notes**    | archive reveals 2 recipes     | run-side reveal                                    | **run.c:906** (`run->relics[RELIC_MASTERS_NOTES]`)                     | ❌ hardcoded id in `run_select_node`; item is a stub                                                                     |
-| Philosopher's Stone   | +20 once/battle               | ON_PIECE_COMBINE                                   | relic.c                                                                | ✅                                                                                                                       |
-| Inherited Power       | +5 all combined               | ON_PIECE_COMBINE                                   | relic.c                                                                | ✅                                                                                                                       |
-| Eagle Eye             | enemy pieces always shown     | QUERY_BOARD_STATE: resets view all-visible + noops every OTHER QUERY_BOARD_STATE effect (seat + pieces) except itself, each read → catches mid-battle blinders | relic.c            | ✅ Phase 3 (GDD "values" read as the piece — hiding a lookup-able value is no nerf; hiding the piece is)                 |
-| **Surveyor's Map**    | pre-reveal 1 modifier/map     | run/map-side reveal                                | relic.c (stub)                                                         | ⬜ Phase 3 (run-side)                                                                                                    |
-| Forward Command       | +5 damage in enemy territory  | QUERY_PIECE_DAMAGE_DEALT                           | relic.c                                                                | ✅                                                                                                                       |
-| Fortified Line        | +5 damage if unmoved          | QUERY_PIECE_DAMAGE_DEALT; `battle_piece_move_turn != turn` (timestamp, no MARK) | relic.c                                                   | ✅ (2.5c)                                                                                                                |
-| Warlord's Banner      | +5 damage adjacent to king    | QUERY_PIECE_DAMAGE_DEALT                           | relic.c                                                                | ✅                                                                                                                       |
+| Relic                 | GDD                           | Decomposition                                                                                                                                                  | Impl                                               | Status                                                                                                                     |
+| --------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Merchant's Ledger     | +5 sell                       | QUERY_CARD_SELL_COST                                                                                                                                           | relic.c                                            | ✅                                                                                                                         |
+| Minted Coin           | +5 income/turn                | QUERY_CP_INCOME                                                                                                                                                | relic.c                                            | ✅                                                                                                                         |
+| Tax Stamp             | +10 on paid card              | ON_CARD_PLAY                                                                                                                                                   | relic.c                                            | ✅                                                                                                                         |
+| Bulk Discount         | cheapest of 3+ free           | QUERY_PIECE_CP_COST_BUY + ON_TURN_START reset                                                                                                                  | relic.c                                            | ✅ (impl frees the 3rd — flagged interpretation; reset targets wrong context, see note)                                    |
+| War Chest             | unspent cp → 20% meter        | ON_TURN_END                                                                                                                                                    | relic.c                                            | ✅                                                                                                                         |
+| Trade Routes          | remove foreign markup for run | eff_trade_routes → QUERY_PIECE_CP_COST_BUY (foreign piece `*100/120`)                                                                                          | relic.c                                            | ✅ (Phase 7) — `battle_price` id-check deleted; markup divided out as an effect (≤1 cp rounding, flagged)                  |
+| Soul Shard            | gaining flip: +30 meter       | eff_soul_shard → ON_PIECE_FLIP (human seat)                                                                                                                    | relic.c                                            | ✅ on human seat; ON_PIECE_FLIP fires the gaining side's list so it runs only on flips onto the human — no engine id check |
+| Veteran's Bond        | 50+ value: +20 meter          | QUERY_PIECE_DAMAGE_DEALT (effective value)                                                                                                                     | relic.c                                            | ✅                                                                                                                         |
+| Dead Man's Pact       | first lethal → reset 20       | QUERY_METER_DAMAGE_TAKEN                                                                                                                                       | relic.c                                            | ✅                                                                                                                         |
+| Iron King             | king +10 meter                | QUERY_PIECE_DAMAGE_DEALT (effective value)                                                                                                                     | relic.c                                            | ✅                                                                                                                         |
+| Bloodthirst           | leading: +5 meter             | ON_TURN_START                                                                                                                                                  | relic.c                                            | ✅                                                                                                                         |
+| Last Breath           | friendly flip → enemy damage  | ON_PIECE_FLIP                                                                                                                                                  | relic.c                                            | ✅                                                                                                                         |
+| Tactician's Scroll    | draw 4                        | QUERY_CARD_DRAW_COUNT                                                                                                                                          | relic.c                                            | ✅                                                                                                                         |
+| **Librarian's Notes** | peek + skip top card          | QUERY_NEXT_HAND (needs deterministic next-hand pre-roll)                                                                                                       | relic.c (stub)                                     | ⬜ Phase 2 preview slice — deferred with Counsel data + `QUERY_NEXT_HAND`; not yet built                                   |
+| Country Seal          | +20 sell (country)            | QUERY_CARD_SELL_COST                                                                                                                                           | relic.c                                            | ✅                                                                                                                         |
+| **Deep Hand**         | +2 draw once/battle           | should be QUERY_CARD_DRAW_COUNT (player-triggered)                                                                                                             | relic.c (stub)                                     | ⬜ Phase 2                                                                                                                 |
+| Gilded Archive        | +10 sell (district)           | QUERY_CARD_SELL_COST                                                                                                                                           | relic.c                                            | ✅                                                                                                                         |
+| Alchemist's Kit       | combine 0 actions             | QUERY_PIECE_ACTION_COST_COMBINE                                                                                                                                | relic.c                                            | ✅                                                                                                                         |
+| **Master's Notes**    | archive reveals 2 recipes     | run-side reveal                                                                                                                                                | **run.c:906** (`run->relics[RELIC_MASTERS_NOTES]`) | ❌ hardcoded id in `run_select_node`; item is a stub                                                                       |
+| Philosopher's Stone   | +20 once/battle               | ON_PIECE_COMBINE                                                                                                                                               | relic.c                                            | ✅                                                                                                                         |
+| Inherited Power       | +5 all combined               | ON_PIECE_COMBINE                                                                                                                                               | relic.c                                            | ✅                                                                                                                         |
+| Eagle Eye             | enemy pieces always shown     | QUERY_BOARD_STATE: resets view all-visible + noops every OTHER QUERY_BOARD_STATE effect (seat + pieces) except itself, each read → catches mid-battle blinders | relic.c                                            | ✅ Phase 3 (GDD "values" read as the piece — hiding a lookup-able value is no nerf; hiding the piece is)                   |
+| **Surveyor's Map**    | pre-reveal 1 modifier/map     | run/map-side reveal                                                                                                                                            | relic.c (stub)                                     | ⬜ Phase 3 (run-side)                                                                                                      |
+| Forward Command       | +5 damage in enemy territory  | QUERY_PIECE_DAMAGE_DEALT                                                                                                                                       | relic.c                                            | ✅                                                                                                                         |
+| Fortified Line        | +5 damage if unmoved          | QUERY_PIECE_DAMAGE_DEALT; `battle_piece_move_turn != turn` (timestamp, no MARK)                                                                                | relic.c                                            | ✅ (2.5c)                                                                                                                  |
+| Warlord's Banner      | +5 damage adjacent to king    | QUERY_PIECE_DAMAGE_DEALT                                                                                                                                       | relic.c                                            | ✅                                                                                                                         |
 
 Note — **Bulk Discount latent bug**: `eff_bulk_reset` clears its **own**
 context (relic.c:94), not `eff_bulk_buy`'s separate context, so the per-turn
@@ -292,57 +294,60 @@ effects find (like Pawn Storm's counter). Fold into Phase 4.
 
 ## Battle Modifiers (18) — `MODIFIER_REGISTRY`, universal.c
 
-One copy per seat (`battle_walk_modifiers`), args[0] = that seat. 12 ✅,
-6 stubs whose behaviour is hardcoded in the engine.
+One copy per seat (`battle_walk_modifiers`), args[0] = that seat. All 18 ✅
+— every registry entry carries real effects; the geometry, Fog of War,
+Bloodbath, and Lucky Strike stubs were converted in Phases 2–4.
 
-| Modifier           | GDD                            | Decomposition                   | Impl                                             | Status                                                      |
-| ------------------ | ------------------------------ | ------------------------------- | ------------------------------------------------ | ----------------------------------------------------------- |
-| Lean Times         | −20 cp start                   | ON_BATTLE_START                 | universal.c                                      | ✅                                                          |
-| Windfall           | +30 cp start                   | ON_BATTLE_START                 | universal.c                                      | ✅                                                          |
-| Open Market        | pieces 50%                     | QUERY_PIECE_CP_COST_BUY         | universal.c                                      | ✅                                                          |
-| Devalued Currency  | sell halved                    | QUERY_CARD_SELL_COST            | universal.c                                      | ✅                                                          |
-| Tax Collector      | +5 on sell                     | ON_CARD_SELL                    | universal.c                                      | ✅                                                          |
-| Glass Cannon       | refill 50%                     | QUERY_METER_REFILL              | universal.c                                      | ✅                                                          |
-| Bloodbath          | 2 flips per empty              | eff_bloodbath → QUERY_FLIP_COUNT +1 | universal.c                                  | ✅ cascade fires QUERY_FLIP_COUNT (base 1) for the emptied side; effect adds 1                                    |
-| Iron Will          | 25% recoil                     | QUERY_METER_DAMAGE_TAKEN        | universal.c                                      | ✅                                                          |
-| Overflow           | gained flip +30 value          | ON_PIECE_FLIP                   | universal.c                                      | ✅                                                          |
-| Mirror             | 25% self-heal                  | QUERY_METER_DAMAGE_TAKEN        | universal.c                                      | ✅                                                          |
-| Rich Hand          | draw 4                         | QUERY_CARD_DRAW_COUNT           | universal.c                                      | ✅                                                          |
-| Sparse Hand        | draw 2                         | QUERY_CARD_DRAW_COUNT           | universal.c                                      | ✅                                                          |
-| Kingdom Purity     | region cards only              | QUERY_CARD_CAN_DRAW             | universal.c                                      | ✅                                                          |
-| Lucky Strike       | first card highest tier        | ON_CARDS_DRAWN (x = `Card**`)   | universal.c                                      | ✅ Phase 2 — `battle_draw` hardcode deleted; once-per-turn (stamps `turn` in ctx), replaces `hand[0]` with a random top-tier from the shared `battle_draw_pool` via `battle_rand` (GDD "any highest-tier available", not forced-first) |
-| Fog of War         | hide enemy pieces off attacked | QUERY_BOARD_STATE (piece, not value) | universal.c                                 | ✅ Phase 3                                                 |
-| Dense Terrain      | 20% voids                      | ON_BOARD_BUILD                  | universal.c                                      | ✅ Phase 3                                                 |
-| Extended Front     | +2 columns                     | QUERY_BOARD_DIMENSION           | universal.c                                      | ✅ Phase 3                                                 |
-| Compressed         | −2 columns                     | QUERY_BOARD_DIMENSION           | universal.c                                      | ✅ Phase 3                                                 |
+| Modifier          | GDD                            | Decomposition                        | Impl        | Status                                                                                                                                                                                                                                 |
+| ----------------- | ------------------------------ | ------------------------------------ | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lean Times        | −20 cp start                   | ON_BATTLE_START                      | universal.c | ✅                                                                                                                                                                                                                                     |
+| Windfall          | +30 cp start                   | ON_BATTLE_START                      | universal.c | ✅                                                                                                                                                                                                                                     |
+| Open Market       | pieces 50%                     | QUERY_PIECE_CP_COST_BUY              | universal.c | ✅                                                                                                                                                                                                                                     |
+| Devalued Currency | sell halved                    | QUERY_CARD_SELL_COST                 | universal.c | ✅                                                                                                                                                                                                                                     |
+| Tax Collector     | +5 on sell                     | ON_CARD_SELL                         | universal.c | ✅                                                                                                                                                                                                                                     |
+| Glass Cannon      | refill 50%                     | QUERY_METER_REFILL                   | universal.c | ✅                                                                                                                                                                                                                                     |
+| Bloodbath         | 2 flips per empty              | eff_bloodbath → QUERY_FLIP_COUNT +1  | universal.c | ✅ cascade fires QUERY_FLIP_COUNT (base 1) for the emptied side; effect adds 1                                                                                                                                                         |
+| Iron Will         | 25% recoil                     | QUERY_METER_DAMAGE_TAKEN             | universal.c | ✅                                                                                                                                                                                                                                     |
+| Overflow          | gained flip +30 value          | ON_PIECE_FLIP                        | universal.c | ✅                                                                                                                                                                                                                                     |
+| Mirror            | 25% self-heal                  | QUERY_METER_DAMAGE_TAKEN             | universal.c | ✅                                                                                                                                                                                                                                     |
+| Rich Hand         | draw 4                         | QUERY_CARD_DRAW_COUNT                | universal.c | ✅                                                                                                                                                                                                                                     |
+| Sparse Hand       | draw 2                         | QUERY_CARD_DRAW_COUNT                | universal.c | ✅                                                                                                                                                                                                                                     |
+| Kingdom Purity    | region cards only              | QUERY_CARD_CAN_DRAW                  | universal.c | ✅                                                                                                                                                                                                                                     |
+| Lucky Strike      | first card highest tier        | ON_CARDS_DRAWN (x = `Card**`)        | universal.c | ✅ Phase 2 — `battle_draw` hardcode deleted; once-per-turn (stamps `turn` in ctx), replaces `hand[0]` with a random top-tier from the shared `battle_draw_pool` via `battle_rand` (GDD "any highest-tier available", not forced-first) |
+| Fog of War        | hide enemy pieces off attacked | QUERY_BOARD_STATE (piece, not value) | universal.c | ✅ Phase 3                                                                                                                                                                                                                             |
+| Dense Terrain     | 20% voids                      | ON_BOARD_BUILD                       | universal.c | ✅ Phase 3                                                                                                                                                                                                                             |
+| Extended Front    | +2 columns                     | QUERY_BOARD_DIMENSION                | universal.c | ✅ Phase 3                                                                                                                                                                                                                             |
+| Compressed        | −2 columns                     | QUERY_BOARD_DIMENSION                | universal.c | ✅ Phase 3                                                                                                                                                                                                                             |
 
 ## Board Traits (10) — `TRAIT_REGISTRY`, kingdom data files
 
-One copy per seat (`battle_walk_traits`). 4 ✅, 6 stubs.
+One copy per seat (`battle_walk_traits`). All 10 ✅ — every trait carries
+real effects (geometry via `ON_BOARD_BUILD`, the rest named `QUERY_*`
+effects); River Crossing / Trade Route / Contested Market built in Phase 4.
 
-| Trait                | GDD                                       | Decomposition                             | Impl                                         | Status                     |
-| -------------------- | ----------------------------------------- | ----------------------------------------- | -------------------------------------------- | -------------------------- |
-| River Crossing       | Xiang can't cross; Bing sideways on cross | eff_river_crossing → QUERY_PIECE_MOVES (prune) + eff_river_bing → ON_PIECE_MOVE (grant) | longwei.c | ✅ verified seed=2: Xiang cross-river moves pruned, Bing gains sideways on crossing |
-| The Palace           | king confined to 3×3                      | eff_palace → QUERY_PIECE_MOVES            | longwei.c                                    | ✅                         |
-| Trade Route          | +1 movement on diagonal path              | eff_trade_route → QUERY_PIECE_MOVES (main-diagonal piece gains empty king-steps) | kewarani.c | ✅ verified seed=8: diagonal piece +1 in all dirs, non-diagonal unaffected (interp: "+1 movement" = +1 square all directions) |
-| Contested Market     | spawn claimable neutral each turn         | eff_contested_market → ON_TURN_START; claim resolves via QUERY_SQUARE_OWNER | kewarani.c | ✅ resolve-then-spawn: neutral market pieces claimed by territory holder or removed if contested, then a random Kewarani Town piece spawns neutral on a contested square |
-| Sandstorm            | even turns sliders ≤ 3                    | eff_sandstorm → QUERY_PIECE_MOVES         | zarqan.c                                     | ✅                         |
-| Mirage               | 5% voids                                  | ON_BOARD_BUILD                            | zarqan.c                                     | ✅ Phase 3                 |
-| Fog Coast            | hide far-3-row enemy pieces until moved   | QUERY_BOARD_STATE (piece, not value)      | harushima.c                                  | ✅ Phase 3                 |
-| Island Chain         | 10% voids middle                          | ON_BOARD_BUILD                            | harushima.c                                  | ✅ Phase 3                 |
-| Castle Corners       | 2×2 corners immune                        | eff_castle_corners → QUERY_PIECE_CAN_FLIP | caelan.c                                     | ✅                         |
-| Siege Trench         | middle row immune                         | eff_siege_trench → QUERY_PIECE_CAN_FLIP   | caelan.c                                     | ✅                         |
+| Trait            | GDD                                       | Decomposition                                                                           | Impl        | Status                                                                                                                                                                   |
+| ---------------- | ----------------------------------------- | --------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| River Crossing   | Xiang can't cross; Bing sideways on cross | eff_river_crossing → QUERY_PIECE_MOVES (prune) + eff_river_bing → ON_PIECE_MOVE (grant) | longwei.c   | ✅ verified seed=2: Xiang cross-river moves pruned, Bing gains sideways on crossing                                                                                      |
+| The Palace       | king confined to 3×3                      | eff_palace → QUERY_PIECE_MOVES                                                          | longwei.c   | ✅                                                                                                                                                                       |
+| Trade Route      | +1 movement on diagonal path              | eff_trade_route → QUERY_PIECE_MOVES (main-diagonal piece gains empty king-steps)        | kewarani.c  | ✅ verified seed=8: diagonal piece +1 in all dirs, non-diagonal unaffected (interp: "+1 movement" = +1 square all directions)                                            |
+| Contested Market | spawn claimable neutral each turn         | eff_contested_market → ON_TURN_START; claim resolves via QUERY_SQUARE_OWNER             | kewarani.c  | ✅ resolve-then-spawn: neutral market pieces claimed by territory holder or removed if contested, then a random Kewarani Town piece spawns neutral on a contested square |
+| Sandstorm        | even turns sliders ≤ 3                    | eff_sandstorm → QUERY_PIECE_MOVES                                                       | zarqan.c    | ✅                                                                                                                                                                       |
+| Mirage           | 5% voids                                  | ON_BOARD_BUILD                                                                          | zarqan.c    | ✅ Phase 3                                                                                                                                                               |
+| Fog Coast        | hide far-3-row enemy pieces until moved   | QUERY_BOARD_STATE (piece, not value)                                                    | harushima.c | ✅ Phase 3                                                                                                                                                               |
+| Island Chain     | 10% voids middle                          | ON_BOARD_BUILD                                                                          | harushima.c | ✅ Phase 3                                                                                                                                                               |
+| Castle Corners   | 2×2 corners immune                        | eff_castle_corners → QUERY_PIECE_CAN_FLIP                                               | caelan.c    | ✅                                                                                                                                                                       |
+| Siege Trench     | middle row immune                         | eff_siege_trench → QUERY_PIECE_CAN_FLIP                                                 | caelan.c    | ✅                                                                                                                                                                       |
 
 ## Chain Penalties (3) — `CHAIN_REGISTRY`, universal.c
 
 Attached to the human seat at `battle_setup_armies` when the region is
 chained.
 
-| Chain      | GDD                                | Decomposition                           | Impl                                                     | Status                                                                       |
-| ---------- | ---------------------------------- | --------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Bronze     | −10 cp (−25 Shackled)              | eff_bronze_chain → QUERY_CP_INCOME turn-1 −10 | universal.c; the opening penalty rides the shared cp seam | ✅ opening cp composes on QUERY_CP_INCOME; engine names no chain |
-| Silver     | enemy +1 starting piece            | eff_silver_chain → QUERY_ENEMY_ARMY_COUNT +1 | universal.c (chains attached cumulatively Bronze..level) | ✅ setup fires QUERY_ENEMY_ARMY_COUNT for the human seat; effect adds 1  |
-| Gold       | figurehead subjugated, track locks | run-state (chain cap + liberation node) | run.c chain logic                                        | ✅ run-state (no battle effect) — liberation node deferred                   |
+| Chain  | GDD                                | Decomposition                                 | Impl                                                      | Status                                                                  |
+| ------ | ---------------------------------- | --------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Bronze | −10 cp (−25 Shackled)              | eff_bronze_chain → QUERY_CP_INCOME turn-1 −10 | universal.c; the opening penalty rides the shared cp seam | ✅ opening cp composes on QUERY_CP_INCOME; engine names no chain        |
+| Silver | enemy +1 starting piece            | eff_silver_chain → QUERY_ENEMY_ARMY_COUNT +1  | universal.c (chains attached cumulatively Bronze..level)  | ✅ setup fires QUERY_ENEMY_ARMY_COUNT for the human seat; effect adds 1 |
+| Gold   | figurehead subjugated, track locks | run-state (chain cap + liberation node)       | `CHAIN_REGISTRY[CHAIN_GOLD]` name-only stub (no effects)  | ⬜ stub — the track-lock / liberation-node behaviour is not built       |
 
 ## Kingdom Synergies (5) — `SYNERGY_REGISTRY` KingdomPower items ✅
 
@@ -351,13 +356,13 @@ the lore-adjacent region (`battle_walk_synergies` → `battle_attach_power`).
 Reshaped (Phase 6) from a bare `const Effect[]` to a `const KingdomPower[]`
 value array (EFFECT_ITEM_BASE + id), consistent with every other item.
 
-| Synergy            | GDD                      | Decomposition                              | Impl             | Status |
-| ------------------ | ------------------------ | ------------------------------------------ | ---------------- | ------ |
-| Longwei → Kewarani | Pao +10 damage           | eff_syn_pao → QUERY_PIECE_DAMAGE_DEALT     | universal.c      | ✅     |
-| Kewarani → Zarqan  | Kewarani pieces −10 cp   | eff_syn_kewarani → QUERY_PIECE_CP_COST_BUY | universal.c      | ✅     |
-| Zarqan → Harushima | Ziraafa/Talliya +5 value | eff_syn_zarqan → QUERY_PIECE_DAMAGE_DEALT  | universal.c      | ✅     |
-| Harushima → Caelan | Caelan card draws +1     | eff_syn_harushima → ON_CARD_PLAY           | universal.c      | ✅     |
-| Caelan → Longwei   | Sultan's Gold +10 cp     | eff_syn_caelan → ON_CARD_PLAY              | universal.c      | ✅     |
+| Synergy            | GDD                      | Decomposition                              | Impl        | Status |
+| ------------------ | ------------------------ | ------------------------------------------ | ----------- | ------ |
+| Longwei → Kewarani | Pao +10 damage           | eff_syn_pao → QUERY_PIECE_DAMAGE_DEALT     | universal.c | ✅     |
+| Kewarani → Zarqan  | Kewarani pieces −10 cp   | eff_syn_kewarani → QUERY_PIECE_CP_COST_BUY | universal.c | ✅     |
+| Zarqan → Harushima | Ziraafa/Talliya +5 value | eff_syn_zarqan → QUERY_PIECE_DAMAGE_DEALT  | universal.c | ✅     |
+| Harushima → Caelan | Caelan card draws +1     | eff_syn_harushima → ON_CARD_PLAY           | universal.c | ✅     |
+| Caelan → Longwei   | Sultan's Gold +10 cp     | eff_syn_caelan → ON_CARD_PLAY              | universal.c | ✅     |
 
 ## Kingdom Innates (5) — `INNATE_REGISTRY` KingdomPower items ✅
 
@@ -368,13 +373,13 @@ to the human seat via `battle_attach_power`, mastery marked in args[1] so a
 scaling innate reads it from context. Enslaved reuses the same attach on the
 enemy seat.
 
-| Innate                      | GDD                                    | Decomposition                                                   | Impl        | Status                                                                 |
-| --------------------------- | -------------------------------------- | --------------------------------------------------------------- | ----------- | --------------------------------------------------------------------- |
-| Bulwark (Longwei)           | adjacent Longwei: −50% (−60% M3)       | eff_bulwark → QUERY_PIECE_DAMAGE_TAKEN                          | longwei.c   | ✅                                                                    |
+| Innate                      | GDD                                    | Decomposition                                                                | Impl        | Status                                                          |
+| --------------------------- | -------------------------------------- | ---------------------------------------------------------------------------- | ----------- | --------------------------------------------------------------- |
+| Bulwark (Longwei)           | adjacent Longwei: −50% (−60% M3)       | eff_bulwark → QUERY_PIECE_DAMAGE_TAKEN                                       | longwei.c   | ✅                                                              |
 | Double Time (Kewarani)      | Kewarani move twice                    | eff_double_time_start (ON_BATTLE_START) + eff_double_time_buy (ON_PIECE_BUY) | kewarani.c  | ✅ (start-walk + buy hook now both effects; GDD cost still N/I) |
-| Royal Substitution (Zarqan) | swap with king, once, free             | eff_royal_sub → QUERY_PIECE_MOVES                               | zarqan.c    | ✅ (relaxed to repeatable + costs action; M3 twice not impl)          |
-| Reclaim (Harushima)         | convert flipped piece, 30 cp + action  | eff_reclaim_cost → QUERY_PIECE_CP_COST_RECLAIM, mastery self-gate in args[1] | harushima.c | ✅ (mastery gate moved into the effect)                    |
-| Conqueror's Reward (Caelan) | Caelan flip-helper +50% value (60% M3) | eff_conqueror → ON_PIECE_FLIP (damager attribution)             | caelan.c    | ✅                                                                    |
+| Royal Substitution (Zarqan) | swap with king, once, free             | eff_royal_sub → QUERY_PIECE_MOVES                                            | zarqan.c    | ✅ (relaxed to repeatable + costs action; M3 twice not impl)    |
+| Reclaim (Harushima)         | convert flipped piece, 30 cp + action  | eff_reclaim_cost → QUERY_PIECE_CP_COST_RECLAIM, mastery self-gate in args[1] | harushima.c | ✅ (mastery gate moved into the effect)                         |
+| Conqueror's Reward (Caelan) | Caelan flip-helper +50% value (60% M3) | eff_conqueror → ON_PIECE_FLIP (damager attribution)                          | caelan.c    | ✅                                                              |
 
 ## Kingdom Climaxes (5) — `CLIMAX_REGISTRY` KingdomPower items ✅
 
@@ -385,13 +390,13 @@ ON_COMBO_CLIMAX effect that self-filters on its own kingdom and resolves —
 attaching a turn-long buff (Longwei/Caelan) or acting immediately
 (Kewarani/Zarqan/Harushima). No fn-pointer dispatch, no engine id check.
 
-| Climax    | GDD                          | Decomposition                                   | Impl        | Status |
-| --------- | ---------------------------- | ----------------------------------------------- | ----------- | ------ |
-| Longwei   | all pieces Bulwark this turn | eff_longwei_combo → attach TURNS_1 buff         | longwei.c   | ✅     |
-| Kewarani  | all pieces +1 move           | eff_kewarani_combo → grant free move            | kewarani.c  | ✅     |
-| Zarqan    | swap any 2 pieces            | eff_zarqan_combo → battle_swap top-2 value      | zarqan.c    | ✅     |
-| Harushima | reclaim 1 flipped free       | eff_harushima_combo → battle_flip first enemy   | harushima.c | ✅     |
-| Caelan    | all pieces +50% damage       | eff_caelan_combo → attach TURNS_1 buff          | caelan.c    | ✅     |
+| Climax    | GDD                          | Decomposition                                 | Impl        | Status |
+| --------- | ---------------------------- | --------------------------------------------- | ----------- | ------ |
+| Longwei   | all pieces Bulwark this turn | eff_longwei_combo → attach TURNS_1 buff       | longwei.c   | ✅     |
+| Kewarani  | all pieces +1 move           | eff_kewarani_combo → grant free move          | kewarani.c  | ✅     |
+| Zarqan    | swap any 2 pieces            | eff_zarqan_combo → battle_swap top-2 value    | zarqan.c    | ✅     |
+| Harushima | reclaim 1 flipped free       | eff_harushima_combo → battle_flip first enemy | harushima.c | ✅     |
+| Caelan    | all pieces +50% damage       | eff_caelan_combo → attach TURNS_1 buff        | caelan.c    | ✅     |
 
 ## Narrative Events (30 × 2 choices) — `EVENT_REGISTRY` Event items ✅
 
@@ -401,9 +406,9 @@ option's behaviour is effects:
 
 - **Run-immediate** = `ON_EVENT_CHOOSE` effects (x = `EngineState*`) run
   inline by `run_event_choose` through public run helpers — `run_reduce_
-  vorath`, `run_offer_relics` (reuses the elite `relic id=N` channel),
+vorath`, `run_offer_relics` (reuses the elite `relic id=N` channel),
   `run_begin_removal` (reuses the `remove card=N` channel), `run_remove_
-  chain`, `run_skip_battle`, `run_begin_elite`.
+chain`, `run_skip_battle`, `run_begin_elite`.
 - **Run-persistent** = `QUERY_PIECE_VALUE` (spawn-time value seam) /
   `QUERY_PIECE_CP_COST_BUY` / `QUERY_ENEMY_ARMY_COUNT` / `QUERY_CP_INCOME`
   effects, re-attached to the human seat each battle by
@@ -417,6 +422,7 @@ the attached copy. Deleted: `run_value_bonus`, `run_cost_bonus`,
 the five `<k>_event` stubs, and the empty `EVENT_NAME/TEXT/OPTION` arrays.
 
 **Phase-7 refinements** (post-review):
+
 - `EventState {id, kingdom, choice_taken}` collapsed to a bare
   `EventChoice events[EVENT_COUNT]` — id/kingdom were redundant with the
   `Event` item + `node->kingdom`; only the choice is runtime state.
@@ -489,12 +495,12 @@ the human seat by `battle_walk_rules` at battle start; every inline `if` in
 the engine is deleted. Difficulties stack (a higher level includes the
 lower penalties), mirroring the cumulative chain attach.
 
-| Difficulty | GDD                                | Decomposition                                   | Impl                          | Status       |
-| ---------- | ---------------------------------- | ----------------------------------------------- | ----------------------------- | ------------ |
-| Free       | baseline                           | —                                               | registry no-effect entry      | ✅ baseline  |
-| Bound      | Vorath pressure starts +2          | eff_bound → QUERY_ENEMY_ARMY_COUNT +2           | universal.c                   | ✅           |
-| Shackled   | Bronze becomes −25 cp              | eff_shackled → QUERY_CP_INCOME turn-1 −15 in a chained region | universal.c                   | ✅           |
-| Enslaved   | enemy innates active from battle 1 | eff_enslaved → ON_BATTLE_SETUP attach enemy innate | universal.c                | ✅           |
+| Difficulty | GDD                                | Decomposition                                                 | Impl                     | Status      |
+| ---------- | ---------------------------------- | ------------------------------------------------------------- | ------------------------ | ----------- |
+| Free       | baseline                           | —                                                             | registry no-effect entry | ✅ baseline |
+| Bound      | Vorath pressure starts +2          | eff_bound → QUERY_ENEMY_ARMY_COUNT +2                         | universal.c              | ✅          |
+| Shackled   | Bronze becomes −25 cp              | eff_shackled → QUERY_CP_INCOME turn-1 −15 in a chained region | universal.c              | ✅          |
+| Enslaved   | enemy innates active from battle 1 | eff_enslaved → ON_BATTLE_SETUP attach enemy innate            | universal.c              | ✅          |
 
 ## Challenge Runs (6) — `CHALLENGE_REGISTRY` EffectItems ✅
 
@@ -502,14 +508,14 @@ lower penalties), mirroring the cumulative chain attach.
 seat by `battle_walk_rules`; the engine names no challenge. Two remain
 genuinely non-effect (category G) and carry no-effect registry entries.
 
-| Challenge            | GDD                            | Decomposition                          | Impl        | Status                          |
-| -------------------- | ------------------------------ | -------------------------------------- | ----------- | ------------------------------- |
-| Daily Conquest       | same seed for all players/day  | seed choice                            | run_new     | ⬜ G — run setup, not an effect |
-| Solo Vanguard        | max 1 piece on board           | eff_solo_vanguard → QUERY_PIECE_CAN_BUY veto | universal.c | ✅                         |
-| Pacifist Doctrine    | no buy > 20 cp                 | eff_pacifist → QUERY_PIECE_CAN_BUY veto | universal.c | ✅                              |
-| Blind Draft          | hide card id/name until played | eff_blind_draft → QUERY_HAND_STATE     | universal.c | ✅                              |
-| The Traitor's Gambit | enemy 3 pieces in your half    | eff_traitors_gambit → ON_BATTLE_SETUP spawn | universal.c | ✅                         |
-| Clockwork            | 30 s/turn                      | real-time timer                        | screen/UI   | ⬜ G — timer, not game state    |
+| Challenge            | GDD                            | Decomposition                                | Impl        | Status                          |
+| -------------------- | ------------------------------ | -------------------------------------------- | ----------- | ------------------------------- |
+| Daily Conquest       | same seed for all players/day  | seed choice                                  | run_new     | ⬜ G — run setup, not an effect |
+| Solo Vanguard        | max 1 piece on board           | eff_solo_vanguard → QUERY_PIECE_CAN_BUY veto | universal.c | ✅                              |
+| Pacifist Doctrine    | no buy > 20 cp                 | eff_pacifist → QUERY_PIECE_CAN_BUY veto      | universal.c | ✅                              |
+| Blind Draft          | hide card id/name until played | eff_blind_draft → QUERY_HAND_STATE           | universal.c | ✅                              |
+| The Traitor's Gambit | enemy 3 pieces in your half    | eff_traitors_gambit → ON_BATTLE_SETUP spawn  | universal.c | ✅                              |
+| Clockwork            | 30 s/turn                      | real-time timer                              | screen/UI   | ⬜ G — timer, not game state    |
 
 ## Overseers (5) — `KINGDOM_OVERSEER[]` fn dispatch, all stubs
 
@@ -528,10 +534,10 @@ their rules should compose from effects, not engine special-cases.
 
 ## Global Vorath Counter (1) — Phase 8
 
-| Threshold      | GDD                       | Decomposition                                              | Impl        | Status                                                                                     |
-| -------------- | ------------------------- | ---------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------ |
-| Every 2 losses | enemy meters +20 baseline | eff_vorath_pressure → ON_BATTLE_START (enemy seat, `vorath/2 * 20`) | battle.c    | ✅ (Phase 8) — `battle_begin` block deleted; universal `VORATH_PRESSURE` effect on the enemy seat, verified live |
-| Every 4 losses | forbid 1 random recipe    | general run threshold in `run_battle_result`               | run.c       | ⬜ general run rule (names no item, not an id-violation); stub log — no real recipe-forbid state yet |
+| Threshold      | GDD                       | Decomposition                                                       | Impl     | Status                                                                                                           |
+| -------------- | ------------------------- | ------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| Every 2 losses | enemy meters +20 baseline | eff_vorath_pressure → ON_BATTLE_START (enemy seat, `vorath/2 * 20`) | battle.c | ✅ (Phase 8) — `battle_begin` block deleted; universal `VORATH_PRESSURE` effect on the enemy seat, verified live |
+| Every 4 losses | forbid 1 random recipe    | general run threshold in `run_battle_result`                        | run.c    | ⬜ general run rule (names no item, not an id-violation); stub log — no real recipe-forbid state yet             |
 
 ---
 
@@ -548,17 +554,17 @@ attached through a generic `walk` loop.
 
 - **Lucky Strike** (once-per-turn top-tier redraw): the engine's
   `battle_draw` hardcoded it. Solution: `ON_CARDS_DRAWN` (x = `Card**`) fired
-  after the hand fills; the effect stamps `battle->turn` in its *own* context
+  after the hand fills; the effect stamps `battle->turn` in its _own_ context
   to self-limit to once per turn, and draws from a shared
   `battle_draw_pool()` both the engine and the effect call (no pool through
   `x`). `battle_rand()` supplies the pick.
 - **Soul Shard** (+30 meter on a flip onto the human): engine placed it on
-  the *enemy* list with an id check. Solution: a plain human-seat relic —
-  `battle_flip` fires `ON_PIECE_FLIP` for the *gaining* side, so a human-seat
+  the _enemy_ list with an id check. Solution: a plain human-seat relic —
+  `battle_flip` fires `ON_PIECE_FLIP` for the _gaining_ side, so a human-seat
   effect runs exactly when a piece flips onto the human. No enemy-list
   special placement, no id.
 - **Bloodbath** (flip 2 per meter-empty): `flips = id==BLOODBATH ? 2 : 1`.
-  Solution: `QUERY_FLIP_COUNT` (x = int*, base 1); Bloodbath is a `+1` effect
+  Solution: `QUERY_FLIP_COUNT` (x = int\*, base 1); Bloodbath is a `+1` effect
   on both seats, fired for one side → exactly +1.
 - **Silver chain** (+1 enemy piece): `if (level >= SILVER) count++`. Solution:
   `QUERY_ENEMY_ARMY_COUNT` fired for the human seat; chains attach
@@ -581,7 +587,7 @@ attached through a generic `walk` loop.
   reading `run->vorath_counter`.
 - **Event value / cost bonuses**: `run_value_bonus` / `run_cost_bonus`
   id/kingdom ladders. Solution: `QUERY_PIECE_VALUE` / `QUERY_PIECE_CP_COST_
-  BUY` event effects re-attached from `run->events[]`.
+BUY` event effects re-attached from `run->events[]`.
 
 ### 2. Reusing an existing seam instead of minting a narrow one
 
@@ -616,7 +622,7 @@ mutates; reuse a seam before adding a trigger.
   not the attach timing, gates it.
 - **Eagle Eye vs. other blinders**: order-independent because it must be a
   `QUERY_BOARD_STATE` effect that, on each read, resets the view all-visible
-  and sets `func = eff_noop` on every *other* board-state effect (seat list +
+  and sets `func = eff_noop` on every _other_ board-state effect (seat list +
   every piece), skipping itself — catching blinders attached mid-battle. Not
   an `ON_BATTLE_START` one-shot.
 - **Iron Will / Mirror dealer reactions**: the receiver-list copy knows the
@@ -632,8 +638,8 @@ mutates; reuse a seam before adding a trigger.
 
 - **Pawn Storm / Reforge**: multi-effect cards whose slots must share a
   counter. The engine used to read their marks by `CardID`. Solution: the
-  card's own data-file effects coordinate via `effect_find_mark` *inside
-  effect-land* — the engine only sets `args[0]`, names nothing. Same shape
+  card's own data-file effects coordinate via `effect_find_mark` _inside
+  effect-land_ — the engine only sets `args[0]`, names nothing. Same shape
   retired the magic move/flip marks into `QUERY_PIECE_HAS_MOVED/FLIPPED`
   counters bumped by `battle_move`/`battle_flip`.
 
@@ -665,7 +671,7 @@ Some mechanics had no value to mutate until a seam was cut.
 
 - **Card play** forced the caller to pre-encode each card's `a`/`b` target.
   Solution (Phase 2.5): the card advertises typed `CardTarget`s via
-  `QUERY_CARD_TARGETS`; the protocol emits them and returns a plain *index*;
+  `QUERY_CARD_TARGETS`; the protocol emits them and returns a plain _index_;
   `ON_CARD_TARGET_SELECTED` resolves. Multi-target cards fire per step and
   park in `PENDING_*`; `QUERY_CARD_CAN_PLAY` dry-runs every step so a play
   never parks on a dead one. Filters are inline Clang blocks, never named
@@ -693,34 +699,38 @@ the run-persistent re-attach are in this category.
 
 ## Summary
 
-| Category        | ✅      | ⚠️     | ❌     | ⬜     | Total   |
-| --------------- | ------- | ------ | ------ | ------ | ------- |
-| Pieces          | 41      |        |        |        | 41      |
-| Cards           | 51      | 2      | 1      |        | 54      |
-| Relics          | 20      | 1      | 1      | 4      | 26      |
-| Modifiers       | 12      |        | 5      | 1      | 18      |
-| Board Traits    | 4       |        | 2      | 4      | 10      |
-| Chain Penalties | 1       | 1      | 1      |        | 3       |
-| Synergies       | 5       |        |        |        | 5       |
-| Innates         | 5       |        |        |        | 5       |
-| Climaxes        | 5       |        |        |        | 5       |
-| Events          | 30      |        |        |        | 30      |
-| Difficulties    | 4       |        |        |        | 4       |
-| Challenges      | 4       |        |        | 2      | 6       |
-| Overseers       |         |        |        | 6      | 6       |
-| Vorath Counter  | 1       |        |        | 1      | 2       |
-| **Total**       | **183** | **4**  | **10** | **18** | **215** |
+| Category        | ✅      | ⚠️    | ❌    | ⬜     | Total   |
+| --------------- | ------- | ----- | ----- | ------ | ------- |
+| Pieces          | 41      |       |       |        | 41      |
+| Cards           | 52      | 2     |       |        | 54      |
+| Relics          | 22      |       | 1     | 3      | 26      |
+| Modifiers       | 18      |       |       |        | 18      |
+| Board Traits    | 10      |       |       |        | 10      |
+| Chain Penalties | 2       |       |       | 1      | 3       |
+| Synergies       | 5       |       |       |        | 5       |
+| Innates         | 5       |       |       |        | 5       |
+| Climaxes        | 5       |       |       |        | 5       |
+| Events          | 30      |       |       |        | 30      |
+| Difficulties    | 4       |       |       |        | 4       |
+| Challenges      | 4       |       |       | 2      | 6       |
+| Overseers       |         |       |       | 6      | 6       |
+| Vorath Counter  | 1       |       |       | 1      | 2       |
+| **Total**       | **199** | **2** | **1** | **13** | **215** |
 
-**183 ✅** effect-driven after Phases 1–8: all pieces, synergies, innates,
-climaxes, events, difficulties, and the reachable relics/modifiers/traits.
-**4 ⚠️** remain effect-driven but the wrong shape or with a flagged edge
-(2 targeting-adjacent cards, 1 relic, the Gold chain). **10 ❌** are the
-still-open violations, dominated by the earlier-phase modifier/trait stubs
-(Fog display, structural modifiers) and the run-side reveal relics
-(Master's Notes). **18 ⬜** are feature-not-violation deferrals (overseers,
-preview relics, Daily Conquest/Clockwork, the recipe-forbid stub). The
-event-target dialog (§ Narrative Events) is the one philosophy item left to
-build; everything else ❌ is a stub feature naming no engine id.
+**199 ✅** effect-driven after Phases 1–8: all pieces, modifiers, board
+traits, synergies, innates, climaxes, events, difficulties, 52 of 54 cards,
+and 22 of 26 relics. **2 ⚠️** — Counsel (a working `QUERY_CARD_CAN_DRAW`
+veto, but the GDD "peek 3, pick 1" is simplified to no-peek/no-choice
+pending `QUERY_NEXT_HAND`) and Divination (wired to `ON_CARD_PLAY` but
+`ai_plan` is an empty stub, so nothing is revealed). **1 ❌** — Master's
+Notes (its archive-reveal behaviour is hardcoded in `run_select_node`,
+naming the relic id). **13 ⬜** are
+feature-not-violation stubs: the 6 overseer bosses, 3 preview/reveal relics
+(Librarian's Notes, Deep Hand, Surveyor's Map), the Gold chain track-lock,
+the 2 category-G challenges (Daily Conquest seed, Clockwork timer), and the
+Vorath recipe-forbid stub. The event-target dialog (§ Narrative Events) is
+the one remaining philosophy item to build; everything else non-✅ is a
+stub feature naming no engine id, except Master's Notes.
 
 Beyond value-mutation, the philosophy reaches two seams: the **protocol**
 queries board/hand state through triggers (Phase 2.5/3) so `screen.c` and

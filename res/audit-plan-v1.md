@@ -770,14 +770,90 @@ migration ends by deleting the old path.
   run_relic_pick as index-mapped resolvers. Not built (would be rushed +
   untestable — events need ~8 wins to reach — bundled with Phase 8/analysis;
   design captured here).
-- **Analysis (excruciating)** ✅: added a full "Implementation challenges &
-  solutions" retrospective (9 challenge classes); flipped Trade Routes,
-  Vorath +20, and the 30 event rows to ✅; refreshed the Summary tally
-  (183✅/4⚠️/10❌/18⬜).
-- **Now:** Phases 1–8 done bar the deferred event-target dialog. Remaining
-  ❌/⬜ are feature stubs (overseers, preview/reveal relics, structural
-  modifiers, recipe-forbid) + category-G non-effects — no value-mutating
-  philosophy violations left except the event-target dialog.
+- **Analysis (excruciating) + audit** ✅: added a full "Implementation
+  challenges & solutions" retrospective (9 challenge classes). Then
+  reconciled the Summary tally against the real per-item tables + code
+  (registry stub scans, function-body scans) — caught over-optimistic greens:
+  Counsel (⚠️ real is a QUERY_CARD_CAN_DRAW veto, not QUERY_NEXT_HAND
+  targeting), Divination (⚠️ wired but `ai_plan` is an empty stub), Gold
+  chain (⬜ name-only stub). Corrected tally: **199✅ / 2⚠️ / 1❌ / 13⬜**.
+- **Now:** Phases 1–8 done. The single remaining value-mutating philosophy
+  violation is Master's Notes (❌, hardcoded id) + the event-target dialog
+  (shape). Everything else non-✅ is a feature stub. Full backlog below.
+
+### Deferred backlog (all phases) — nothing lost
+
+Complete list of every deferral/stub/flag across the rectification, so none
+is forgotten. Grouped by what unblocks it.
+
+**A. Remaining philosophy items (build to finish the rectification)**
+1. **Event-target dialog** (Phase 7 shape) — run-side two-step `target i=N`
+   (map-side analogue of Phase 2.5). Step 0 = A/B; dynamic follow-up:
+   TARGET_CARD (card removal), TARGET_RELIC (of the offered 2),
+   TARGET_PIECE_TYPE (replaces the fixed Xiang/Kyosha for Janggi Elder /
+   Forge Master), TARGET_NODE (skip → drops `skip_next_battle`). Replaces
+   `choose`/`remove`/`relic` event commands; reuses run_offering/
+   run_relic_pick as index-mapped resolvers.
+2. **Master's Notes** (❌) — archive-reveal is hardcoded in `run_select_node`
+   (`run->relics[RELIC_MASTERS_NOTES]`, run.c:906). Needs an archive-reveal
+   seam/trigger so the relic supplies the effect and the engine names no id.
+
+**B. Preview / draw seam (Phase 2 slice, never built)**
+3. **`QUERY_NEXT_HAND` + deterministic next-hand pre-roll** → unblocks
+   **Counsel** (⚠️ → full peek-3-pick-1, via TARGET_CARD sourced from the
+   preview) and **Librarian's Notes** (⬜ peek + skip top card).
+4. **Deep Hand** (⬜) — +2 draw once/battle; needs a player-triggered
+   `QUERY_CARD_DRAW_COUNT` gated once per battle.
+
+**C. Map/run reveal seam (Phase 3 slice)**
+5. **Surveyor's Map** (⬜) — pre-reveal 1 modifier per map. Blocked: every
+   node is already `revealed=1`, so a hidden-node model must exist first
+   (the same reason the event "reveal N nodes" choices are informational
+   no-ops).
+
+**D. AI layer (master-plan Phase 7, not a rectification phase)**
+6. **`ai_plan`** is an empty stub → **Divination** (⚠️) plays but reveals
+   nothing. Build the enemy-turn preview.
+7. **AI archetypes** (decision trees) — category-G behavioural; the current
+   AI is the single "Hammer" buy-and-advance heuristic.
+
+**E. Bosses / run structure (master-plan Phase 7)**
+8. **6 Overseer boss battles** (Iron Strategist, Caravan of Conquest,
+   Many-Faced King, Eternal Recursion, Crowned Heretic + the Vorath finale)
+   — all empty stubs; when built their army/rules should compose from
+   effects, not engine special-cases.
+9. **Gold chain** (⬜) — track-lock + liberation-node injection.
+10. **Event-elite bespoke armies** — Mirage (Citadel enemies), Pretender
+    (mirror the human setup), Tournament (fixed mid-tier Caelan). Currently
+    run the standard region army + the reward (flagged simplification).
+
+**F. Vorath**
+11. **Recipe-forbid** (4 losses, ⬜) — `run_battle_result` emits a stub log;
+    no real recipe-forbid state exists to forbid a recipe.
+
+**G. Category-G — out of effect scope BY DESIGN (note, do not convert)**
+12. **Daily Conquest** (seed choice at `run_new`), **Clockwork** (real-time
+    30 s/turn timer). Not game-state values.
+
+**H. Known bug + flagged interpretations (not violations)**
+13. **Bulk Discount latent bug** (CONFIRMED still present, relic.c): the
+    ON_TURN_START `eff_bulk_reset` clears *its own* context, not
+    `eff_bulk_buy`'s separate context, so the per-turn buy counter never
+    resets — it frees only the 3rd buy of the whole battle, not per turn.
+    Fix = a shared `eff_noop` mark both effects find (the Pawn Storm pattern).
+14. **Interpretation flags to revisit if they matter**: Bulk Discount
+    "cheapest of 3+ free" → "3rd free"; Trade Route "+1 movement" → +1 square
+    all directions; Trade Routes markup reversal ≤1 cp rounding; Contested
+    Market "each turn" = each half-turn + claim reassigns side only; Caravan
+    advances a file in board-y order so a black multi-piece file can
+    self-block; Royal Substitution relaxed to repeatable + costs an action
+    (M3 "twice" not impl); Harushima Reclaim = the M3 cost-cut only; assorted
+    M3 cosmetic titles/params unbuilt.
+
+**I. Verification gaps (code-verified only — no live pass)**
+15. Tier-gated multi-target cards, deep-map relics/traits, and all 30 events
+    are unreachable without a progression harness (~8 sequential battle wins
+    to reach an event node). They reuse machinery proven live elsewhere.
 
 ### Execution phases (gate each: `make debug` zero warnings, 80-col clean, harnesses green)
 
