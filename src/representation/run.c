@@ -544,8 +544,9 @@ map_generate(MapState* map, KingdomID kingdom, MapTypeID tier, size_t seed) {
         *node          = LAYOUTS[kingdom][tier][i];
         node->map      = map;
         node->kingdom  = map->kingdom;
-        node->revealed = i == 0;
-        node->cleared  = false;
+        node->revealed          = i == 0;
+        node->modifier_revealed = false;
+        node->cleared           = false;
 
         if (node->type == MAP_NODE_BATTLE || node->type == MAP_NODE_ELITE ||
             node->type == MAP_NODE_OVERSEER) {
@@ -836,10 +837,55 @@ void run_free(RunState* run) {
     free(run);
 }
 
+/// run_fire_relics
+///
+/// Generic run-side relic dispatch: walks the run's held relics and invokes
+/// every relic effect matching the trigger through the shared invoke-and-log
+/// path, the run-side analogue of battle_walk_run. x is the value the trigger
+/// computes; relic identities are never named here.
+///
+/// Params:
+/// - engine  -> engine owning the run
+/// - trigger -> trigger to match relic effects against
+/// - x       -> queried value, type defined per trigger
+///
+static void
+run_fire_relics(EngineState* engine, EffectTrigger trigger, void* x) {
+    RunState* run = engine->run;
+
+    for (int id = 0; id < RELIC_COUNT; id++) {
+        if (!run->relics[id]) {
+            continue;
+        }
+
+        const Relic* relic = &RELIC_REGISTRY[id];
+
+        for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+            const Effect* effect = &relic->effects[slot];
+
+            if (!effect->func || effect->trigger != trigger) {
+                continue;
+            }
+
+            EffectContext ctx =
+                effect->context ? *effect->context : (EffectContext){};
+
+            if (effect->func(&ctx, x) && effect->name) {
+                protocol_emit(
+                    "log effect name=\"%s\" trigger=%s",
+                    effect->name,
+                    effect_trigger_name(trigger)
+                );
+            }
+        }
+    }
+}
+
 /// run_enter_map
 ///
 /// Enters the given kingdom's active map, applying the idempotent unlock
-/// schedule for every tier up to and including the active one.
+/// schedule for every tier up to and including the active one, then fires
+/// ON_MAP_ENTER so held run items may pre-reveal map information.
 ///
 /// Params:
 /// - engine  -> engine owning the run
@@ -853,6 +899,8 @@ void run_enter_map(EngineState* engine, KingdomID kingdom) {
     for (int t = 0; t <= (int) tier; t++) {
         unlock_tier(engine->run, kingdom, (MapTypeID) t);
     }
+
+    run_fire_relics(engine, ON_MAP_ENTER, engine);
 }
 
 /*----------------------------------------------------------------------------*\
@@ -913,52 +961,8 @@ void run_emit_map(EngineState* engine) {
             node->revealed,
             node->cleared,
             node_selectable(map, i),
-            node->revealed ? modifier : -1
+            node->modifier_revealed ? modifier : -1
         );
-    }
-}
-
-/// run_fire_relics
-///
-/// Generic run-side relic dispatch: walks the run's held relics and invokes
-/// every relic effect matching the trigger through the shared invoke-and-log
-/// path, the run-side analogue of battle_walk_run. x is the value the trigger
-/// computes; relic identities are never named here.
-///
-/// Params:
-/// - engine  -> engine owning the run
-/// - trigger -> trigger to match relic effects against
-/// - x       -> queried value, type defined per trigger
-///
-static void
-run_fire_relics(EngineState* engine, EffectTrigger trigger, void* x) {
-    RunState* run = engine->run;
-
-    for (int id = 0; id < RELIC_COUNT; id++) {
-        if (!run->relics[id]) {
-            continue;
-        }
-
-        const Relic* relic = &RELIC_REGISTRY[id];
-
-        for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
-            const Effect* effect = &relic->effects[slot];
-
-            if (!effect->func || effect->trigger != trigger) {
-                continue;
-            }
-
-            EffectContext ctx =
-                effect->context ? *effect->context : (EffectContext){};
-
-            if (effect->func(&ctx, x) && effect->name) {
-                protocol_emit(
-                    "log effect name=\"%s\" trigger=%s",
-                    effect->name,
-                    effect_trigger_name(trigger)
-                );
-            }
-        }
     }
 }
 
@@ -1487,6 +1491,29 @@ void run_targets_battle_nodes(CardTarget* list) {
     }
 }
 
+/// run_targets_modifier_nodes
+///
+/// Pushes every revealed, uncleared battle node whose modifier is still
+/// hidden onto the target list as a TARGET_NODE, the battles ahead a
+/// modifier-reveal event may scout. Node identity must already be known;
+/// the pick only lifts the separate modifier mask.
+///
+/// Params:
+/// - list -> target list to extend
+///
+void run_targets_modifier_nodes(CardTarget* list) {
+    MapState* map = active_map(RUN_ENGINE->run, ENTERED_KINGDOM);
+
+    for (size_t i = 0; i < map->nodes.vertices_count; i++) {
+        MapNode* node = map_node(map, i);
+
+        if (node->type == MAP_NODE_BATTLE && node->modifier &&
+            node->revealed && !node->modifier_revealed && !node->cleared) {
+            card_target_push(list, TARGET_NODE, (int) i);
+        }
+    }
+}
+
 /// run_targets_figureheads
 ///
 /// Pushes every chained kingdom onto the target list as a
@@ -1679,6 +1706,77 @@ void run_node_reveal(EngineState* engine, size_t count) {
         count--;
 
         protocol_emit("log reveal node=%zu", i);
+    }
+}
+
+/// run_reveal_modifier
+///
+/// Reveals a single node's battle modifier without touching its node-identity
+/// visibility, logging the peek. This is the modifier-only analogue of
+/// run_node_reveal, the resolution of a modifier-reveal event or item.
+///
+/// Params:
+/// - engine -> engine owning the run
+/// - index  -> node index whose modifier becomes visible
+///
+void run_reveal_modifier(EngineState* engine, size_t index) {
+    MapState* map = active_map(engine->run, ENTERED_KINGDOM);
+
+    if (index >= map->nodes.vertices_count) {
+        return;
+    }
+
+    map_node(map, index)->modifier_revealed = true;
+
+    protocol_emit("log reveal modifier=%zu", index);
+}
+
+/// run_reveal_map_modifier
+///
+/// Reveals one deterministic battle node's modifier on the entered kingdom's
+/// active map. The choice folds the same per-map seed used to generate the
+/// map, so re-entering reveals the same node's modifier and never another.
+///
+/// Params:
+/// - engine -> engine owning the run
+///
+void run_reveal_map_modifier(EngineState* engine) {
+    RunState* run     = engine->run;
+    KingdomID kingdom = ENTERED_KINGDOM;
+    MapTypeID tier    = active_tier(run, kingdom);
+    MapState* map     = active_map(run, kingdom);
+
+    size_t    count   = 0;
+
+    for (size_t i = 0; i < map->nodes.vertices_count; i++) {
+        MapNode* node = map_node(map, i);
+
+        if (node->type == MAP_NODE_BATTLE && node->modifier) {
+            count++;
+        }
+    }
+
+    if (!count) {
+        return;
+    }
+
+    size_t target =
+        rng_mix(run->seed, (size_t) kingdom * 3 + (size_t) tier) % count;
+    size_t seen   = 0;
+
+    for (size_t i = 0; i < map->nodes.vertices_count; i++) {
+        MapNode* node = map_node(map, i);
+
+        if (node->type != MAP_NODE_BATTLE || !node->modifier) {
+            continue;
+        }
+
+        if (seen == target) {
+            run_reveal_modifier(engine, i);
+            return;
+        }
+
+        seen++;
     }
 }
 

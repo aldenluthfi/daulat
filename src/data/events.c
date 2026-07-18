@@ -191,6 +191,25 @@ static bool eff_ev_tg_node(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_ev_tg_modifier
+///
+/// Advertises the battle nodes whose modifier is still hidden as TARGET_NODE
+/// candidates, the battles a modifier-reveal event may scout.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> CardTarget* candidate list to fill
+///
+/// Return: true, the list always builds
+///
+static bool eff_ev_tg_modifier(EffectContext* context, void* x) {
+    (void) context;
+
+    run_targets_modifier_nodes(x);
+
+    return true;
+}
+
 /// eff_ev_tg_figurehead
 ///
 /// Advertises the chained kingdoms as TARGET_FIGUREHEAD candidates.
@@ -305,6 +324,31 @@ static bool eff_ev_sel_skip(EffectContext* context, void* x) {
     }
 
     run_skip_node((size_t) picks[0].value);
+
+    return true;
+}
+
+/// eff_ev_sel_modifier
+///
+/// Reveals the picked battle node's modifier without revealing the node
+/// itself, the resolution of a modifier-reveal event.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> CardTarget* the picks list
+///
+/// Return: true when a node was picked
+///
+static bool eff_ev_sel_modifier(EffectContext* context, void* x) {
+    (void) context;
+
+    CardTarget* picks = x;
+
+    if (picks[0].kind != TARGET_NODE) {
+        return false;
+    }
+
+    run_reveal_modifier(run_engine(), (size_t) picks[0].value);
 
     return true;
 }
@@ -588,6 +632,17 @@ static bool eff_enemy_army(EffectContext* context, void* x) {
      .trigger   = ON_EVENT_TARGET_SELECTED,                                    \
      .lasts_for = ENTIRE_BATTLE}
 
+#define EV_TG_MODIFIER                                                         \
+    {.func      = eff_ev_tg_modifier,                                          \
+     .trigger   = QUERY_EVENT_TARGETS,                                         \
+     .lasts_for = ENTIRE_BATTLE}
+
+#define EV_SEL_MODIFIER                                                        \
+    {.func      = eff_ev_sel_modifier,                                         \
+     .name      = "Modifier Reveal",                                           \
+     .trigger   = ON_EVENT_TARGET_SELECTED,                                    \
+     .lasts_for = ENTIRE_BATTLE}
+
 #define EV_TG_FIGUREHEAD                                                       \
     {.func      = eff_ev_tg_figurehead,                                        \
      .trigger   = QUERY_EVENT_TARGETS,                                         \
@@ -737,7 +792,7 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_DEFECTOR,
          .options =
              {{.text    = "Reveal the next battle's modifier",
-               .effects = {EV_REVEAL(1)}},
+               .effects = {EV_TG_MODIFIER, EV_SEL_MODIFIER}},
               {.text    = "Reduce Global Vorath Counter by 1",
                .effects = {EV_VORATH(1)}}}},
 

@@ -188,6 +188,12 @@ bool engine_save(EngineState* engine, const char* path) {
                 fputc(node->revealed ? '1' : '0', file);
             }
 
+            fprintf(file, " modrev=");
+            for (size_t i = 0; i < map->nodes.vertices_count; i++) {
+                MapNode* node = map->nodes.nodes[i].data;
+                fputc(node->modifier_revealed ? '1' : '0', file);
+            }
+
             fprintf(file, "\n");
         }
     }
@@ -255,8 +261,10 @@ bool engine_load(EngineState* engine, const char* path) {
         int    k;
         int    t;
         int    choice;
+        int    matched;
         char   bits[512];
         char   revealed[512];
+        char   modrev[512];
 
         if (sscanf(
                 line,
@@ -335,21 +343,24 @@ bool engine_load(EngineState* engine, const char* path) {
                 engine->run->liberation_at[i]  = strtoul(cursor, &cursor, 10);
                 cursor                        += *cursor == ',';
             }
-        } else if (sscanf(
-                       line,
-                       "map k=%d t=%d cleared=%511s revealed=%511s",
-                       &k,
-                       &t,
-                       bits,
-                       revealed
-                   ) == 4) {
+        } else if ((matched = sscanf(
+                        line,
+                        "map k=%d t=%d cleared=%511s revealed=%511s "
+                        "modrev=%511s",
+                        &k,
+                        &t,
+                        bits,
+                        revealed,
+                        modrev
+                    )) >= 4) {
             MapState* map = save_map(engine->run, (size_t) k, (size_t) t);
 
             for (size_t i = 0; i < map->nodes.vertices_count; i++) {
-                MapNode* node  = map->nodes.nodes[i].data;
+                MapNode* node           = map->nodes.nodes[i].data;
 
-                node->cleared  = bits[i] == '1';
-                node->revealed = revealed[i] == '1';
+                node->cleared           = bits[i] == '1';
+                node->revealed          = revealed[i] == '1';
+                node->modifier_revealed = matched == 5 && modrev[i] == '1';
             }
         } else if (sscanf(line, "event i=%d choice=%d", &k, &choice) == 2 &&
                    strncmp(line, "event ", 6) == 0) {

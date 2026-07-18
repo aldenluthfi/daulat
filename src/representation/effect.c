@@ -84,6 +84,8 @@ static const char* const TRIGGER_NAME[] = {
 
     "QUERY_NEXT_HAND",
     "ON_ITEM_ACTIVATE",
+
+    "ON_MAP_ENTER",
 };
 
 /// effect_trigger_name

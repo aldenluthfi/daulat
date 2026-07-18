@@ -155,6 +155,10 @@
 ///                                                context args[0] holds a
 ///                                                once-per-battle used flag and
 ///                                                args[1] a once-per-turn stamp
+/// ON_MAP_ENTER                    x: EngineState* the entered kingdom's active
+///                                                map; a held run item may
+///                                                pre-reveal map information as
+///                                                the map is entered
 ///
 enum EffectTrigger {
     QUERY_CARD_DRAW_COUNT,
@@ -230,6 +234,8 @@ enum EffectTrigger {
 
     QUERY_NEXT_HAND,
     ON_ITEM_ACTIVATE,
+
+    ON_MAP_ENTER,
 };
 
 /// EffectDuration
@@ -1053,6 +1059,7 @@ struct MapNode {
     BattleModifier* modifier;
 
     bool            revealed;
+    bool            modifier_revealed;
     bool            cleared;
 };
 
@@ -1380,14 +1387,10 @@ void   battle_next_hand_discard(BattleState* battle, Side side, size_t slot);
 ///
 /// Return: item count, usability, or activation success
 ///
-size_t battle_item_list(
-    BattleState* battle,
-    Side         side,
-    Effect**     out,
-    size_t       cap
-);
-bool   battle_item_usable(BattleState* battle, Effect* item);
-bool   battle_item_activate(BattleState* battle, Side side, size_t index);
+size_t
+battle_item_list(BattleState* battle, Side side, Effect** out, size_t cap);
+bool battle_item_usable(BattleState* battle, Effect* item);
+bool battle_item_activate(BattleState* battle, Side side, size_t index);
 
 /// Direct damage and single-piece strike
 ///
@@ -1567,6 +1570,7 @@ void              run_battle_result(EngineState* engine, bool won);
 void              run_event_choose(EngineState* engine, EventChoice choice);
 bool              run_event_target(EngineState* engine, size_t index);
 void              run_targets_battle_nodes(CardTarget* list);
+void              run_targets_modifier_nodes(CardTarget* list);
 void              run_targets_figureheads(CardTarget* list);
 void              run_event_pick(int value);
 void              run_skip_node(size_t index);
@@ -1577,6 +1581,8 @@ size_t            run_pressure(RunState* run, KingdomID kingdom);
 bool              run_innate_ready(RunState* run, KingdomID kingdom);
 void              run_reduce_vorath(RunState* run, size_t amount);
 void              run_node_reveal(EngineState* engine, size_t count);
+void              run_reveal_modifier(EngineState* engine, size_t index);
+void              run_reveal_map_modifier(EngineState* engine);
 void              run_remove_chain(RunState* run);
 void run_begin_elite(EngineState* engine, int reward, RelicID a, RelicID b);
 void run_emit_kingdoms(EngineState* engine);

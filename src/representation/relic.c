@@ -541,6 +541,26 @@ static bool eff_deep_hand(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_surveyors_map
+///
+/// Surveyor's Map: on entering a map, pre-reveal one deterministic battle
+/// node's modifier. The generic run helper folds the per-map seed, so the
+/// same node's modifier is revealed on every re-entry and no second one.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> EngineState* owning the entered map
+///
+/// Return: true, the pre-reveal always applies
+///
+static bool eff_surveyors_map(EffectContext* context, void* x) {
+    (void) context;
+
+    run_reveal_map_modifier(x);
+
+    return true;
+}
+
 /*----------------------------------------------------------------------------*\
                                  COMBINATIONS
 \*----------------------------------------------------------------------------*/
@@ -977,9 +997,9 @@ const Relic RELIC_REGISTRY[RELIC_COUNT] = {
         },
     [RELIC_LIBRARIANS_NOTES] =
         {
-            .name = "Librarian's Notes",
-            .desc = "Once per turn, peek the top card and skip it.",
-            .id   = RELIC_LIBRARIANS_NOTES,
+            .name    = "Librarian's Notes",
+            .desc    = "Once per turn, peek the top card and skip it.",
+            .id      = RELIC_LIBRARIANS_NOTES,
             .effects = {{
                 .func      = eff_librarians_notes,
                 .name      = "Librarian's Notes",
@@ -1087,7 +1107,13 @@ const Relic RELIC_REGISTRY[RELIC_COUNT] = {
             .name = "Surveyor's Map",
             .desc =
                 "One random battle node's modifier is pre-revealed per map.",
-            .id = RELIC_SURVEYORS_MAP,
+            .id      = RELIC_SURVEYORS_MAP,
+            .effects = {{
+                .func      = eff_surveyors_map,
+                .name      = "Surveyor's Map",
+                .trigger   = ON_MAP_ENTER,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [RELIC_FORWARD_COMMAND] =
         {
