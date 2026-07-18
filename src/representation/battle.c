@@ -278,6 +278,17 @@ Side battle_enemy(Side side) {
     return side == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
 }
 
+/// battle_human
+///
+/// Returns the side the human player controls this battle, fixed when the
+/// battle begins from the run's fought count.
+///
+/// Return: the human's side
+///
+Side battle_human(void) {
+    return HUMAN_SIDE;
+}
+
 /// battle_rand
 ///
 /// Draws the next value from the battle's deterministic RNG stream, the
@@ -345,10 +356,8 @@ size_t battle_draw_pool(BattleState* battle, Side side, CardID* out) {
 /// Return: the mark effect, nullptr on allocation failure
 ///
 static Effect* next_hand_mark(BattleState* battle, Side side) {
-    LinkedList* list =
-        &battle_player(battle, side)->effects;
-    Effect*     mark =
-        effect_find_mark(list, NEXT_HAND, (void*) (uintptr_t) side);
+    LinkedList* list = &battle_player(battle, side)->effects;
+    Effect* mark = effect_find_mark(list, NEXT_HAND, (void*) (uintptr_t) side);
 
     if (mark) {
         return mark;
@@ -383,12 +392,8 @@ static Effect* next_hand_mark(BattleState* battle, Side side) {
 /// - count  -> number of cards to sample
 /// - out    -> buffer receiving count borrowed Card*
 ///
-static void battle_roll_cards(
-    BattleState* battle,
-    Side         side,
-    size_t       count,
-    Card**       out
-) {
+static void
+battle_roll_cards(BattleState* battle, Side side, size_t count, Card** out) {
     CardID pool[CARD_COUNT];
     size_t pool_size = battle_draw_pool(battle, side, pool);
 
@@ -441,7 +446,7 @@ static void battle_project_hand(BattleState* battle, Side side) {
         draw = MAX_DRAWN_CARDS;
     }
 
-    Card** cards           = (Card**) &mark->context->args[NEXT_HAND_BASE];
+    Card** cards = (Card**) &mark->context->args[NEXT_HAND_BASE];
     battle_roll_cards(battle, side, (size_t) draw, cards);
 
     mark->context->args[2] = (void*) (uintptr_t) draw;
@@ -449,7 +454,7 @@ static void battle_project_hand(BattleState* battle, Side side) {
 
     effect_fire(battle, side, QUERY_NEXT_HAND, cards);
 
-    CURRENT_BATTLE         = saved_battle;
+    CURRENT_BATTLE = saved_battle;
 }
 
 /// battle_realize_hand
@@ -506,7 +511,7 @@ static void battle_realize_hand(BattleState* battle, Side side) {
 
         CURRENT_BATTLE            = battle;
         effect_fire(battle, side, ON_CARDS_DRAWN, player->hand);
-        CURRENT_BATTLE            = saved_battle;
+        CURRENT_BATTLE = saved_battle;
     }
 }
 
@@ -589,12 +594,8 @@ void battle_next_hand_discard(BattleState* battle, Side side, size_t slot) {
 ///
 /// Return: the number of activatable items found
 ///
-size_t battle_item_list(
-    BattleState* battle,
-    Side         side,
-    Effect**     out,
-    size_t       cap
-) {
+size_t
+battle_item_list(BattleState* battle, Side side, Effect** out, size_t cap) {
     LinkedList* list  = &battle_player(battle, side)->effects;
     size_t      count = 0;
 
@@ -669,10 +670,9 @@ bool battle_item_activate(BattleState* battle, Side side, size_t index) {
         BattleState* saved_battle = CURRENT_BATTLE;
         CURRENT_BATTLE            = battle;
 
-        bool applied              =
-            effect->func(effect->context, (void*) (uintptr_t) side);
+        bool applied = effect->func(effect->context, (void*) (uintptr_t) side);
 
-        CURRENT_BATTLE            = saved_battle;
+        CURRENT_BATTLE = saved_battle;
 
         if (applied && effect->name) {
             protocol_emit(
@@ -2917,6 +2917,8 @@ void battle_begin(EngineState* engine, MapNode* node) {
 
     BATTLE_ENGINE       = engine;
     engine->battle      = battle;
+
+    ai_reset();
 
     HUMAN_SIDE  = engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
 

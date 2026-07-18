@@ -591,11 +591,7 @@ static bool eff_counsel_discard(EffectContext* context, void* x) {
     Side        side  = (Side) (uintptr_t) context->args[0];
     CardTarget* picks = x;
 
-    battle_next_hand_discard(
-        battle_current(),
-        side,
-        (size_t) picks[0].value
-    );
+    battle_next_hand_discard(battle_current(), side, (size_t) picks[0].value);
 
     return true;
 }

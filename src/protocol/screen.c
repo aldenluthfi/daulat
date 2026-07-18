@@ -186,7 +186,7 @@ static void emit_hand(EngineState* engine) {
 ///
 static void emit_next(EngineState* engine) {
     BattleState* battle = engine->battle;
-    Side side = engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
+    Side   side  = engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
 
     size_t count = 0;
     Card** cards = battle_next_hand(battle, side, &count);
@@ -222,15 +222,10 @@ static void emit_next(EngineState* engine) {
 ///
 static void emit_activatable(EngineState* engine) {
     BattleState* battle = engine->battle;
-    Side side = engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
+    Side    side = engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
 
     Effect* items[RELIC_COUNT];
-    size_t  count = battle_item_list(
-        battle,
-        side,
-        items,
-        RELIC_COUNT
-    );
+    size_t  count = battle_item_list(battle, side, items, RELIC_COUNT);
 
     for (size_t i = 0; i < count; i++) {
         protocol_emit(
@@ -394,8 +389,7 @@ static void handle_battle(EngineState* engine, ...) {
     }
 
     if (strcmp(argv[0], "activate") == 0) {
-        Side side =
-            engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
+        Side   side = engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
         size_t index = (size_t) arg_long(argc, argv, "i", -1);
 
         if (!battle_item_activate(battle, side, index)) {

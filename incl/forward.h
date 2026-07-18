@@ -44,6 +44,7 @@ typedef enum ChainPenaltyID   ChainPenaltyID;
 typedef enum OverseerTypeID   OverseerTypeID;
 typedef enum EventID          EventID;
 typedef enum EventChoice      EventChoice;
+typedef enum AIActionKind     AIActionKind;
 
 typedef struct EffectContext  EffectContext;
 typedef struct Effect         Effect;
@@ -67,6 +68,8 @@ typedef struct ChallengeRun   ChallengeRun;
 typedef struct KingdomPower   KingdomPower;
 typedef struct PlayerState    PlayerState;
 typedef struct BattleState    BattleState;
+typedef struct AIAction       AIAction;
+typedef struct AIPlan         AIPlan;
 typedef struct RunState       RunState;
 typedef struct EngineState    EngineState;
 

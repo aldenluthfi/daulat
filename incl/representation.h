@@ -1196,6 +1196,47 @@ struct BattleState {
     size_t          turn;
 };
 
+/// Maximum number of actions a stored AI plan can hold.
+///
+#define MAX_AI_PLAN 8
+
+/// AIActionKind
+///
+/// Which primitive a planned AI action performs when the stored plan is
+/// replayed during the enemy turn.
+///
+enum AIActionKind {
+    AI_ACT_BUY,
+    AI_ACT_MOVE,
+};
+
+/// AIAction
+///
+/// One replayable AI action. A buy uses piece and to; a move uses from and
+/// to. Squares are board coordinates in the battle the plan was built for.
+///
+struct AIAction {
+    AIActionKind kind;
+    PieceID      piece;
+    Square       from;
+    Square       to;
+};
+
+/// AIPlan
+///
+/// The enemy's stored next-turn intention: an ordered action list plus the
+/// side it belongs to and a board-occupancy fingerprint captured at build
+/// time. valid marks whether the plan may be replayed; a fingerprint
+/// mismatch at execution means the board changed and the plan is re-built.
+///
+struct AIPlan {
+    AIAction actions[MAX_AI_PLAN];
+    size_t   count;
+    Side     side;
+    bool     valid;
+    unsigned fingerprint;
+};
+
 /*----------------------------------------------------------------------------*\
                                  RUN.C STRUCTS
 \*----------------------------------------------------------------------------*/
@@ -1324,6 +1365,7 @@ void battle_attach_power(
 ///
 PlayerState* battle_player(BattleState* battle, Side side);
 Side         battle_enemy(Side side);
+Side         battle_human(void);
 PieceInfo*   battle_find_king(BattleState* battle, Side side);
 void         battle_meter_gain(BattleState* battle, Side side, int amount);
 
@@ -1548,6 +1590,7 @@ void card_targets_piece_type(
 
 void ai_take_turn(BattleState* battle);
 void ai_plan(BattleState* battle);
+void ai_reset(void);
 
 /*----------------------------------------------------------------------------*\
                                      RUN.C

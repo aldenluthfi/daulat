@@ -1237,7 +1237,7 @@ static bool eff_lucky_strike(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
     Side         side   = (Side) (uintptr_t) context->args[0];
     CardID       pool[CARD_COUNT];
-    size_t       size   = battle_draw_pool(battle, side, pool);
+    size_t       size = battle_draw_pool(battle, side, pool);
 
     if (size == 0) {
         return false;
