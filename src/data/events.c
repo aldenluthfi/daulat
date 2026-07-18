@@ -18,26 +18,6 @@
                               IMMEDIATE EFFECTS
 \*----------------------------------------------------------------------------*/
 
-/// eff_ev_relic
-///
-/// Offers the player a choice between the two relics baked into the effect.
-///
-/// Params:
-/// - context -> args[0]/args[1] the two offered relics
-/// - x       -> EngineState* owning the run
-///
-/// Return: true, the offer always opens
-///
-static bool eff_ev_relic(EffectContext* context, void* x) {
-    run_offer_relics(
-        x,
-        (RelicID) (uintptr_t) context->args[0],
-        (RelicID) (uintptr_t) context->args[1]
-    );
-
-    return true;
-}
-
 /// eff_ev_vorath
 ///
 /// Reduces the Global Vorath Counter by the baked amount.
@@ -56,76 +36,20 @@ static bool eff_ev_vorath(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_ev_remove
-///
-/// Begins removing the baked number of cards from the run's card set.
-///
-/// Params:
-/// - context -> args[0] card count to remove
-/// - x       -> EngineState* owning the run
-///
-/// Return: true, the removal always begins
-///
-static bool eff_ev_remove(EffectContext* context, void* x) {
-    run_begin_removal(x, (size_t) (uintptr_t) context->args[0]);
-
-    return true;
-}
-
-/// eff_ev_chain
-///
-/// Removes one accumulated chain penalty from a figurehead.
-///
-/// Params:
-/// - context -> unused
-/// - x       -> EngineState* owning the run
-///
-/// Return: true, the removal always attempts
-///
-static bool eff_ev_chain(EffectContext* context, void* x) {
-    (void) context;
-
-    run_remove_chain(((EngineState*) x)->run);
-
-    return true;
-}
-
-/// eff_ev_skip
-///
-/// Skips the next battle node the player selects.
-///
-/// Params:
-/// - context -> unused
-/// - x       -> EngineState* owning the run
-///
-/// Return: true, the skip always arms
-///
-static bool eff_ev_skip(EffectContext* context, void* x) {
-    (void) context;
-
-    run_skip_battle(((EngineState*) x)->run);
-
-    return true;
-}
-
 /// eff_ev_reveal
 ///
-/// Reveals map information to the player. Every node is already revealed in
-/// this build, so the effect only logs the peek.
+/// Reveals the next baked number of hidden nodes on the active map, folding
+/// the peek through the shared node-visibility state so masked identities
+/// and content become visible.
 ///
 /// Params:
 /// - context -> args[0] nodes revealed
-/// - x       -> EngineState* owning the run (unused)
+/// - x       -> EngineState* owning the run
 ///
-/// Return: true, the peek always logs
+/// Return: true, the peek always reveals
 ///
 static bool eff_ev_reveal(EffectContext* context, void* x) {
-    (void) x;
-
-    protocol_emit(
-        "log reveal nodes=%d",
-        (int) (intptr_t) context->args[0]
-    );
+    run_node_reveal(x, (size_t) (uintptr_t) context->args[0]);
 
     return true;
 }
@@ -148,6 +72,263 @@ static bool eff_ev_elite(EffectContext* context, void* x) {
         (RelicID) (uintptr_t) context->args[1],
         (RelicID) (uintptr_t) context->args[2]
     );
+
+    return true;
+}
+
+/*----------------------------------------------------------------------------*\
+                            TYPED TARGET EFFECTS
+\*----------------------------------------------------------------------------*/
+
+/// eff_ev_tg_card
+///
+/// Advertises every held card as a TARGET_CARD candidate, excluding cards
+/// already picked in an earlier step so a multi-card removal never offers
+/// the same card twice.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> CardTarget* candidate list to fill
+///
+/// Return: true, the list always builds
+///
+static bool eff_ev_tg_card(EffectContext* context, void* x) {
+    (void) context;
+
+    RunState*         run   = run_engine()->run;
+    const CardTarget* picks = run_pending_picks();
+    CardTarget*       list  = x;
+
+    for (CardID id = 0; id < CARD_COUNT; id++) {
+        if (!run->cards[id]) {
+            continue;
+        }
+
+        bool picked = false;
+
+        for (size_t p = 0; picks[p].kind != TARGET_NONE; p++) {
+            if (picks[p].kind == TARGET_CARD && picks[p].value == (int) id) {
+                picked = true;
+            }
+        }
+
+        if (!picked) {
+            card_target_push(list, TARGET_CARD, (int) id);
+        }
+    }
+
+    return true;
+}
+
+/// eff_ev_tg_piece
+///
+/// Advertises every unlocked piece type as a TARGET_PIECE_TYPE candidate,
+/// restricted to the baked kingdom unless it is KINGDOM_NONE.
+///
+/// Params:
+/// - context -> args[1] kingdom filter, KINGDOM_NONE for any
+/// - x       -> CardTarget* candidate list to fill
+///
+/// Return: true, the list always builds
+///
+static bool eff_ev_tg_piece(EffectContext* context, void* x) {
+    RunState*   run     = run_engine()->run;
+    KingdomID   kingdom = (KingdomID) (uintptr_t) context->args[1];
+    CardTarget* list    = x;
+
+    for (PieceID id = 0; id < PIECE_COUNT; id++) {
+        const Piece* piece = PIECE_REGISTRY[id];
+
+        if (!piece || !run->pieces[id]) {
+            continue;
+        }
+
+        if (kingdom != KINGDOM_NONE && piece->kingdom != kingdom) {
+            continue;
+        }
+
+        card_target_push(list, TARGET_PIECE_TYPE, (int) id);
+    }
+
+    return true;
+}
+
+/// eff_ev_tg_relic
+///
+/// Advertises the two baked relics as TARGET_RELIC candidates.
+///
+/// Params:
+/// - context -> args[0]/args[1] the two offered relics
+/// - x       -> CardTarget* candidate list to fill
+///
+/// Return: true, the list always builds
+///
+static bool eff_ev_tg_relic(EffectContext* context, void* x) {
+    CardTarget* list = x;
+
+    card_target_push(list, TARGET_RELIC, (int) (uintptr_t) context->args[0]);
+    card_target_push(list, TARGET_RELIC, (int) (uintptr_t) context->args[1]);
+
+    return true;
+}
+
+/// eff_ev_tg_node
+///
+/// Advertises the active map's selectable battle nodes as TARGET_NODE
+/// candidates, the nodes a skip event may forgo.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> CardTarget* candidate list to fill
+///
+/// Return: true, the list always builds
+///
+static bool eff_ev_tg_node(EffectContext* context, void* x) {
+    (void) context;
+
+    run_targets_battle_nodes(x);
+
+    return true;
+}
+
+/// eff_ev_tg_figurehead
+///
+/// Advertises the chained kingdoms as TARGET_FIGUREHEAD candidates.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> CardTarget* candidate list to fill
+///
+/// Return: true, the list always builds
+///
+static bool eff_ev_tg_figurehead(EffectContext* context, void* x) {
+    (void) context;
+
+    run_targets_figureheads(x);
+
+    return true;
+}
+
+/// eff_ev_sel_remove
+///
+/// Removes every card picked in the interaction from the run's card set.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> CardTarget* the picks list
+///
+/// Return: true, the removal always applies
+///
+static bool eff_ev_sel_remove(EffectContext* context, void* x) {
+    (void) context;
+
+    RunState*   run   = run_engine()->run;
+    CardTarget* picks = x;
+
+    for (size_t p = 0; picks[p].kind != TARGET_NONE; p++) {
+        if (picks[p].kind != TARGET_CARD) {
+            continue;
+        }
+
+        run->cards[picks[p].value] = false;
+
+        protocol_emit("log offering removed=%d", picks[p].value);
+    }
+
+    return true;
+}
+
+/// eff_ev_sel_relic
+///
+/// Grants the picked relic to the run.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> CardTarget* the picks list
+///
+/// Return: true when a relic was picked
+///
+static bool eff_ev_sel_relic(EffectContext* context, void* x) {
+    (void) context;
+
+    CardTarget* picks = x;
+
+    if (picks[0].kind != TARGET_RELIC) {
+        return false;
+    }
+
+    run_engine()->run->relics[picks[0].value] = true;
+
+    protocol_emit("log relic id=%d", picks[0].value);
+
+    return true;
+}
+
+/// eff_ev_sel_pick
+///
+/// Records the picked piece type for the pending event so its run-persistent
+/// value or cost effect reads it each battle.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> CardTarget* the picks list
+///
+/// Return: true, the pick always records
+///
+static bool eff_ev_sel_pick(EffectContext* context, void* x) {
+    (void) context;
+
+    CardTarget* picks = x;
+
+    run_event_pick(picks[0].value);
+
+    return true;
+}
+
+/// eff_ev_sel_skip
+///
+/// Skips the picked battle node.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> CardTarget* the picks list
+///
+/// Return: true when a node was picked
+///
+static bool eff_ev_sel_skip(EffectContext* context, void* x) {
+    (void) context;
+
+    CardTarget* picks = x;
+
+    if (picks[0].kind != TARGET_NODE) {
+        return false;
+    }
+
+    run_skip_node((size_t) picks[0].value);
+
+    return true;
+}
+
+/// eff_ev_sel_figurehead
+///
+/// Removes one chain level from the picked figurehead.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> CardTarget* the picks list
+///
+/// Return: true when a figurehead was picked
+///
+static bool eff_ev_sel_figurehead(EffectContext* context, void* x) {
+    (void) context;
+
+    CardTarget* picks = x;
+
+    if (picks[0].kind != TARGET_FIGUREHEAD) {
+        return false;
+    }
+
+    run_unchain((KingdomID) picks[0].value);
 
     return true;
 }
@@ -340,14 +521,6 @@ static bool eff_enemy_army(EffectContext* context, void* x) {
                              EFFECT SHORTHANDS
 \*----------------------------------------------------------------------------*/
 
-#define EV_RELIC(a, b)                                                         \
-    {                                                                         \
-        .func = eff_ev_relic, .name = "Relic Offer",                          \
-        .trigger = ON_EVENT_CHOOSE, .lasts_for = ENTIRE_BATTLE,               \
-        .context = &(EffectContext){                                          \
-            .args = {(void*) (uintptr_t) (a), (void*) (uintptr_t) (b)}}       \
-    }
-
 #define EV_VORATH(n)                                                           \
     {                                                                         \
         .func = eff_ev_vorath, .name = "Vorath Reduction",                    \
@@ -355,30 +528,91 @@ static bool eff_enemy_army(EffectContext* context, void* x) {
         .context = &(EffectContext){.args = {(void*) (uintptr_t) (n)}}        \
     }
 
-#define EV_REMOVE(n)                                                           \
-    {                                                                         \
-        .func = eff_ev_remove, .name = "Card Removal",                        \
-        .trigger = ON_EVENT_CHOOSE, .lasts_for = ENTIRE_BATTLE,               \
-        .context = &(EffectContext){.args = {(void*) (uintptr_t) (n)}}        \
-    }
-
-#define EV_CHAIN                                                               \
-    {                                                                         \
-        .func = eff_ev_chain, .name = "Chain Removal",                        \
-        .trigger = ON_EVENT_CHOOSE, .lasts_for = ENTIRE_BATTLE                \
-    }
-
-#define EV_SKIP                                                                \
-    {                                                                         \
-        .func = eff_ev_skip, .name = "Skip Battle",                           \
-        .trigger = ON_EVENT_CHOOSE, .lasts_for = ENTIRE_BATTLE                \
-    }
-
 #define EV_REVEAL(n)                                                           \
     {                                                                         \
         .func = eff_ev_reveal, .name = "Reveal",                              \
         .trigger = ON_EVENT_CHOOSE, .lasts_for = ENTIRE_BATTLE,               \
         .context = &(EffectContext){.args = {(void*) (intptr_t) (n)}}         \
+    }
+
+#define EV_TG_CARD                                                             \
+    {                                                                         \
+        .func = eff_ev_tg_card, .trigger = QUERY_EVENT_TARGETS,               \
+        .lasts_for = ENTIRE_BATTLE                                            \
+    }
+
+#define EV_SEL_REMOVE                                                          \
+    {                                                                         \
+        .func = eff_ev_sel_remove, .name = "Card Removal",                    \
+        .trigger = ON_EVENT_TARGET_SELECTED, .lasts_for = ENTIRE_BATTLE       \
+    }
+
+#define EV_TG_RELIC(a, b)                                                      \
+    {                                                                         \
+        .func = eff_ev_tg_relic, .trigger = QUERY_EVENT_TARGETS,              \
+        .lasts_for = ENTIRE_BATTLE,                                           \
+        .context = &(EffectContext){                                          \
+            .args = {(void*) (uintptr_t) (a), (void*) (uintptr_t) (b)}}       \
+    }
+
+#define EV_SEL_RELIC                                                           \
+    {                                                                         \
+        .func = eff_ev_sel_relic, .name = "Relic Offer",                      \
+        .trigger = ON_EVENT_TARGET_SELECTED, .lasts_for = ENTIRE_BATTLE       \
+    }
+
+#define EV_TG_PIECE(k)                                                         \
+    {                                                                         \
+        .func = eff_ev_tg_piece, .trigger = QUERY_EVENT_TARGETS,              \
+        .lasts_for = ENTIRE_BATTLE,                                           \
+        .context = &(EffectContext){.args = {nullptr,                         \
+            (void*) (uintptr_t) (k)}}                                         \
+    }
+
+#define EV_SEL_PICK                                                            \
+    {                                                                         \
+        .func = eff_ev_sel_pick, .name = "Piece Focus",                       \
+        .trigger = ON_EVENT_TARGET_SELECTED, .lasts_for = ENTIRE_BATTLE       \
+    }
+
+#define EV_TG_NODE                                                             \
+    {                                                                         \
+        .func = eff_ev_tg_node, .trigger = QUERY_EVENT_TARGETS,               \
+        .lasts_for = ENTIRE_BATTLE                                            \
+    }
+
+#define EV_SEL_SKIP                                                            \
+    {                                                                         \
+        .func = eff_ev_sel_skip, .name = "Skip Battle",                       \
+        .trigger = ON_EVENT_TARGET_SELECTED, .lasts_for = ENTIRE_BATTLE       \
+    }
+
+#define EV_TG_FIGUREHEAD                                                       \
+    {                                                                         \
+        .func = eff_ev_tg_figurehead, .trigger = QUERY_EVENT_TARGETS,         \
+        .lasts_for = ENTIRE_BATTLE                                            \
+    }
+
+#define EV_SEL_FIGUREHEAD                                                      \
+    {                                                                         \
+        .func = eff_ev_sel_figurehead, .name = "Chain Removal",               \
+        .trigger = ON_EVENT_TARGET_SELECTED, .lasts_for = ENTIRE_BATTLE       \
+    }
+
+#define EV_VAL_PIECE_PICK(v)                                                   \
+    {                                                                         \
+        .func = eff_val_piece, .name = "Value Bonus",                         \
+        .trigger = QUERY_PIECE_VALUE, .lasts_for = ENTIRE_BATTLE,             \
+        .context = &(EffectContext){.args = {nullptr,                         \
+            (void*) (intptr_t) (-1), (void*) (intptr_t) (v)}}                 \
+    }
+
+#define EV_COST_PIECE_PICK(p)                                                  \
+    {                                                                         \
+        .func = eff_cost_piece, .name = "Cost Discount",                      \
+        .trigger = QUERY_PIECE_CP_COST_BUY, .lasts_for = ENTIRE_BATTLE,       \
+        .context = &(EffectContext){.args = {nullptr,                         \
+            (void*) (intptr_t) (-1), (void*) (intptr_t) (p)}}                 \
     }
 
 #define EV_ELITE(kind, a, b)                                                   \
@@ -421,14 +655,6 @@ static bool eff_enemy_army(EffectContext* context, void* x) {
             (void*) (uintptr_t) (k), (void*) (intptr_t) (p)}}                 \
     }
 
-#define EV_COST_PIECE(id, p)                                                   \
-    {                                                                         \
-        .func = eff_cost_piece, .name = "Cost Discount",                      \
-        .trigger = QUERY_PIECE_CP_COST_BUY, .lasts_for = ENTIRE_BATTLE,       \
-        .context = &(EffectContext){.args = {nullptr,                         \
-            (void*) (uintptr_t) (id), (void*) (intptr_t) (p)}}                \
-    }
-
 #define EV_ENEMY_ARMY(k, n)                                                    \
     {                                                                         \
         .func = eff_enemy_army, .name = "Enemy Reinforcement",                \
@@ -450,7 +676,9 @@ static const Event EVENTS[EVENT_COUNT] = {
              {{.text = "All Longwei pieces gain +3 value this run",
                .effects = {EV_VAL_KINGDOM(KINGDOM_LONGWEI, 3)}},
               {.text = "Choose 1 relic from 2",
-               .effects = {EV_RELIC(RELIC_VETERANS_BOND, RELIC_TAX_STAMP)}}}},
+               .effects =
+                   {EV_TG_RELIC(RELIC_VETERANS_BOND, RELIC_TAX_STAMP),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_DRAGON_COURT_TRIBUTE] =
         {.name = "Dragon Court Tribute",
@@ -458,10 +686,12 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_DRAGON_COURT_TRIBUTE,
          .options =
              {{.text = "Remove 1 card; all Longwei pieces +5 value this run",
-               .effects = {EV_REMOVE(1), EV_VAL_KINGDOM(KINGDOM_LONGWEI, 5)}},
+               .effects = {EV_TG_CARD, EV_SEL_REMOVE,
+                   EV_VAL_KINGDOM(KINGDOM_LONGWEI, 5)}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_BULK_DISCOUNT, RELIC_FORTIFIED_LINE)}}}},
+                   {EV_TG_RELIC(RELIC_BULK_DISCOUNT, RELIC_FORTIFIED_LINE),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_DEFECTOR] =
         {.name = "The Defector",
@@ -479,7 +709,8 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_JANGGI_ELDER,
          .options =
              {{.text = "One Longwei piece type gains +5 value this run",
-               .effects = {EV_VAL_PIECE(PIECE_XIANG, 5)}},
+               .effects = {EV_TG_PIECE(KINGDOM_LONGWEI), EV_SEL_PICK,
+                   EV_VAL_PIECE_PICK(5)}},
               {.text = "Reduce Global Vorath Counter by 1",
                .effects = {EV_VORATH(1)}}}},
 
@@ -499,7 +730,7 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_MANSAS_COURT,
          .options =
              {{.text = "Remove 1 card from card set",
-               .effects = {EV_REMOVE(1)}},
+               .effects = {EV_TG_CARD, EV_SEL_REMOVE}},
               {.text = "Refuse: Kewarani enemies gain +1 piece this run",
                .effects = {EV_ENEMY_ARMY(KINGDOM_KEWARANI, 1)}}}},
 
@@ -510,7 +741,8 @@ static const Event EVENTS[EVENT_COUNT] = {
          .options =
              {{.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_SOUL_SHARD, RELIC_GILDED_ARCHIVE)}},
+                   {EV_TG_RELIC(RELIC_SOUL_SHARD, RELIC_GILDED_ARCHIVE),
+                    EV_SEL_RELIC}},
               {.text = "All Medeq gain +3 value this run",
                .effects = {EV_VAL_PIECE(PIECE_MEDEQ, 3)}}}},
 
@@ -540,10 +772,11 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_FEAST_OF_YOD_ABEGA,
          .options =
              {{.text = "Skip the next battle node",
-               .effects = {EV_SKIP}},
+               .effects = {EV_TG_NODE, EV_SEL_SKIP}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_LAST_BREATH, RELIC_WARLORDS_BANNER)}}}},
+                   {EV_TG_RELIC(RELIC_LAST_BREATH, RELIC_WARLORDS_BANNER),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_WARLORDS_CHALLENGE] =
         {.name = "The Warlord's Challenge",
@@ -562,8 +795,8 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_BAZAAR_OF_SAMARKAND,
          .options =
              {{.text = "Remove 2 cards; Zarqan pieces cost 15% less this run",
-               .effects =
-                   {EV_REMOVE(2), EV_COST_KINGDOM(KINGDOM_ZARQAN, 15)}},
+               .effects = {EV_TG_CARD, EV_TG_CARD, EV_SEL_REMOVE,
+                   EV_COST_KINGDOM(KINGDOM_ZARQAN, 15)}},
               {.text = "Reduce Global Vorath Counter by 2",
                .effects = {EV_VORATH(2)}}}},
 
@@ -603,7 +836,7 @@ static const Event EVENTS[EVENT_COUNT] = {
              {{.text = "Reveal 3 map nodes ahead",
                .effects = {EV_REVEAL(3)}},
               {.text = "Remove 1 Bronze chain from any figurehead",
-               .effects = {EV_CHAIN}}}},
+               .effects = {EV_TG_FIGUREHEAD, EV_SEL_FIGUREHEAD}}}},
 
     [EVENT_RONIN] =
         {.name = "The Ronin",
@@ -612,7 +845,8 @@ static const Event EVENTS[EVENT_COUNT] = {
          .options =
              {{.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_EAGLE_EYE, RELIC_FORWARD_COMMAND)}},
+                   {EV_TG_RELIC(RELIC_EAGLE_EYE, RELIC_FORWARD_COMMAND),
+                    EV_SEL_RELIC}},
               {.text = "All Harushima pieces gain +3 value this run",
                .effects = {EV_VAL_KINGDOM(KINGDOM_HARUSHIMA, 3)}}}},
 
@@ -625,7 +859,8 @@ static const Event EVENTS[EVENT_COUNT] = {
                .effects = {EV_REVEAL(3)}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_MINTED_COIN, RELIC_SURVEYORS_MAP)}}}},
+                   {EV_TG_RELIC(RELIC_MINTED_COIN, RELIC_SURVEYORS_MAP),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_BURNING_PORT] =
         {.name = "The Burning Port",
@@ -633,11 +868,12 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_BURNING_PORT,
          .options =
              {{.text = "Remove 2 cards; Harushima pieces cost 15% less",
-               .effects =
-                   {EV_REMOVE(2), EV_COST_KINGDOM(KINGDOM_HARUSHIMA, 15)}},
+               .effects = {EV_TG_CARD, EV_TG_CARD, EV_SEL_REMOVE,
+                   EV_COST_KINGDOM(KINGDOM_HARUSHIMA, 15)}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_COUNTRY_SEAL, RELIC_FORTIFIED_LINE)}}}},
+                   {EV_TG_RELIC(RELIC_COUNTRY_SEAL, RELIC_FORTIFIED_LINE),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_FORGE_MASTER] =
         {.name = "The Forge Master",
@@ -645,10 +881,12 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_FORGE_MASTER,
          .options =
              {{.text = "One piece type costs 20% less this run",
-               .effects = {EV_COST_PIECE(PIECE_KYOSHA, 20)}},
+               .effects = {EV_TG_PIECE(KINGDOM_NONE), EV_SEL_PICK,
+                   EV_COST_PIECE_PICK(20)}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_VETERANS_BOND, RELIC_TACTICIANS_SCROLL)}}}},
+                   {EV_TG_RELIC(RELIC_VETERANS_BOND, RELIC_TACTICIANS_SCROLL),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_VETERAN_LANCE] =
         {.name = "The Veteran Lance",
@@ -687,7 +925,8 @@ static const Event EVENTS[EVENT_COUNT] = {
                .effects = {EV_COST_KINGDOM(KINGDOM_CAELAN, 10)}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_GILDED_ARCHIVE, RELIC_BULK_DISCOUNT)}}}},
+                   {EV_TG_RELIC(RELIC_GILDED_ARCHIVE, RELIC_BULK_DISCOUNT),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_SIEGE_ENGINEER] =
         {.name = "The Siege Engineer",
@@ -696,7 +935,8 @@ static const Event EVENTS[EVENT_COUNT] = {
          .options =
              {{.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_MASTERS_NOTES, RELIC_ALCHEMISTS_KIT)}},
+                   {EV_TG_RELIC(RELIC_MASTERS_NOTES, RELIC_ALCHEMISTS_KIT),
+                    EV_SEL_RELIC}},
               {.text = "All Pao gain +5 value this run",
                .effects = {EV_VAL_PIECE(PIECE_PAO, 5)}}}},
 
@@ -709,7 +949,8 @@ static const Event EVENTS[EVENT_COUNT] = {
                .effects = {EV_ELITE(1, 0, 0)}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_DEAD_MANS_PACT, RELIC_TRADE_ROUTES)}}}},
+                   {EV_TG_RELIC(RELIC_DEAD_MANS_PACT, RELIC_TRADE_ROUTES),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_ROYAL_DECREE] =
         {.name = "The Royal Decree",
@@ -717,9 +958,12 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_ROYAL_DECREE,
          .options =
              {{.text = "Remove 1 card; all Caelan pieces +3 value this run",
-               .effects = {EV_REMOVE(1), EV_VAL_KINGDOM(KINGDOM_CAELAN, 3)}},
+               .effects = {EV_TG_CARD, EV_SEL_REMOVE,
+                   EV_VAL_KINGDOM(KINGDOM_CAELAN, 3)}},
               {.text = "Choose 1 relic from 2",
-               .effects = {EV_RELIC(RELIC_IRON_KING, RELIC_BLOODTHIRST)}}}},
+               .effects =
+                   {EV_TG_RELIC(RELIC_IRON_KING, RELIC_BLOODTHIRST),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_QUEENS_FAVOR] =
         {.name = "The Queen's Favor",
@@ -738,7 +982,8 @@ static const Event EVENTS[EVENT_COUNT] = {
                }}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_VETERANS_BOND, RELIC_MINTED_COIN)}}}},
+                   {EV_TG_RELIC(RELIC_VETERANS_BOND, RELIC_MINTED_COIN),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_WANDERING_PIECE] =
         {.name = "The Wandering Piece",
@@ -749,7 +994,8 @@ static const Event EVENTS[EVENT_COUNT] = {
                .effects = {EV_VORATH(2)}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_VETERANS_BOND, RELIC_DEEP_HAND)}}}},
+                   {EV_TG_RELIC(RELIC_VETERANS_BOND, RELIC_DEEP_HAND),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_VORATHS_DECREE] =
         {.name = "Vorath's Decree",
@@ -757,10 +1003,11 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_VORATHS_DECREE,
          .options =
              {{.text = "Remove 1 card; reduce Global Vorath Counter by 3",
-               .effects = {EV_REMOVE(1), EV_VORATH(3)}},
+               .effects = {EV_VORATH(3), EV_TG_CARD, EV_SEL_REMOVE}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_SOUL_SHARD, RELIC_FORWARD_COMMAND)}}}},
+                   {EV_TG_RELIC(RELIC_SOUL_SHARD, RELIC_FORWARD_COMMAND),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_DESERTER] =
         {.name = "The Deserter",
@@ -768,10 +1015,11 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_DESERTER,
          .options =
              {{.text = "Remove 1 card; all pawns gain +3 value this run",
-               .effects = {EV_REMOVE(1), EV_VAL_PAWN(3)}},
+               .effects = {EV_TG_CARD, EV_SEL_REMOVE, EV_VAL_PAWN(3)}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_WARLORDS_BANNER, RELIC_DEAD_MANS_PACT)}}}},
+                   {EV_TG_RELIC(RELIC_WARLORDS_BANNER, RELIC_DEAD_MANS_PACT),
+                    EV_SEL_RELIC}}}},
 
     [EVENT_ARCHIVE] =
         {.name = "The Archive",
@@ -780,10 +1028,13 @@ static const Event EVENTS[EVENT_COUNT] = {
          .options =
              {{.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_PHILOSOPHERS_STONE, RELIC_INHERITED_POWER)}},
+                   {EV_TG_RELIC(RELIC_PHILOSOPHERS_STONE,
+                        RELIC_INHERITED_POWER),
+                    EV_SEL_RELIC}},
               {.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_RELIC(RELIC_MASTERS_NOTES, RELIC_ALCHEMISTS_KIT)}}}},
+                   {EV_TG_RELIC(RELIC_MASTERS_NOTES, RELIC_ALCHEMISTS_KIT),
+                    EV_SEL_RELIC}}}},
 };
 
 const Event* const EVENT_REGISTRY[EVENT_COUNT] = {

@@ -1182,6 +1182,65 @@ static bool eff_double_time_start(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_double_time_price_home
+///
+/// Double Time's home-market downside: while the innate is active a Kewarani
+/// piece bought in its home kingdom loses the forty percent home discount,
+/// paying full value. Reverses the discount battle_price applied.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* buy cost being priced
+///
+/// Return: true when the home discount was removed
+///
+static bool eff_double_time_price_home(EffectContext* context, void* x) {
+    (void) context;
+
+    const Piece* piece  = battle_buy_piece();
+    BattleState* battle = battle_current();
+
+    if (!piece || piece->kingdom != KINGDOM_KEWARANI || !battle->node ||
+        !battle->node->kingdom ||
+        piece->kingdom != battle->node->kingdom->id) {
+        return false;
+    }
+
+    *(int*) x = *(int*) x * 100 / 60;
+
+    return true;
+}
+
+/// eff_double_time_price_foreign
+///
+/// Double Time's foreign-market downside: while the innate is active a
+/// foreign Kewarani buy pays a forty percent markup rather than the usual
+/// twenty. Selassie mastery three cancels the extra, leaving the normal
+/// twenty percent penalty battle_price already applied.
+///
+/// Params:
+/// - context -> args[1] Kewarani mastery level
+/// - x       -> int* buy cost being priced
+///
+/// Return: true when the extra markup was added
+///
+static bool eff_double_time_price_foreign(EffectContext* context, void* x) {
+    MasteryLevel level  = (MasteryLevel) (uintptr_t) context->args[1];
+    const Piece* piece  = battle_buy_piece();
+    BattleState* battle = battle_current();
+
+    if (!piece || piece->kingdom != KINGDOM_KEWARANI || !battle->node ||
+        !battle->node->kingdom ||
+        piece->kingdom == battle->node->kingdom->id ||
+        level >= MASTERY_LEVEL_3) {
+        return false;
+    }
+
+    *(int*) x = *(int*) x * 140 / 120;
+
+    return true;
+}
+
 /// eff_kewarani_combo
 ///
 /// Kewarani combo climax: on the kingdom's third same-kingdom card play,
@@ -1233,6 +1292,18 @@ const KingdomPower KEWARANI_INNATE = {
                 .func      = eff_double_time_buy,
                 .name      = "Double Time",
                 .trigger   = ON_PIECE_BUY,
+                .lasts_for = ENTIRE_BATTLE,
+            },
+            {
+                .func      = eff_double_time_price_home,
+                .name      = "Double Time",
+                .trigger   = QUERY_PIECE_CP_COST_BUY,
+                .lasts_for = ENTIRE_BATTLE,
+            },
+            {
+                .func      = eff_double_time_price_foreign,
+                .name      = "Double Time",
+                .trigger   = QUERY_PIECE_CP_COST_BUY,
                 .lasts_for = ENTIRE_BATTLE,
             },
         },

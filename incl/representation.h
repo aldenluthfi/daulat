@@ -59,6 +59,10 @@
 /// QUERY_METER_DAMAGE_TAKEN        x: int*        total resolve damage;
 ///                                                side is the receiver
 /// QUERY_METER_REFILL              x: int*        battle_meter_max result
+/// QUERY_METER_AMOUNT              x: int*        a side's meter maximum, base
+///                                                the piece-value sum; capacity
+///                                                effects add to it before the
+///                                                maximum is used
 /// QUERY_FLIP_COUNT                x: int*        pieces flipped per meter
 ///                                                empty; base 1, fired for
 ///                                                the emptied side
@@ -121,9 +125,23 @@
 ///                                                actions fold into the maxima
 /// ON_BATTLE_START                 x: MapNode*    battle location node
 /// ON_BATTLE_END                   x: uintptr_t   winning Side
+/// ON_CASCADE_END                  x: int*        the lowest meter the damage
+///                                                and cascade transaction drove
+///                                                the receiver to; fired once
+///                                                per transaction for the
+///                                                receiver after the cascade
 /// ON_EVENT_CHOOSE                 x: EngineState* the run; the chosen event
 ///                                                option's run-immediate
 ///                                                effects act on run state
+/// QUERY_EVENT_TARGETS             x: CardTarget* a targeting event option
+///                                                fills one selection step's
+///                                                candidates, one slot per
+///                                                step, mirroring
+///                                                QUERY_CARD_TARGETS
+/// ON_EVENT_TARGET_SELECTED        x: CardTarget* the TARGET_NONE terminated
+///                                                picks; the option resolves
+///                                                against the chosen run
+///                                                targets
 ///
 enum EffectTrigger {
     QUERY_CARD_DRAW_COUNT,
@@ -157,6 +175,7 @@ enum EffectTrigger {
 
     QUERY_METER_DAMAGE_TAKEN,
     QUERY_METER_REFILL,
+    QUERY_METER_AMOUNT,
     QUERY_FLIP_COUNT,
 
     QUERY_CP_INCOME,
@@ -188,15 +207,21 @@ enum EffectTrigger {
     ON_BATTLE_SETUP,
     ON_BATTLE_START,
     ON_BATTLE_END,
+    ON_CASCADE_END,
 
     ON_EVENT_CHOOSE,
+    QUERY_EVENT_TARGETS,
+    ON_EVENT_TARGET_SELECTED,
 };
 
 /// EffectDuration
 ///
-/// This enum enumerates all possible effect durations. Effects persist for
-/// their duration and are automatically removed when they expire. ONE_BATTLE
-/// lasts a whole battle like ENTIRE_BATTLE, but a run-persistent event effect
+/// This enum enumerates all possible effect durations. A TURNS_n effect is
+/// removed at the start of its list side's n-th turn after attachment, so it
+/// stays live across the intervening opponent halves. An effect attached
+/// during a side's own turn therefore lasts n full rounds; one attached onto
+/// the opponent's list covers that opponent's next n turns. ONE_BATTLE lasts
+/// a whole battle like ENTIRE_BATTLE, but a run-persistent event effect
 /// carrying it is consumed after that one battle (not re-attached again).
 ///
 enum EffectDuration {
@@ -400,18 +425,24 @@ enum UnlockTier {
 
 /// TargetKind
 ///
-/// Kinds of target a card can advertise through QUERY_CARD_TARGETS.
-/// TARGET_PIECE and TARGET_SQUARE both carry a board square in value
-/// (y * 20 + x); the effect derives whatever it needs from it (a file is
-/// the square's column). TARGET_NONE terminates a target list. New kinds
-/// extend the enum without touching the protocol, which only relays a
-/// chosen index.
+/// Kinds of target a card or event can advertise through QUERY_CARD_TARGETS
+/// or QUERY_EVENT_TARGETS. TARGET_PIECE and TARGET_SQUARE both carry a board
+/// square in value (y * 20 + x); the effect derives whatever it needs from
+/// it (a file is the square's column). TARGET_CARD carries a hand slot in
+/// battle or a CardID in a run event; TARGET_PIECE_TYPE a PieceID;
+/// TARGET_RELIC a RelicID; TARGET_NODE a map node index; TARGET_FIGUREHEAD a
+/// KingdomID (a new run domain the four card kinds do not cover).
+/// TARGET_NONE terminates a target list. New kinds extend the enum without
+/// touching the protocol, which only relays a chosen index.
 ///
 enum TargetKind {
     TARGET_PIECE,
     TARGET_SQUARE,
     TARGET_CARD,
     TARGET_PIECE_TYPE,
+    TARGET_RELIC,
+    TARGET_NODE,
+    TARGET_FIGUREHEAD,
     TARGET_NONE,
 };
 
@@ -1159,6 +1190,7 @@ struct RunState {
 
     KingdomState   kingdoms[KINGDOM_COUNT];
     EventChoice    events[EVENT_COUNT];
+    int            event_picks[EVENT_COUNT];
 
     Difficulty     difficulty;
     ChallengeRunID challenge;
@@ -1167,8 +1199,6 @@ struct RunState {
     size_t         vorath_counter;
     size_t         battles_fought;
     size_t         liberation_at[KINGDOM_COUNT];
-
-    bool           skip_next_battle;
 };
 
 /*----------------------------------------------------------------------------*\
@@ -1203,6 +1233,7 @@ void    effect_fire(
 );
 void    effect_tick(LinkedList* list);
 void    effect_clear(LinkedList* list);
+const char* effect_trigger_name(EffectTrigger trigger);
 bool    eff_noop(EffectContext* context, void* x);
 Effect* effect_find_mark(LinkedList* list, uintptr_t tag, void* subject);
 
@@ -1315,7 +1346,10 @@ int  battle_lunge(BattleState* battle, PieceInfo* piece, Square to);
 /// effects can self-filter without payload slots. battle_victim is
 /// nullptr outside damage queries, battle_damagers is a null-terminated
 /// list live only during resolve, and battle_move_from is valid only
-/// during ON_PIECE_MOVE.
+/// during ON_PIECE_MOVE. battle_cascade_origin holds the receiver's meter
+/// before the current damage and cascade transaction, valid during
+/// ON_CASCADE_END. battle_run exposes the active run so data-file effects
+/// can read run state without the private engine pointer.
 ///
 BattleState* battle_current(void);
 PieceInfo*   battle_subject(void);
@@ -1324,6 +1358,8 @@ Card*        battle_subject_card(void);
 const Piece* battle_buy_piece(void);
 Square       battle_move_from(void);
 Square       battle_owner_square(void);
+int          battle_cascade_origin(void);
+RunState*    battle_run(void);
 PieceInfo**  battle_damagers(void);
 void         battle_draw(BattleState* battle, Side side, size_t count);
 
@@ -1463,17 +1499,24 @@ void   run_new(
 void   run_free(RunState* run);
 void   run_enter_map(EngineState* engine, KingdomID kingdom);
 bool   run_select_node(EngineState* engine, size_t index);
+void   run_fire(EngineState* engine, EffectTrigger trigger, void* x);
+EngineState*      run_engine(void);
+const CardTarget* run_pending_picks(void);
 void   run_battle_result(EngineState* engine, bool won);
 void   run_event_choose(EngineState* engine, EventChoice choice);
+bool   run_event_target(EngineState* engine, size_t index);
+void   run_targets_battle_nodes(CardTarget* list);
+void   run_targets_figureheads(CardTarget* list);
+void   run_event_pick(int value);
+void   run_skip_node(size_t index);
+void   run_unchain(KingdomID kingdom);
 void   run_offering(EngineState* engine, CardID card);
 void   run_relic_pick(EngineState* engine, RelicID relic);
 size_t run_pressure(RunState* run, KingdomID kingdom);
 bool   run_innate_ready(RunState* run, KingdomID kingdom);
-void   run_offer_relics(EngineState* engine, RelicID first, RelicID second);
-void   run_begin_removal(EngineState* engine, size_t count);
 void   run_reduce_vorath(RunState* run, size_t amount);
+void   run_node_reveal(EngineState* engine, size_t count);
 void   run_remove_chain(RunState* run);
-void   run_skip_battle(RunState* run);
 void   run_begin_elite(EngineState* engine, int reward, RelicID a, RelicID b);
 void   run_emit_kingdoms(EngineState* engine);
 void   run_emit_map(EngineState* engine);
@@ -1531,6 +1574,7 @@ extern const KingdomPower* const  CLIMAX_REGISTRY[KINGDOM_COUNT];
 extern const Event* const      EVENT_REGISTRY[EVENT_COUNT];
 
 void                           vorath_setup(BattleState* battle);
+void   vorath_attach_capacity(BattleState* battle, Side side);
 
 /// Kingdom dispatch tables
 ///

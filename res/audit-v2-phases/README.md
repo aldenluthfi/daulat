@@ -20,9 +20,11 @@ not a replacement for `res/audit-plan-v2.md` or `res/audit-baseline-v2.md`.
 |---|---|---|---|
 | F0 | COMPLETE | `F0.md` | F0.5 complete |
 | F0.5 | COMPLETE | `F0.5.md` | F1 |
-| F1 | NOT STARTED | none | baseline defects and mastery gaps |
+| F1 | COMPLETE | `F1.md` | F2 |
+| F2 | COMPLETE | `F2.md` | F3 |
+| F3 | NOT STARTED | none | archive composition and Master's Notes |
 
 ## Fresh-session entry
 
-Copy `res/audit-v2-session-prompt.md`, replace `<PHASE>` with `F1`, and include
+Copy `res/audit-v2-session-prompt.md`, replace `<PHASE>` with `F3`, and include
 any current receipt if the phase is resumed.

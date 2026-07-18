@@ -511,6 +511,44 @@ static bool eff_citadel_flag(EffectContext* context, void* x) {
                                  CARD EFFECTS
 \*----------------------------------------------------------------------------*/
 
+#define ROYAL_SUB_USES ((uintptr_t) 0x525355)
+
+/// zarqan_swap_pool
+///
+/// Finds, or lazily creates, the shared Royal Substitution use counter on a
+/// side's effect list. Both the manual innate swap and Timur's automatic
+/// swap draw from this one mark so a mastery limit spans both.
+///
+/// Params:
+/// - battle -> battle whose list holds the counter
+/// - side   -> side whose swaps are counted
+///
+/// Return: the counter mark, or nullptr when attachment failed
+///
+static Effect* zarqan_swap_pool(BattleState* battle, Side side) {
+    LinkedList* list = &battle_player(battle, side)->effects;
+    Effect*     pool =
+        effect_find_mark(list, ROYAL_SUB_USES, (void*) (uintptr_t) side);
+
+    if (pool) {
+        return pool;
+    }
+
+    Effect seed = {
+        .func      = eff_noop,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    pool = effect_attach(list, &seed);
+
+    if (pool) {
+        pool->context->args[0] = (void*) (uintptr_t) side;
+        pool->context->args[1] = (void*) ROYAL_SUB_USES;
+    }
+
+    return pool;
+}
+
 /// eff_counsel
 ///
 /// Discards one card from next turn's hand by vetoing the first drawable
@@ -877,7 +915,7 @@ static bool eff_citadel_pick(EffectContext* context, void* x) {
             .func      = eff_citadel_flag,
             .name      = "Citadel",
             .trigger   = gates[i],
-            .lasts_for = TURNS_2,
+            .lasts_for = TURNS_3,
         };
         Effect* attached =
             effect_attach(&battle_player(battle, target->side)->effects, &gate);
@@ -926,27 +964,31 @@ static bool eff_conquest_pick(EffectContext* context, void* x) {
 
 /// eff_timur_watch
 ///
-/// Timur's Conquest watcher: once the side's meter drops below twenty it
-/// swaps the friendly king with a Zarqan piece, the automatic Royal
-/// Substitution. Fires after each cascade step settles.
+/// Timur's Conquest watcher: when a damage and cascade transaction drops the
+/// side's meter from at or above twenty to below it, the friendly king swaps
+/// with a Zarqan piece, the automatic Royal Substitution. Fires once per
+/// transaction on ON_CASCADE_END and draws from the shared use pool, so it
+/// respects the once or, at Zarqan mastery three, twice per battle limit.
 ///
 /// Params:
-/// - context -> args[0] owning side, args[1] spent flag
-/// - x       -> flipped piece, unused
+/// - context -> args[0] owning side, args[2] Zarqan mastery level
+/// - x       -> int* the lowest meter the transaction reached
 ///
 /// Return: true when the automatic swap fired
 ///
 static bool eff_timur_watch(EffectContext* context, void* x) {
-    (void) x;
+    Side         side  = (Side) (uintptr_t) context->args[0];
+    MasteryLevel level = (MasteryLevel) (uintptr_t) context->args[2];
 
-    if (context->args[1]) {
+    if (battle_cascade_origin() < 20 || *(int*) x >= 20) {
         return false;
     }
 
     BattleState* battle = battle_current();
-    Side         side   = (Side) (uintptr_t) context->args[0];
+    Effect*      pool   = zarqan_swap_pool(battle, side);
+    size_t       limit  = level >= MASTERY_LEVEL_3 ? 2 : 1;
 
-    if (battle_player(battle, side)->meter >= 20) {
+    if (!pool || (uintptr_t) pool->context->args[2] >= limit) {
         return false;
     }
 
@@ -966,7 +1008,8 @@ static bool eff_timur_watch(EffectContext* context, void* x) {
 
         battle_swap(battle, king, cell);
 
-        context->args[1] = (void*) 1;
+        pool->context->args[2] =
+            (void*) ((uintptr_t) pool->context->args[2] + 1);
 
         return true;
     }
@@ -977,7 +1020,8 @@ static bool eff_timur_watch(EffectContext* context, void* x) {
 /// eff_timur
 ///
 /// Timur's Conquest: attaches the automatic Royal Substitution watcher to
-/// the playing side for the rest of the battle.
+/// the playing side for the rest of the battle, baking in the Zarqan mastery
+/// level so the watcher can honour the shared use limit.
 ///
 /// Params:
 /// - context -> beneficiary side in args[0]
@@ -988,13 +1032,16 @@ static bool eff_timur_watch(EffectContext* context, void* x) {
 static bool eff_timur(EffectContext* context, void* x) {
     (void) x;
 
-    BattleState*        battle = battle_current();
-    Side                side   = (Side) (uintptr_t) context->args[0];
+    BattleState*        battle  = battle_current();
+    Side                side    = (Side) (uintptr_t) context->args[0];
+    RunState*           run     = battle_run();
+    MasteryLevel        mastery =
+        run ? run->kingdoms[KINGDOM_ZARQAN].mastery : MASTERY_NONE;
 
-    static const Effect watch  = {
+    static const Effect watch   = {
         .func      = eff_timur_watch,
         .name      = "Timur's Conquest",
-        .trigger   = ON_PIECE_FLIP_POST,
+        .trigger   = ON_CASCADE_END,
         .lasts_for = ENTIRE_BATTLE,
     };
 
@@ -1003,6 +1050,7 @@ static bool eff_timur(EffectContext* context, void* x) {
 
     if (attached) {
         attached->context->args[0] = (void*) (uintptr_t) side;
+        attached->context->args[2] = (void*) (uintptr_t) mastery;
     }
 
     return attached != nullptr;
@@ -1450,25 +1498,36 @@ const BoardTrait ZARQAN_TRAITS[] = {
 /// eff_royal_sub
 ///
 /// Royal Substitution: any Zarqan piece may swap places with the friendly
-/// king by moving onto its square. The king's square is appended to the
-/// piece's move list so battle_move performs the swap.
+/// king by moving onto its square, up to once per battle or twice at Zarqan
+/// mastery three. The king's square is appended to the piece's move list so
+/// battle_move performs the swap, but only while the shared use pool has a
+/// swap left.
 ///
 /// Params:
-/// - context -> args[0] owning side
+/// - context -> args[0] owning side, args[1] Zarqan mastery level
 /// - x       -> Square* move list to extend
 ///
 /// Return: true when the king square was appended
 ///
 static bool eff_royal_sub(EffectContext* context, void* x) {
-    Side       side  = (Side) (uintptr_t) context->args[0];
-    PieceInfo* piece = battle_subject();
+    Side         side  = (Side) (uintptr_t) context->args[0];
+    MasteryLevel level = (MasteryLevel) (uintptr_t) context->args[1];
+    PieceInfo*   piece = battle_subject();
 
     if (!piece || piece->side != side ||
         piece->piece->kingdom != KINGDOM_ZARQAN) {
         return false;
     }
 
-    PieceInfo* king = battle_find_king(battle_current(), side);
+    BattleState* battle = battle_current();
+    Effect*      pool   = zarqan_swap_pool(battle, side);
+    size_t       limit  = level >= MASTERY_LEVEL_3 ? 2 : 1;
+
+    if (!pool || (uintptr_t) pool->context->args[2] >= limit) {
+        return false;
+    }
+
+    PieceInfo* king = battle_find_king(battle, side);
 
     if (!king) {
         return false;
@@ -1488,6 +1547,49 @@ static bool eff_royal_sub(EffectContext* context, void* x) {
 
     moves[count]     = king->square;
     moves[count + 1] = SQUARE_END;
+
+    return true;
+}
+
+/// eff_royal_sub_use
+///
+/// Counts a Royal Substitution once it actually happens: when a friendly
+/// Zarqan piece moves and leaves the friendly king standing on its origin
+/// square, the swap executed, so the shared use pool is spent. Move
+/// projections and legality checks never reach here, so only real swaps
+/// count.
+///
+/// Params:
+/// - context -> args[0] owning side
+/// - x       -> PieceInfo* the piece that moved
+///
+/// Return: true when a swap was counted
+///
+static bool eff_royal_sub_use(EffectContext* context, void* x) {
+    PieceInfo* piece = x;
+    Side       side  = (Side) (uintptr_t) context->args[0];
+
+    if (!piece || piece->side != side ||
+        piece->piece->kingdom != KINGDOM_ZARQAN) {
+        return false;
+    }
+
+    BattleState* battle = battle_current();
+    PieceInfo*   king   = battle_find_king(battle, side);
+    Square       origin = battle_move_from();
+
+    if (!king || king->square.x != origin.x || king->square.y != origin.y) {
+        return false;
+    }
+
+    Effect* pool = zarqan_swap_pool(battle, side);
+
+    if (!pool) {
+        return false;
+    }
+
+    pool->context->args[2] =
+        (void*) ((uintptr_t) pool->context->args[2] + 1);
 
     return true;
 }
@@ -1546,12 +1648,21 @@ static bool eff_zarqan_combo(EffectContext* context, void* x) {
 /// repeatable and costing a normal move action.
 ///
 const KingdomPower ZARQAN_INNATE = {
-    .effects = {{
-        .func      = eff_royal_sub,
-        .name      = "Royal Substitution",
-        .trigger   = QUERY_PIECE_MOVES,
-        .lasts_for = ENTIRE_BATTLE,
-    }},
+    .effects =
+        {
+            {
+                .func      = eff_royal_sub,
+                .name      = "Royal Substitution",
+                .trigger   = QUERY_PIECE_MOVES,
+                .lasts_for = ENTIRE_BATTLE,
+            },
+            {
+                .func      = eff_royal_sub_use,
+                .name      = "Royal Substitution",
+                .trigger   = ON_PIECE_MOVE,
+                .lasts_for = ENTIRE_BATTLE,
+            },
+        },
     .name = "Royal Substitution",
     .id   = KINGDOM_ZARQAN,
 };

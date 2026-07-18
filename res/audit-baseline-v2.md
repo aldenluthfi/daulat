@@ -951,3 +951,133 @@ Required current runtime surfaces were driven through real protocol. Every
 F1-F9 future trace now has a route contract or an owning-phase surface gap.
 Source/header file count remains unchanged. F1 implementation remains
 unstarted; no baseline or F0.5 audit result is an F1 behavior claim.
+
+# F1 evidence — baseline defects and mastery gaps
+
+Each fixture starts from a normal `new`/`save` in an isolated temporary
+directory, patches only legal persistent fields, loads through `load`, then
+drives public commands. Captures are decisive protocol output; probes are
+adjacent negative checks.
+
+## F1.1 Counter Coup owner-turn lifetime (reuses B8)
+
+Fix: `effect_tick` moved from the end of `battle_half_turn` to the top of
+`turn_start`, so a `TURNS_1` effect attached during the owner's half now
+survives the opponent's half. Card keeps `TURNS_1`.
+
+Fixture: `new seed=7 difficulty=3 challenge=7`, patch `battles=1` (human
+black), `cards` bit 8 only (Counter Coup fills every draw), `pieces` all set.
+Drive: `enter id=0` / `select i=0` / repeat `play i=0` then `end`.
+
+Human black capture:
+
+```text
+log damage side=white amount=15
+log effect name="Counter Coup" trigger=QUERY_METER_DAMAGE_TAKEN
+log damage side=black amount=30
+```
+
+The 30 meter damage the human takes echoes 15 (50%) to the enemy before the
+deduction. Human white (`battles=0`, `seed=89`):
+
+```text
+log damage side=black amount=5
+log effect name="Counter Coup" trigger=QUERY_METER_DAMAGE_TAKEN
+log damage side=white amount=10
+```
+
+Probe: the Phase 0 B8 baseline shows this echo absent pre-fix (the `TURNS_1`
+copy expired at the playing side's half-turn end).
+
+## F1.2 Vorath capacity (reuses B3)
+
+Fix: `battle_meter_max` folds the piece sum through `QUERY_METER_AMOUNT`;
+the capacity effect adds 20 per two losses before the maximum is used.
+
+Fixture: `new seed=2 difficulty=0 challenge=7`, patch `vorath=2`.
+Drive: `enter id=0` / `select i=0`.
+
+```text
+log effect name="Vorath Pressure" trigger=QUERY_METER_AMOUNT
+state side=white turn=1 cp=30 meter=10 enemy_meter=30 actions=3
+```
+
+Probes: `vorath=0` -> `enemy_meter=10` (no fire); `vorath=4` ->
+`enemy_meter=50`. Pre-fix the 200% clamp cut the lone-King case to 20.
+
+## F1.3 Timur below-20 crossing (reuses B7)
+
+Fix: one `ON_CASCADE_END` per damage/cascade transaction carries the lowest
+meter; the watcher swaps when `battle_cascade_origin() >= 20` and lowest
+`< 20`.
+
+Fixture: `new seed=1 difficulty=1 challenge=7`, patch `battles=1` (human
+black), `pieces` all set, `cards` bit 52 only (Timur's Conquest). Drive:
+enter, `sell`/`buy piece=25` Wazirs beside the black king to a meter of 40,
+`play i=0` (Timur), then `end` through AI attacks.
+
+```text
+log damage side=black amount=30
+log effect name="Timur's Conquest" trigger=ON_CASCADE_END
+row y=0 cells=····N·k·····   pre:  king at 6,0
+row y=1 cells=···wwww·····
+row y=0 cells=····N·w·····   post: Wazir at 6,0
+row y=1 cells=···kwww·····   post: king swapped to 3,1
+```
+
+Probes: no fire when a hit lands at exactly meter 20; later crossings in the
+same battle do not fire again at mastery 0 (limit 1).
+
+## F1.4 Bulk Discount cheapest-of-three settlement
+
+Fix: single shared mark; total per-turn discount equals the cheapest
+committed cost; only `ON_PIECE_BUY` commits count.
+
+Fixture: `new seed=2 difficulty=0 challenge=7`, patch `relics` bit 3,
+`pieces` all set. Longwei battle. Bing (id 1) costs 3, piece 20 costs 12.
+
+```text
+three Bings:    cp 30 -> 27 -> 24 -> 24    3rd free (cheapest 3)
+12,12,3 order:  cp 30 ------> 6 ---> 6      cheapest 3 free
+3,12,12 order:  cp 30 -> 27 -> 15 -> 6      3rd pays 9 = 12 - 3
+log effect name="Bulk Discount" trigger=QUERY_PIECE_CP_COST_BUY
+```
+
+Probe: two buys yield no discount.
+
+## F1.5 Double Time pricing + Selassie mastery 3
+
+Fix: two `QUERY_PIECE_CP_COST_BUY` effects on the Kewarani innate.
+
+Fixture: `new seed=2 difficulty=0 challenge=7`, patch `masteries=0,1,0,0,0`
+then `0,3,0,0,0`, `pieces` all set. Medeq (id 18) value 10.
+
+```text
+Medeq home (Kewarani):            paid 10   no 40% home discount
+Medeq foreign (Longwei) mastery1: paid 7    140%, node modifier halves
+Medeq foreign (Longwei) mastery3: paid 6    120%; DT foreign declines
+```
+
+The 7:6 ratio equals 140:120, isolating the Double Time markup.
+
+## F1.6 Royal Substitution usage limit
+
+Fix: shared `eff_noop` use pool; `QUERY_PIECE_MOVES` only gates,
+`ON_PIECE_MOVE` counts an executed king swap.
+
+Fixture: `new seed=2 difficulty=0 challenge=7`, patch `masteries=0,0,1,0,0`
+then `0,0,3,0,0`, `pieces` all set. Zarqan battle, white king at (6,11).
+
+```text
+mastery 1: Wazir(6,10) moves offer king square 6,11; after the swap the
+           next Wazir's moves omit it (no Royal Substitution fire).
+mastery 3: two swaps counted (ON_PIECE_MOVE x2); the third piece's moves
+           omit the king square.
+```
+
+Probe: repeated `moves` queries before a swap never spend a use.
+
+## F1 verdict
+
+Six baseline defects corrected and verified through the public protocol.
+Source/header file count unchanged (20 .c / 5 .h). No F2+ work began.

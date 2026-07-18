@@ -23,6 +23,7 @@ static Card*        SUBJECT_CARD;
 static const Piece* BUY_PIECE;
 static Square       MOVE_FROM    = {-1, -1};
 static Square       OWNER_SQUARE = {-1, -1};
+static int          CASCADE_ORIGIN;
 static PieceInfo**  DAMAGERS;
 
 static EngineState* BATTLE_ENGINE;
@@ -200,6 +201,29 @@ Square battle_owner_square(void) {
 ///
 PieceInfo** battle_damagers(void) {
     return DAMAGERS;
+}
+
+/// battle_cascade_origin
+///
+/// Returns the receiver's meter recorded before the current damage and
+/// cascade transaction, so an ON_CASCADE_END effect can tell whether the
+/// transaction crossed a threshold.
+///
+/// Return: the pre-transaction meter, valid during ON_CASCADE_END
+///
+int battle_cascade_origin(void) {
+    return CASCADE_ORIGIN;
+}
+
+/// battle_run
+///
+/// Returns the active run so data-file effects can read run state without
+/// the private engine pointer.
+///
+/// Return: the current run, or nullptr outside a run
+///
+RunState* battle_run(void) {
+    return BATTLE_ENGINE ? BATTLE_ENGINE->run : nullptr;
 }
 
 /*----------------------------------------------------------------------------*\
@@ -415,6 +439,8 @@ static void turn_start(BattleState* battle, Side side) {
     PlayerState* player = battle_player(battle, side);
 
     battle_reap();
+
+    effect_tick(&player->effects);
 
     player->actions = 3;
 
@@ -1608,6 +1634,8 @@ static int battle_resolve(BattleState* battle, Side attacker) {
 ///
 static bool battle_cascade(BattleState* battle, Side receiver) {
     PlayerState* player = battle_player(battle, receiver);
+    int          low    = player->meter;
+    bool         over   = false;
 
     while (player->meter <= 0) {
         int        deficit = -player->meter;
@@ -1648,12 +1676,13 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
                     battle_flip(battle, king);
                 }
 
-                return true;
+                over = true;
+                break;
             }
 
             player->meter = 0;
 
-            return false;
+            break;
         }
 
         Side gainer_side    = receiver == SIDE_WHITE ? SIDE_BLACK : SIDE_WHITE;
@@ -1667,18 +1696,10 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
         effect_fire(battle, receiver, QUERY_FLIP_COUNT, &flips);
         CURRENT_BATTLE = nullptr;
 
-        PieceInfo* toggled[2];
-        int        toggled_count = 0;
-
         for (int f = 0; f < flips && count > 0; f++) {
             size_t pick = (size_t) rand_r(&BATTLE_RNG) % count;
 
             battle_flip(battle, candidates[pick]);
-
-            if (FLIPPED_PIECE) {
-                toggled[toggled_count] = FLIPPED_PIECE;
-                toggled_count++;
-            }
 
             candidates[pick] = candidates[count - 1];
             count--;
@@ -1699,24 +1720,13 @@ static bool battle_cascade(BattleState* battle, Side receiver) {
         if (gainer->meter > 2 * gainer_max) {
             gainer->meter = 2 * gainer_max;
         }
-
-        for (int f = 0; f < toggled_count; f++) {
-            CURRENT_BATTLE = battle;
-            SUBJECT        = toggled[f];
-
-            effect_fire(
-                battle,
-                toggled[f]->side,
-                ON_PIECE_FLIP_POST,
-                toggled[f]
-            );
-
-            CURRENT_BATTLE = nullptr;
-            SUBJECT        = nullptr;
-        }
     }
 
-    return false;
+    CURRENT_BATTLE = battle;
+    effect_fire(battle, receiver, ON_CASCADE_END, &low);
+    CURRENT_BATTLE = nullptr;
+
+    return over;
 }
 
 /// battle_half_turn
@@ -1770,7 +1780,10 @@ static bool battle_half_turn(BattleState* battle, Side side) {
     effect_fire(battle, enemy_side, QUERY_METER_DAMAGE_TAKEN, &total);
     CURRENT_BATTLE  = nullptr;
 
-    enemy->meter   -= total;
+    int saved_origin = CASCADE_ORIGIN;
+
+    CASCADE_ORIGIN   = enemy->meter;
+    enemy->meter    -= total;
 
     if (total > 0) {
         protocol_emit(
@@ -1780,11 +1793,10 @@ static bool battle_half_turn(BattleState* battle, Side side) {
         );
     }
 
-    bool over = battle_cascade(battle, enemy_side);
+    bool over      = battle_cascade(battle, enemy_side);
 
-    DAMAGERS  = nullptr;
-
-    effect_tick(&battle_player(battle, side)->effects);
+    CASCADE_ORIGIN = saved_origin;
+    DAMAGERS       = nullptr;
 
     battle_player(battle, side)->actions = 0;
 
@@ -1815,6 +1827,9 @@ void battle_damage(BattleState* battle, Side side, int amount) {
     CURRENT_BATTLE     = battle;
     effect_fire(battle, side, QUERY_METER_DAMAGE_TAKEN, &dmg);
 
+    int saved_origin = CASCADE_ORIGIN;
+
+    CASCADE_ORIGIN   = battle_player(battle, side)->meter;
     battle_player(battle, side)->meter -= dmg;
 
     if (dmg > 0) {
@@ -1827,6 +1842,7 @@ void battle_damage(BattleState* battle, Side side, int amount) {
 
     battle_cascade(battle, side);
 
+    CASCADE_ORIGIN = saved_origin;
     CURRENT_BATTLE = saved;
 }
 
@@ -1975,7 +1991,9 @@ static void battle_walk_run_effects(BattleState* battle) {
         for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
             const Effect* effect = &option->effects[slot];
 
-            if (!effect->func || effect->trigger == ON_EVENT_CHOOSE) {
+            if (!effect->func || effect->trigger == ON_EVENT_CHOOSE ||
+                effect->trigger == QUERY_EVENT_TARGETS ||
+                effect->trigger == ON_EVENT_TARGET_SELECTED) {
                 continue;
             }
 
@@ -1991,6 +2009,12 @@ static void battle_walk_run_effects(BattleState* battle) {
                 for (size_t arg = 1; arg < MAX_EFFECT_ARGS; arg++) {
                     attached->context->args[arg] = effect->context->args[arg];
                 }
+            }
+
+            if ((intptr_t) attached->context->args[1] == -1 &&
+                run->event_picks[id] >= 0) {
+                attached->context->args[1] =
+                    (void*) (uintptr_t) run->event_picks[id];
             }
 
             attached->context->args[0] = (void*) (uintptr_t) HUMAN_SIDE;
@@ -2506,50 +2530,6 @@ static void battle_walk_rules(BattleState* battle) {
     }
 }
 
-/// eff_vorath_pressure
-///
-/// The Global Vorath Counter's battle pressure: every two accumulated
-/// losses add twenty to the enemy's opening meter. Attached to the enemy
-/// seat and fired on ON_BATTLE_START so the pressure composes through the
-/// trigger rather than a hardcoded battle_begin block.
-///
-/// Params:
-/// - context -> args[0] the pressured (enemy) side
-/// - x       -> unused battle node
-///
-/// Return: true when pressure was applied
-///
-static bool eff_vorath_pressure(EffectContext* context, void* x) {
-    (void) x;
-
-    RunState* run    = BATTLE_ENGINE ? BATTLE_ENGINE->run : nullptr;
-    size_t    stacks = run ? run->vorath_counter / 2 : 0;
-
-    if (stacks == 0) {
-        return false;
-    }
-
-    battle_meter_gain(
-        battle_current(),
-        (Side) (uintptr_t) context->args[0],
-        (int) (stacks * 20)
-    );
-
-    return true;
-}
-
-/// VORATH_PRESSURE
-///
-/// The Global Vorath Counter's opening-meter pressure template, attached to
-/// the enemy seat each battle.
-///
-static const Effect VORATH_PRESSURE = {
-    .func      = eff_vorath_pressure,
-    .name      = "Vorath Pressure",
-    .trigger   = ON_BATTLE_START,
-    .lasts_for = ENTIRE_BATTLE,
-};
-
 /// battle_begin
 ///
 /// Sets up a battle on the given campaign node: the human's seat from
@@ -2632,18 +2612,10 @@ void battle_begin(EngineState* engine, MapNode* node) {
     effect_fire(battle, HUMAN_SIDE, ON_BATTLE_SETUP, node);
     CURRENT_BATTLE      = nullptr;
 
+    vorath_attach_capacity(battle, battle_enemy(HUMAN_SIDE));
+
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);
-
-    Effect* pressure    = effect_attach(
-        &battle_player(battle, battle_enemy(HUMAN_SIDE))->effects,
-        &VORATH_PRESSURE
-    );
-
-    if (pressure) {
-        pressure->context->args[0] =
-            (void*) (uintptr_t) battle_enemy(HUMAN_SIDE);
-    }
 
     ACTING_SIDE    = SIDE_WHITE;
 
@@ -2899,6 +2871,12 @@ int battle_meter_max(BattleState* battle, Side side) {
             total += battle_value(battle, cell, nullptr);
         }
     }
+
+    BattleState* saved = CURRENT_BATTLE;
+
+    CURRENT_BATTLE     = battle;
+    effect_fire(battle, side, QUERY_METER_AMOUNT, &total);
+    CURRENT_BATTLE     = saved;
 
     return total;
 }

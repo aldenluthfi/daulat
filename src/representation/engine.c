@@ -203,6 +203,17 @@ bool engine_save(EngineState* engine, const char* path) {
         }
     }
 
+    for (size_t i = 0; i < EVENT_COUNT; i++) {
+        if (run->event_picks[i] >= 0) {
+            fprintf(
+                file,
+                "eventpick i=%zu value=%d\n",
+                i,
+                run->event_picks[i]
+            );
+        }
+    }
+
     fclose(file);
     return true;
 }
@@ -350,8 +361,11 @@ bool engine_load(EngineState* engine, const char* path) {
                 node->cleared  = bits[i] == '1';
                 node->revealed = revealed[i] == '1';
             }
-        } else if (sscanf(line, "event i=%d choice=%d", &k, &choice) == 2) {
+        } else if (sscanf(line, "event i=%d choice=%d", &k, &choice) == 2 &&
+                   strncmp(line, "event ", 6) == 0) {
             engine->run->events[k] = (EventChoice) choice;
+        } else if (sscanf(line, "eventpick i=%d value=%d", &k, &choice) == 2) {
+            engine->run->event_picks[k] = choice;
         }
     }
 

@@ -391,15 +391,21 @@ static const PieceID CAPSTONE[KINGDOM_COUNT] = {
                               NAVIGATION STATE
 \*----------------------------------------------------------------------------*/
 
-static EngineState* RUN_ENGINE;
-static KingdomID    ENTERED_KINGDOM;
-static MapNode*     PENDING_NODE;
-static RelicID      PENDING_RELICS[2];
-static bool         RELIC_OFFER;
-static MapNode      VORATH_NODE;
-static size_t       PENDING_REMOVALS;
-static int          EVENT_REWARD;
-static bool         EVENT_REWARD_ACTIVE;
+static EngineState*       RUN_ENGINE;
+static KingdomID          ENTERED_KINGDOM;
+static MapNode*           PENDING_NODE;
+static const EventOption* PENDING_OPTION;
+static RelicID            PENDING_RELICS[2];
+static bool               RELIC_OFFER;
+static MapNode            VORATH_NODE;
+static int                EVENT_REWARD;
+static bool               EVENT_REWARD_ACTIVE;
+
+static CardTarget         RUN_TARGETS[MAX_BOARD_SIZE + 1];
+static size_t             RUN_TARGET_COUNT;
+static CardTarget         RUN_PICKS[MAX_EFFECT_COUNT + 1];
+static size_t             RUN_STEP;
+static size_t             RUN_STEP_COUNT;
 
 /// rng_mix
 ///
@@ -466,11 +472,52 @@ static void graph_add_edge(DirectedGraph* graph, size_t from, size_t to) {
     graph->edges_count++;
 }
 
+/// reveal_successors
+///
+/// Marks every direct successor of a node revealed, so clearing or
+/// revealing a node uncovers the content of the nodes it leads to.
+///
+/// Params:
+/// - map   -> map holding the node
+/// - index -> node whose successors are revealed
+///
+static void reveal_successors(MapState* map, size_t index) {
+    for (DGEdge* edge = map->nodes.nodes[index].edges; edge;
+         edge         = edge->next) {
+        map_node(map, edge->to)->revealed = true;
+    }
+}
+
+/// reveal_from
+///
+/// Reveals the successors of a node located by identity, for the clear
+/// sites that hold a node pointer rather than its map index.
+///
+/// Params:
+/// - node -> cleared or revealing node whose successors uncover
+///
+static void reveal_from(MapNode* node) {
+    MapState* map = node->map;
+
+    if (!map) {
+        return;
+    }
+
+    for (size_t i = 0; i < map->nodes.vertices_count; i++) {
+        if (map_node(map, i) == node) {
+            reveal_successors(map, i);
+            return;
+        }
+    }
+}
+
 /// map_generate
 ///
 /// Builds one map: a random DAG patched so every node has an incoming
 /// edge from its predecessor, with a heap MapNode per vertex resolved
 /// from the layout table and a deterministic modifier on battle nodes.
+/// The entry node and its direct successors start revealed; deeper nodes
+/// stay hidden until a predecessor is cleared or an event reveals them.
 ///
 /// Params:
 /// - map     -> map to populate
@@ -497,7 +544,7 @@ map_generate(MapState* map, KingdomID kingdom, MapTypeID tier, size_t seed) {
         *node          = LAYOUTS[kingdom][tier][i];
         node->map      = map;
         node->kingdom  = map->kingdom;
-        node->revealed = true;
+        node->revealed = i == 0;
         node->cleared  = false;
 
         if (node->type == MAP_NODE_BATTLE || node->type == MAP_NODE_ELITE ||
@@ -515,6 +562,8 @@ map_generate(MapState* map, KingdomID kingdom, MapTypeID tier, size_t seed) {
 
         map->nodes.nodes[i].data = node;
     }
+
+    reveal_successors(map, 0);
 }
 
 /// map_complete
@@ -693,6 +742,10 @@ void run_new(
     run->difficulty = difficulty;
     run->challenge  = challenge;
 
+    for (size_t event = 0; event < EVENT_COUNT; event++) {
+        run->event_picks[event] = -1;
+    }
+
     for (size_t kingdom = 0; kingdom < KINGDOM_COUNT; kingdom++) {
         KingdomState* state = &run->kingdoms[kingdom];
 
@@ -855,12 +908,12 @@ void run_emit_map(EngineState* engine) {
             "node i=%zu type=%d name=\"%s\" revealed=%d cleared=%d "
             "selectable=%d modifier=%d",
             i,
-            node->type,
-            node->name,
+            node->revealed ? (int) node->type : -1,
+            node->revealed ? node->name : "?",
             node->revealed,
             node->cleared,
             node_selectable(map, i),
-            modifier
+            node->revealed ? modifier : -1
         );
     }
 }
@@ -914,6 +967,7 @@ bool run_select_node(EngineState* engine, size_t index) {
         node->cleared = true;
         PENDING_NODE  = nullptr;
 
+        reveal_successors(map, index);
         run_emit_map(engine);
         break;
 
@@ -926,16 +980,6 @@ bool run_select_node(EngineState* engine, size_t index) {
         break;
 
     default:
-        if (run->skip_next_battle && node->type == MAP_NODE_BATTLE) {
-            run->skip_next_battle = false;
-            node->cleared         = true;
-            PENDING_NODE          = nullptr;
-
-            protocol_emit("log skip node=%zu", index);
-            run_emit_map(engine);
-            break;
-        }
-
         battle_begin(engine, node);
         break;
     }
@@ -1066,6 +1110,7 @@ void run_battle_result(EngineState* engine, bool won) {
     if (won) {
         node->cleared = true;
 
+        reveal_from(node);
         chain_remove(state);
 
         if (node->type == MAP_NODE_OVERSEER) {
@@ -1115,11 +1160,197 @@ void run_battle_result(EngineState* engine, bool won) {
     }
 }
 
+/// run_engine
+///
+/// Exposes the engine driving the current run so an event's target and
+/// resolver effect bodies can enumerate held cards, unlocked pieces,
+/// chained figureheads, and map nodes without threading it through x.
+///
+/// Return: the engine owning the active run
+///
+EngineState* run_engine(void) {
+    return RUN_ENGINE;
+}
+
+/// run_pending_picks
+///
+/// Exposes the TARGET_NONE terminated targets chosen so far for the parked
+/// event, so a later step's QUERY_EVENT_TARGETS effect can exclude earlier
+/// picks, the run analogue of battle_pending_picks.
+///
+/// Return: the pending picks list
+///
+const CardTarget* run_pending_picks(void) {
+    return RUN_PICKS;
+}
+
+/// run_event_step_count
+///
+/// Counts an option's QUERY_EVENT_TARGETS slots, the number of target
+/// selection steps a targeting event gathers before it resolves.
+///
+/// Params:
+/// - option -> chosen event option
+///
+/// Return: the number of target steps, zero when the option needs none
+///
+static size_t run_event_step_count(const EventOption* option) {
+    size_t count = 0;
+
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        if (option->effects[slot].func &&
+            option->effects[slot].trigger == QUERY_EVENT_TARGETS) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+/// run_build_step
+///
+/// Fills RUN_TARGETS with the legal targets for one selection step by
+/// firing the step-th QUERY_EVENT_TARGETS effect of the pending option.
+/// That effect enumerates candidates through run_engine and may read the
+/// picks already gathered through run_pending_picks.
+///
+/// Params:
+/// - step -> zero based ordinal among the QUERY_EVENT_TARGETS slots
+///
+/// Return: the number of legal targets advertised for the step
+///
+static size_t run_build_step(size_t step) {
+    RUN_TARGETS[0].kind = TARGET_NONE;
+
+    size_t ordinal      = 0;
+
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        const Effect* effect = &PENDING_OPTION->effects[slot];
+
+        if (!effect->func || effect->trigger != QUERY_EVENT_TARGETS) {
+            continue;
+        }
+
+        if (ordinal++ != step) {
+            continue;
+        }
+
+        EffectContext ctx =
+            effect->context ? *effect->context : (EffectContext){};
+
+        effect->func(&ctx, RUN_TARGETS);
+        break;
+    }
+
+    return card_target_count(RUN_TARGETS);
+}
+
+/// run_emit_targets
+///
+/// Emits the current RUN_TARGETS list on the protocol so the caller can
+/// pick one by index, shared by the choice and each further step.
+///
+/// Params:
+/// - count -> number of live targets in RUN_TARGETS
+///
+static void run_emit_targets(size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        protocol_emit(
+            "target i=%zu kind=%d value=%d",
+            i,
+            RUN_TARGETS[i].kind,
+            RUN_TARGETS[i].value
+        );
+    }
+}
+
+/// run_fire
+///
+/// Generic run-side effect dispatch: walks the pending event option's
+/// effects and invokes every one matching the trigger through the shared
+/// invoke-and-log path, the non-battle analogue of effect_fire. x is the
+/// value the trigger computes; run operation metadata lives in the file
+/// static pending state, never in x.
+///
+/// Params:
+/// - engine  -> engine owning the run (unused, kept for call symmetry)
+/// - trigger -> trigger to match option effects against
+/// - x       -> queried value, type defined per trigger
+///
+void run_fire(EngineState* engine, EffectTrigger trigger, void* x) {
+    (void) engine;
+
+    if (!PENDING_OPTION) {
+        return;
+    }
+
+    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+        const Effect* effect = &PENDING_OPTION->effects[slot];
+
+        if (!effect->func || effect->trigger != trigger) {
+            continue;
+        }
+
+        EffectContext ctx =
+            effect->context ? *effect->context : (EffectContext){};
+
+        if (effect->func(&ctx, x) && effect->name) {
+            protocol_emit(
+                "log effect name=\"%s\" trigger=%s",
+                effect->name,
+                effect_trigger_name(trigger)
+            );
+        }
+    }
+}
+
+/// run_interaction_advance
+///
+/// Advances the parked event interaction: builds and emits the next
+/// non-empty target step, or when no steps remain resolves the gathered
+/// picks through run_fire and completes the node. This is the single
+/// completion path for every event that does not suspend into a battle or
+/// a relic offer.
+///
+/// Params:
+/// - engine -> engine owning the run
+///
+static void run_interaction_advance(EngineState* engine) {
+    while (RUN_STEP < RUN_STEP_COUNT) {
+        RUN_TARGET_COUNT = run_build_step(RUN_STEP);
+
+        if (RUN_TARGET_COUNT > 0) {
+            run_emit_targets(RUN_TARGET_COUNT);
+            return;
+        }
+
+        RUN_PICKS[RUN_STEP].kind     = TARGET_NONE;
+        RUN_PICKS[RUN_STEP + 1].kind = TARGET_NONE;
+        RUN_STEP++;
+    }
+
+    run_fire(engine, ON_EVENT_TARGET_SELECTED, RUN_PICKS);
+
+    MapNode* node = PENDING_NODE;
+
+    if (node) {
+        node->cleared = true;
+
+        reveal_from(node);
+    }
+
+    PENDING_NODE   = nullptr;
+    PENDING_OPTION = nullptr;
+
+    run_emit_map(engine);
+}
+
 /// run_event_choose
 ///
 /// Resolves the pending narrative event with the player's choice,
-/// recording it, dispatching to the owning kingdom's event handler, and
-/// clearing the node.
+/// recording it, firing its immediate effects through run_fire, then either
+/// parking a typed target interaction or completing through the single
+/// completion path.
 ///
 /// Params:
 /// - engine -> engine owning the run
@@ -1136,38 +1367,139 @@ void run_event_choose(EngineState* engine, EventChoice choice) {
     EventID   event    = (EventID) node->content;
 
     run->events[event] = choice;
-
-    const EventOption* option =
+    PENDING_OPTION =
         &EVENT_REGISTRY[event]->options[choice == CHOICE_A ? 0 : 1];
 
-    for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
-        const Effect* effect = &option->effects[slot];
-
-        if (!effect->func || effect->trigger != ON_EVENT_CHOOSE) {
-            continue;
-        }
-
-        EffectContext ctx =
-            effect->context ? *effect->context : (EffectContext){};
-
-        if (effect->func(&ctx, engine) && effect->name) {
-            protocol_emit(
-                "log effect name=\"%s\" trigger=ON_EVENT_CHOOSE",
-                effect->name
-            );
-        }
-    }
+    run_fire(engine, ON_EVENT_CHOOSE, engine);
 
     protocol_emit("log event id=%d choice=%d", event, choice);
 
-    if (engine->battle || RELIC_OFFER || PENDING_REMOVALS > 0) {
+    if (engine->battle || RELIC_OFFER) {
         return;
     }
 
-    node->cleared = true;
-    PENDING_NODE  = nullptr;
+    RUN_STEP          = 0;
+    RUN_STEP_COUNT    = run_event_step_count(PENDING_OPTION);
+    RUN_PICKS[0].kind = TARGET_NONE;
 
-    run_emit_map(engine);
+    run_interaction_advance(engine);
+}
+
+/// run_event_target
+///
+/// Records one selection for the parked event and advances the interaction,
+/// the run analogue of battle_card_target. The protocol selects by index
+/// into the list emitted for the current step.
+///
+/// Params:
+/// - engine -> engine owning the run
+/// - index  -> index into the current step's advertised target list
+///
+/// Return: true when the selection was accepted
+///
+bool run_event_target(EngineState* engine, size_t index) {
+    if (!PENDING_OPTION || RUN_STEP >= RUN_STEP_COUNT ||
+        index >= RUN_TARGET_COUNT) {
+        return false;
+    }
+
+    RUN_PICKS[RUN_STEP]          = RUN_TARGETS[index];
+    RUN_PICKS[RUN_STEP + 1].kind = TARGET_NONE;
+    RUN_STEP++;
+
+    run_interaction_advance(engine);
+
+    return true;
+}
+
+/// run_targets_battle_nodes
+///
+/// Pushes every currently selectable, uncleared battle node of the active
+/// map onto the target list as a TARGET_NODE, the candidate set a skip
+/// event chooses among.
+///
+/// Params:
+/// - list -> target list to extend
+///
+void run_targets_battle_nodes(CardTarget* list) {
+    MapState* map = active_map(RUN_ENGINE->run, ENTERED_KINGDOM);
+
+    for (size_t i = 0; i < map->nodes.vertices_count; i++) {
+        MapNode* node = map_node(map, i);
+
+        if (node->type == MAP_NODE_BATTLE && !node->cleared &&
+            node_selectable(map, i)) {
+            card_target_push(list, TARGET_NODE, (int) i);
+        }
+    }
+}
+
+/// run_targets_figureheads
+///
+/// Pushes every chained kingdom onto the target list as a
+/// TARGET_FIGUREHEAD, the eligible figureheads a chain-removal event
+/// chooses among.
+///
+/// Params:
+/// - list -> target list to extend
+///
+void run_targets_figureheads(CardTarget* list) {
+    RunState* run = RUN_ENGINE->run;
+
+    for (size_t k = 0; k < KINGDOM_COUNT; k++) {
+        if (run->kingdoms[k].chain) {
+            card_target_push(list, TARGET_FIGUREHEAD, (int) k);
+        }
+    }
+}
+
+/// run_event_pick
+///
+/// Records the chosen target value for the pending event so a run-persistent
+/// effect can read it each battle from event_picks.
+///
+/// Params:
+/// - value -> chosen target value to persist
+///
+void run_event_pick(int value) {
+    if (PENDING_NODE) {
+        RUN_ENGINE->run->event_picks[PENDING_NODE->content] = value;
+    }
+}
+
+/// run_skip_node
+///
+/// Clears the chosen battle node without a battle, revealing its
+/// successors, the resolution of a skip event.
+///
+/// Params:
+/// - index -> node index to skip
+///
+void run_skip_node(size_t index) {
+    MapState* map = active_map(RUN_ENGINE->run, ENTERED_KINGDOM);
+
+    if (index >= map->nodes.vertices_count) {
+        return;
+    }
+
+    map_node(map, index)->cleared = true;
+
+    reveal_successors(map, index);
+    protocol_emit("log skip node=%zu", index);
+}
+
+/// run_unchain
+///
+/// Removes one chain level from the chosen figurehead, the resolution of a
+/// chain-removal event that targets a specific kingdom.
+///
+/// Params:
+/// - kingdom -> figurehead kingdom to unchain a step
+///
+void run_unchain(KingdomID kingdom) {
+    if (kingdom < KINGDOM_COUNT && RUN_ENGINE->run->kingdoms[kingdom].chain) {
+        chain_remove(&RUN_ENGINE->run->kingdoms[kingdom]);
+    }
 }
 
 /// run_offering
@@ -1182,8 +1514,7 @@ void run_event_choose(EngineState* engine, EventChoice choice) {
 void run_offering(EngineState* engine, CardID card) {
     MapNode* node = PENDING_NODE;
 
-    if (!node ||
-        (node->type != MAP_NODE_OFFERING && node->type != MAP_NODE_EVENT)) {
+    if (!node || node->type != MAP_NODE_OFFERING) {
         return;
     }
 
@@ -1191,17 +1522,10 @@ void run_offering(EngineState* engine, CardID card) {
 
     protocol_emit("log offering removed=%d", card);
 
-    if (node->type == MAP_NODE_EVENT && PENDING_REMOVALS > 0) {
-        PENDING_REMOVALS--;
-
-        if (PENDING_REMOVALS > 0) {
-            return;
-        }
-    }
-
     node->cleared = true;
     PENDING_NODE  = nullptr;
 
+    reveal_from(node);
     run_emit_map(engine);
 }
 
@@ -1225,6 +1549,8 @@ void run_relic_pick(EngineState* engine, RelicID relic) {
 
     if (PENDING_NODE && PENDING_NODE->type == MAP_NODE_EVENT) {
         PENDING_NODE->cleared = true;
+
+        reveal_from(PENDING_NODE);
         PENDING_NODE          = nullptr;
 
         run_emit_map(engine);
@@ -1263,43 +1589,6 @@ bool run_innate_ready(RunState* run, KingdomID kingdom) {
     return map_complete(run->kingdoms[kingdom].town_map);
 }
 
-/// run_offer_relics
-///
-/// Opens a two-relic choice, reusing the elite relic-offer channel so an
-/// event's relic option resolves through the same `relic id=N` command.
-///
-/// Params:
-/// - engine -> engine owning the run (unused)
-/// - first  -> first offered relic
-/// - second -> second offered relic
-///
-void run_offer_relics(EngineState* engine, RelicID first, RelicID second) {
-    (void) engine;
-
-    PENDING_RELICS[0] = first;
-    PENDING_RELICS[1] = second;
-    RELIC_OFFER       = true;
-
-    protocol_emit("offer relic_a=%d relic_b=%d", first, second);
-}
-
-/// run_begin_removal
-///
-/// Arms a card removal of the given count, resolved through the map's
-/// `remove card=N` command; the event node clears once the count is met.
-///
-/// Params:
-/// - engine -> engine owning the run (unused)
-/// - count  -> number of cards to remove
-///
-void run_begin_removal(EngineState* engine, size_t count) {
-    (void) engine;
-
-    PENDING_REMOVALS = count;
-
-    protocol_emit("offer remove=%zu", count);
-}
-
 /// run_reduce_vorath
 ///
 /// Lowers the Global Vorath Counter, clamped at zero.
@@ -1311,6 +1600,33 @@ void run_begin_removal(EngineState* engine, size_t count) {
 void run_reduce_vorath(RunState* run, size_t amount) {
     run->vorath_counter =
         run->vorath_counter > amount ? run->vorath_counter - amount : 0;
+}
+
+/// run_node_reveal
+///
+/// Reveals the next count still-hidden nodes of the entered kingdom's
+/// active map in graph index order, logging each. Reveal events fold their
+/// peek through this so the masked identity and content become visible.
+///
+/// Params:
+/// - engine -> engine owning the run
+/// - count  -> number of hidden nodes to reveal
+///
+void run_node_reveal(EngineState* engine, size_t count) {
+    MapState* map = active_map(engine->run, ENTERED_KINGDOM);
+
+    for (size_t i = 0; i < map->nodes.vertices_count && count; i++) {
+        MapNode* node = map_node(map, i);
+
+        if (node->revealed) {
+            continue;
+        }
+
+        node->revealed = true;
+        count--;
+
+        protocol_emit("log reveal node=%zu", i);
+    }
 }
 
 /// run_remove_chain
@@ -1327,17 +1643,6 @@ void run_remove_chain(RunState* run) {
             return;
         }
     }
-}
-
-/// run_skip_battle
-///
-/// Arms a skip of the next battle node the player selects.
-///
-/// Params:
-/// - run -> run to arm
-///
-void run_skip_battle(RunState* run) {
-    run->skip_next_battle = true;
 }
 
 /// run_begin_elite

@@ -510,6 +510,18 @@ static void handle_map(EngineState* engine, ...) {
         return;
     }
 
+    if (strcmp(argv[0], "target") == 0) {
+        size_t index = (size_t) arg_long(argc, argv, "i", -1);
+
+        if (!run_event_target(engine, index)) {
+            protocol_emit("error msg=\"no pending target\"");
+            return;
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
     if (strcmp(argv[0], "remove") == 0) {
         CardID card = (CardID) arg_long(argc, argv, "card", CARD_COUNT);
 

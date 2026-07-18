@@ -2346,6 +2346,59 @@ void (*const KINGDOM_OVERSEER[KINGDOM_COUNT])(BattleState*) = {
                                     VORATH
 \*----------------------------------------------------------------------------*/
 
+/// eff_vorath_capacity
+///
+/// The Global Vorath Counter's battle capacity: every two accumulated
+/// losses raise the enemy's meter maximum by twenty. Attached to the enemy
+/// seat and fired through QUERY_METER_AMOUNT so the capacity feeds the
+/// initial meter, refills, and overflow ceiling alike.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* the enemy meter maximum being computed
+///
+/// Return: true when capacity was added
+///
+static bool eff_vorath_capacity(EffectContext* context, void* x) {
+    (void) context;
+
+    RunState* run    = battle_run();
+    size_t    stacks = run ? run->vorath_counter / 2 : 0;
+
+    if (stacks == 0) {
+        return false;
+    }
+
+    *(int*) x += (int) (stacks * 20);
+
+    return true;
+}
+
+/// VORATH_CAPACITY
+///
+/// The Global Vorath Counter's opening-capacity template, attached to the
+/// enemy seat each battle before the meters compute.
+///
+static const Effect VORATH_CAPACITY = {
+    .func      = eff_vorath_capacity,
+    .name      = "Vorath Pressure",
+    .trigger   = QUERY_METER_AMOUNT,
+    .lasts_for = ENTIRE_BATTLE,
+};
+
+/// vorath_attach_capacity
+///
+/// Attaches the Vorath capacity effect to the given seat, so the counter's
+/// pressure raises that side's meter maximum from the moment meters compute.
+///
+/// Params:
+/// - battle -> battle to attach into
+/// - side   -> seat that carries the pressured maximum
+///
+void vorath_attach_capacity(BattleState* battle, Side side) {
+    effect_attach(&battle_player(battle, side)->effects, &VORATH_CAPACITY);
+}
+
 /// vorath_setup
 ///
 /// Sets up the final Vorath battle: the twenty by twenty board, the

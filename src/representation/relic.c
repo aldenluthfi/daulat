@@ -77,13 +77,53 @@ static bool eff_tax_stamp(EffectContext* context, void* x) {
     return true;
 }
 
-/// eff_bulk_reset
+#define BULK_STATE ((uintptr_t) 0x42554c4b)
+
+/// bulk_mark
 ///
-/// Bulk Discount bookkeeping: clears the per-turn buy counter at the
-/// start of the owner's turn.
+/// Finds, or lazily creates, Bulk Discount's shared per-turn state on the
+/// owner's effect list. The mark stores the committed buy count in args[2],
+/// the cheapest committed cost in args[3], the discount granted so far in
+/// args[4], and the pending count, cheapest, and granted for the buy being
+/// priced in args[5], args[6], and args[7].
 ///
 /// Params:
-/// - context -> args[1] buy counter to clear
+/// - battle -> battle whose list holds the state
+/// - side   -> owning side
+///
+/// Return: the state mark, or nullptr when attachment failed
+///
+static Effect* bulk_mark(BattleState* battle, Side side) {
+    LinkedList* list = &battle_player(battle, side)->effects;
+    Effect*     mark =
+        effect_find_mark(list, BULK_STATE, (void*) (uintptr_t) side);
+
+    if (mark) {
+        return mark;
+    }
+
+    Effect seed = {
+        .func      = eff_noop,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    mark = effect_attach(list, &seed);
+
+    if (mark) {
+        mark->context->args[0] = (void*) (uintptr_t) side;
+        mark->context->args[1] = (void*) BULK_STATE;
+    }
+
+    return mark;
+}
+
+/// eff_bulk_reset
+///
+/// Bulk Discount bookkeeping: clears the per-turn buy state at the start of
+/// the owner's turn.
+///
+/// Params:
+/// - context -> args[0] owning side
 /// - x       -> unused turn number
 ///
 /// Return: false, a reset is silent bookkeeping
@@ -91,31 +131,93 @@ static bool eff_tax_stamp(EffectContext* context, void* x) {
 static bool eff_bulk_reset(EffectContext* context, void* x) {
     (void) x;
 
-    context->args[1] = nullptr;
+    Side    side = (Side) (uintptr_t) context->args[0];
+    Effect* mark = bulk_mark(battle_current(), side);
+
+    if (mark) {
+        for (size_t slot = 2; slot <= 7; slot++) {
+            mark->context->args[slot] = nullptr;
+        }
+    }
 
     return false;
 }
 
 /// eff_bulk_buy
 ///
-/// Bulk Discount: the third piece bought in a turn is free, standing in
-/// for the design's cheapest-of-three-plus rebate.
+/// Bulk Discount pricing: keeps the turn's total discount equal to the
+/// single cheapest piece bought once three or more are committed. Each buy
+/// is adjusted by the difference between the discount already granted and
+/// the discount the running cheapest now warrants, so a later, cheaper buy
+/// repays the earlier over-discount and itself becomes the free piece.
 ///
 /// Params:
-/// - context -> args[1] running buy count this turn
-/// - x       -> int* buy cost to possibly zero
+/// - context -> args[0] owning side
+/// - x       -> int* buy cost being priced
 ///
-/// Return: true when this buy was made free
+/// Return: true when the cost was adjusted
 ///
 static bool eff_bulk_buy(EffectContext* context, void* x) {
-    size_t count     = (size_t) (uintptr_t) context->args[1] + 1;
-    context->args[1] = (void*) (uintptr_t) count;
+    Side    side = (Side) (uintptr_t) context->args[0];
+    Effect* mark = bulk_mark(battle_current(), side);
 
-    if (count == 3) {
-        *(int*) x = 0;
-
-        return true;
+    if (!mark) {
+        return false;
     }
+
+    int    cost    = *(int*) x;
+    size_t count   = (size_t) (uintptr_t) mark->context->args[2];
+    int    lowest  = (int) (uintptr_t) mark->context->args[3];
+    int    granted = (int) (uintptr_t) mark->context->args[4];
+
+    size_t pending_count   = count + 1;
+    int    pending_lowest  =
+        count == 0 || cost < lowest ? cost : lowest;
+    int    pending_granted = pending_count >= 3 ? pending_lowest : 0;
+    int    adjust          = granted - pending_granted;
+
+    mark->context->args[5] = (void*) (uintptr_t) pending_count;
+    mark->context->args[6] = (void*) (uintptr_t) pending_lowest;
+    mark->context->args[7] = (void*) (uintptr_t) pending_granted;
+
+    if (adjust == 0) {
+        return false;
+    }
+
+    *(int*) x = cost + adjust;
+
+    return true;
+}
+
+/// eff_bulk_commit
+///
+/// Bulk Discount bookkeeping: promotes the pending pricing state to the
+/// committed state once a buy actually lands, so failed or merely priced
+/// buys never count toward the discount.
+///
+/// Params:
+/// - context -> args[0] owning side
+/// - x       -> PieceInfo* the piece just bought
+///
+/// Return: false, the commit is silent bookkeeping
+///
+static bool eff_bulk_commit(EffectContext* context, void* x) {
+    PieceInfo* piece = x;
+    Side       side  = (Side) (uintptr_t) context->args[0];
+
+    if (!piece || piece->side != side) {
+        return false;
+    }
+
+    Effect* mark = bulk_mark(battle_current(), side);
+
+    if (!mark) {
+        return false;
+    }
+
+    mark->context->args[2] = mark->context->args[5];
+    mark->context->args[3] = mark->context->args[6];
+    mark->context->args[4] = mark->context->args[7];
 
     return false;
 }
@@ -690,6 +792,12 @@ const Relic RELIC_REGISTRY[RELIC_COUNT] = {
                         .func      = eff_bulk_buy,
                         .name      = "Bulk Discount",
                         .trigger   = QUERY_PIECE_CP_COST_BUY,
+                        .lasts_for = ENTIRE_BATTLE,
+                    },
+                    {
+                        .func      = eff_bulk_commit,
+                        .name      = "Bulk Discount",
+                        .trigger   = ON_PIECE_BUY,
                         .lasts_for = ENTIRE_BATTLE,
                     },
                 },

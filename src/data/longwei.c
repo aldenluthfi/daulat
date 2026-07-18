@@ -1137,7 +1137,7 @@ static bool eff_palace_decree(EffectContext* context, void* x) {
         .func      = eff_palace_zone,
         .name      = "Palace Decree",
         .trigger   = QUERY_PIECE_MOVES,
-        .lasts_for = TURNS_2,
+        .lasts_for = TURNS_3,
     };
 
     Effect* attached =
@@ -1223,7 +1223,7 @@ static bool eff_mingzhu_pick(EffectContext* context, void* x) {
         .func      = eff_mingzhu_seal,
         .name      = "Mingzhu's Seal",
         .trigger   = QUERY_PIECE_CAN_MOVE,
-        .lasts_for = TURNS_3,
+        .lasts_for = TURNS_4,
     };
 
     Effect* attached =

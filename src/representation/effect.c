@@ -42,6 +42,7 @@ static const char* const TRIGGER_NAME[] = {
 
     "QUERY_METER_DAMAGE_TAKEN",
     "QUERY_METER_REFILL",
+    "QUERY_METER_AMOUNT",
     "QUERY_FLIP_COUNT",
 
     "QUERY_CP_INCOME",
@@ -73,9 +74,26 @@ static const char* const TRIGGER_NAME[] = {
     "ON_BATTLE_SETUP",
     "ON_BATTLE_START",
     "ON_BATTLE_END",
+    "ON_CASCADE_END",
 
     "ON_EVENT_CHOOSE",
+    "QUERY_EVENT_TARGETS",
+    "ON_EVENT_TARGET_SELECTED",
 };
+
+/// effect_trigger_name
+///
+/// Returns the protocol log spelling of a trigger, the single source the
+/// battle and run fire paths share so their effect-fire lines agree.
+///
+/// Params:
+/// - trigger -> trigger to name
+///
+/// Return: the trigger's log string
+///
+const char* effect_trigger_name(EffectTrigger trigger) {
+    return TRIGGER_NAME[trigger];
+}
 
 /// effect_run
 ///
@@ -99,7 +117,7 @@ static void effect_run(Effect* effect, EffectTrigger trigger, void* x) {
         protocol_emit(
             "log effect name=\"%s\" trigger=%s",
             effect->name,
-            TRIGGER_NAME[trigger]
+            effect_trigger_name(trigger)
         );
     }
 }
