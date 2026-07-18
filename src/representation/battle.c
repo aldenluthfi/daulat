@@ -24,6 +24,7 @@ static const Piece* BUY_PIECE;
 static Square       MOVE_FROM    = {-1, -1};
 static Square       OWNER_SQUARE = {-1, -1};
 static int          CASCADE_ORIGIN;
+static int          CURRENT_RECIPE = -1;
 static PieceInfo**  DAMAGERS;
 
 static EngineState* BATTLE_ENGINE;
@@ -83,6 +84,11 @@ static const PieceID RECIPES[][3] = {
 
     {PIECE_NONE, PIECE_NONE, PIECE_NONE},
 };
+
+static_assert(
+    sizeof(RECIPES) / sizeof(RECIPES[0]) == RECIPE_COUNT + 1,
+    "RECIPE_COUNT must match the RECIPES table"
+);
 
 static int        KINGDOM_PLAYS[KINGDOM_COUNT];
 
@@ -216,6 +222,35 @@ PieceInfo** battle_damagers(void) {
 ///
 int battle_cascade_origin(void) {
     return CASCADE_ORIGIN;
+}
+
+/// battle_subject_recipe
+///
+/// Returns the index of the recipe being combined, so a QUERY_RECIPE_ALLOWED
+/// effect can decide whether that recipe is forbidden without reading x.
+///
+/// Return: the RECIPES row index, valid during QUERY_RECIPE_ALLOWED
+///
+int battle_subject_recipe(void) {
+    return CURRENT_RECIPE;
+}
+
+/// battle_recipe_result
+///
+/// Returns the result piece a recipe row produces, so run-side item logic can
+/// name a forbidden recipe without a copy of the table.
+///
+/// Params:
+/// - index -> RECIPES row index
+///
+/// Return: the result PieceID, PIECE_NONE when the index is out of range
+///
+int battle_recipe_result(int index) {
+    if (index < 0 || index >= RECIPE_COUNT) {
+        return PIECE_NONE;
+    }
+
+    return RECIPES[index][2];
 }
 
 /// battle_run
@@ -1422,6 +1457,7 @@ bool battle_combine(BattleState* battle, Square a, Square b) {
     }
 
     PieceID result = PIECE_NONE;
+    int     recipe = -1;
 
     for (size_t i = 0; RECIPES[i][2] != PIECE_NONE; i++) {
         PieceID left  = RECIPES[i][0];
@@ -1430,6 +1466,7 @@ bool battle_combine(BattleState* battle, Square a, Square b) {
         if ((first->piece->id == left && second->piece->id == right) ||
             (first->piece->id == right && second->piece->id == left)) {
             result = RECIPES[i][2];
+            recipe = (int) i;
             break;
         }
     }
@@ -1439,6 +1476,18 @@ bool battle_combine(BattleState* battle, Square a, Square b) {
     }
 
     if (ACTING_SIDE == HUMAN_SIDE && !BATTLE_ENGINE->run->pieces[result]) {
+        return false;
+    }
+
+    bool allowed   = true;
+
+    CURRENT_BATTLE = battle;
+    CURRENT_RECIPE = recipe;
+    effect_fire(battle, ACTING_SIDE, QUERY_RECIPE_ALLOWED, &allowed);
+    CURRENT_RECIPE = -1;
+    CURRENT_BATTLE = nullptr;
+
+    if (!allowed) {
         return false;
     }
 
@@ -2517,14 +2566,14 @@ static void battle_setup_armies(BattleState* battle) {
         }
     }
 
+    if (node->type == MAP_NODE_LIBERATION) {
+        liberation_attach(battle, HUMAN_SIDE, (KingdomID) node->content);
+    }
+
     int count = (int) run_pressure(BATTLE_ENGINE->run, kingdom);
 
     if (node->type == MAP_NODE_ELITE) {
         count++;
-    }
-
-    if (node->type == MAP_NODE_LIBERATION) {
-        count += 2;
     }
 
     CURRENT_BATTLE = battle;
@@ -2983,6 +3032,7 @@ void battle_begin(EngineState* engine, MapNode* node) {
     CURRENT_BATTLE = nullptr;
 
     vorath_attach_capacity(battle, battle_enemy(HUMAN_SIDE));
+    vorath_attach_recipe(battle, HUMAN_SIDE);
 
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);

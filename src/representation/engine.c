@@ -149,6 +149,7 @@ bool engine_save(EngineState* engine, const char* path) {
     write_bits(file, "pieces", run->pieces, PIECE_COUNT);
     write_bits(file, "cards", run->cards, CARD_COUNT);
     write_bits(file, "synergies", run->synergies, KINGDOM_COUNT);
+    write_bits(file, "forbidden", run->recipe_forbidden, RECIPE_COUNT);
 
     fprintf(file, "chains=");
     for (size_t k = 0; k < KINGDOM_COUNT; k++) {
@@ -310,6 +311,9 @@ bool engine_load(EngineState* engine, const char* path) {
         } else if (sscanf(line, "synergies=%511s", bits) == 1 &&
                    strncmp(line, "synergies=", 10) == 0) {
             apply_bits(engine->run->synergies, KINGDOM_COUNT, bits);
+        } else if (sscanf(line, "forbidden=%511s", bits) == 1 &&
+                   strncmp(line, "forbidden=", 10) == 0) {
+            apply_bits(engine->run->recipe_forbidden, RECIPE_COUNT, bits);
         } else if (sscanf(
                        line,
                        "chains=%d,%d,%d,%d,%d",

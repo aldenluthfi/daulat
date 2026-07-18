@@ -2393,6 +2393,88 @@ void vorath_attach_capacity(BattleState* battle, Side side) {
     effect_attach(&battle_player(battle, side)->effects, &VORATH_CAPACITY);
 }
 
+/// eff_vorath_recipe
+///
+/// The Global Vorath Counter's recipe ban: a combination whose recipe index
+/// the run has forbidden is vetoed. Fired through QUERY_RECIPE_ALLOWED with
+/// the candidate index read from battle_subject_recipe.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> bool* the combination-allowed flag being folded
+///
+/// Return: true when the recipe was forbidden and the combine vetoed
+///
+static bool eff_vorath_recipe(EffectContext* context, void* x) {
+    (void) context;
+
+    RunState* run    = battle_run();
+    int       recipe = battle_subject_recipe();
+
+    if (!run || recipe < 0 || recipe >= RECIPE_COUNT ||
+        !run->recipe_forbidden[recipe]) {
+        return false;
+    }
+
+    *(bool*) x = false;
+
+    return true;
+}
+
+/// VORATH_RECIPE_BAN
+///
+/// The Global Vorath Counter's recipe-ban template, attached to the acting
+/// seat each battle so a forbidden combination cannot commit.
+///
+static const Effect VORATH_RECIPE_BAN = {
+    .func      = eff_vorath_recipe,
+    .name      = "Vorath Ban",
+    .trigger   = QUERY_RECIPE_ALLOWED,
+    .lasts_for = ENTIRE_BATTLE,
+};
+
+/// vorath_attach_recipe
+///
+/// Attaches the Vorath recipe-ban effect to the given seat, so a recipe the
+/// run has forbidden is vetoed before the combination commits.
+///
+/// Params:
+/// - battle -> battle to attach into
+/// - side   -> seat whose combinations are gated
+///
+void vorath_attach_recipe(BattleState* battle, Side side) {
+    effect_attach(&battle_player(battle, side)->effects, &VORATH_RECIPE_BAN);
+}
+
+/// vorath_forbid_recipe
+///
+/// The Global Vorath Counter's four-loss threshold: deterministically bans
+/// one still-allowed recipe for the rest of the run and emits its identity.
+/// An exhausted recipe pool is a safe no-op.
+///
+/// Params:
+/// - run -> run whose forbidden set grows by one recipe
+///
+void vorath_forbid_recipe(RunState* run) {
+    size_t start = rng_mix(run->seed, run->vorath_counter) % RECIPE_COUNT;
+
+    for (size_t step = 0; step < RECIPE_COUNT; step++) {
+        size_t index = (start + step) % RECIPE_COUNT;
+
+        if (!run->recipe_forbidden[index]) {
+            run->recipe_forbidden[index] = true;
+
+            protocol_emit(
+                "log vorath forbid recipe=%zu result=%d",
+                index,
+                battle_recipe_result((int) index)
+            );
+
+            return;
+        }
+    }
+}
+
 /// vorath_setup
 ///
 /// Sets up the final Vorath battle: the twenty by twenty board, the
@@ -2403,4 +2485,96 @@ void vorath_attach_capacity(BattleState* battle, Side side) {
 ///
 void vorath_setup(BattleState* battle) {
     (void) battle;
+}
+
+/*----------------------------------------------------------------------------*\
+                                 LIBERATION
+\*----------------------------------------------------------------------------*/
+
+/// eff_liberation_army
+///
+/// The Liberation Trial's enemy reinforcement: the trial enemy starts with
+/// two extra pieces, folded through QUERY_ENEMY_ARMY_COUNT rather than a
+/// node-type branch in the setup path.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* the enemy reinforcement count being folded
+///
+/// Return: always true
+///
+static bool eff_liberation_army(EffectContext* context, void* x) {
+    (void) context;
+
+    *(int*) x += 2;
+
+    return true;
+}
+
+/// eff_liberation_draw
+///
+/// The Liberation Trial's card restriction: only the subjugated kingdom's
+/// cards are drawable, so any other card is vetoed through QUERY_CARD_CAN_DRAW.
+///
+/// Params:
+/// - context -> args[0] the subjugated KingdomID
+/// - x       -> bool* the card-drawable flag being folded
+///
+/// Return: true when a non-subjugated card was blocked
+///
+static bool eff_liberation_draw(EffectContext* context, void* x) {
+    Card*     card       = battle_subject_card();
+    KingdomID subjugated = (KingdomID) (uintptr_t) context->args[0];
+
+    if (!card || card->kingdom == subjugated) {
+        return false;
+    }
+
+    *(bool*) x = false;
+
+    return true;
+}
+
+/// LIBERATION_EFFECTS
+///
+/// The Liberation Trial's battle-setup effects: the plus-two enemy army and
+/// the subjugated-kingdom-only draw restriction. Attached to the human seat
+/// when a liberation node opens its battle.
+///
+static const Effect LIBERATION_EFFECTS[] = {
+    {
+        .func      = eff_liberation_army,
+        .name      = "Liberation Trial",
+        .trigger   = QUERY_ENEMY_ARMY_COUNT,
+        .lasts_for = ENTIRE_BATTLE,
+    },
+    {
+        .func      = eff_liberation_draw,
+        .name      = "Liberation Trial",
+        .trigger   = QUERY_CARD_CAN_DRAW,
+        .lasts_for = ENTIRE_BATTLE,
+    },
+};
+
+/// liberation_attach
+///
+/// Attaches the Liberation Trial's setup effects to the given seat, carrying
+/// the subjugated kingdom so the draw restriction knows which cards remain.
+///
+/// Params:
+/// - battle     -> battle to attach into
+/// - side       -> seat carrying the trial rules
+/// - subjugated -> kingdom whose figurehead the trial liberates
+///
+void liberation_attach(BattleState* battle, Side side, KingdomID subjugated) {
+    LinkedList* list = &battle_player(battle, side)->effects;
+
+    for (size_t i = 0;
+         i < sizeof(LIBERATION_EFFECTS) / sizeof(LIBERATION_EFFECTS[0]); i++) {
+        Effect* attached = effect_attach(list, &LIBERATION_EFFECTS[i]);
+
+        if (attached) {
+            attached->context->args[0] = (void*) (uintptr_t) subjugated;
+        }
+    }
 }

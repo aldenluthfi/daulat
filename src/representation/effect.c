@@ -86,6 +86,8 @@ static const char* const TRIGGER_NAME[] = {
     "ON_ITEM_ACTIVATE",
 
     "ON_MAP_ENTER",
+
+    "QUERY_RECIPE_ALLOWED",
 };
 
 /// effect_trigger_name

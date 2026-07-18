@@ -370,6 +370,19 @@ static void handle_battle(EngineState* engine, ...) {
         return;
     }
 
+    if (strcmp(argv[0], "combine") == 0) {
+        Square a = battle_square_arg(argc, argv, "ax", "ay");
+        Square b = battle_square_arg(argc, argv, "bx", "by");
+
+        if (!battle_combine(battle, a, b)) {
+            protocol_emit("error msg=\"illegal combine\"");
+            return;
+        }
+
+        protocol_emit("ok");
+        return;
+    }
+
     if (strcmp(argv[0], "hand") == 0) {
         emit_hand(engine);
         protocol_emit("ok");

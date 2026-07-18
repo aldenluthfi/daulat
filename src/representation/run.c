@@ -578,7 +578,13 @@ map_generate(MapState* map, KingdomID kingdom, MapTypeID tier, size_t seed) {
 ///
 static bool map_complete(MapState* map) {
     for (size_t i = 0; i < map->nodes.vertices_count; i++) {
-        if (!map_node(map, i)->cleared) {
+        MapNode* node = map_node(map, i);
+
+        if (node->type == MAP_NODE_LIBERATION) {
+            continue;
+        }
+
+        if (!node->cleared) {
             return false;
         }
     }
@@ -648,8 +654,16 @@ static MapState* active_map(RunState* run, KingdomID kingdom) {
 /// Return: true when the node is selectable
 ///
 static bool node_selectable(MapState* map, size_t index) {
-    if (map_node(map, index)->cleared) {
+    MapNode* self = map_node(map, index);
+
+    if (self->cleared) {
         return false;
+    }
+
+    if (self->type == MAP_NODE_LIBERATION) {
+        RunState* run = RUN_ENGINE->run;
+
+        return run->battles_fought >= run->liberation_at[self->content];
     }
 
     if (index == 0) {
@@ -935,6 +949,80 @@ void run_emit_kingdoms(EngineState* engine) {
     }
 }
 
+/// liberation_inject
+///
+/// Appends a Liberation Trial node to a host map, linked from the entry node
+/// so it becomes selectable once the entry is cleared. The node carries the
+/// subjugated kingdom in its content field. Appending at the highest index
+/// preserves the graph's low-to-high acyclicity.
+///
+/// Params:
+/// - map        -> host map to grow
+/// - subjugated -> kingdom whose figurehead the trial liberates
+///
+static void liberation_inject(MapState* map, KingdomID subjugated) {
+    size_t  index = map->nodes.vertices_count;
+    DGNode* grown = realloc(map->nodes.nodes, (index + 1) * sizeof(DGNode));
+
+    if (!grown) {
+        return;
+    }
+
+    map->nodes.nodes                 = grown;
+    map->nodes.nodes[index].edges    = nullptr;
+
+    MapNode* node                    = malloc(sizeof(MapNode));
+
+    *node                            = (MapNode){};
+    node->type                       = MAP_NODE_LIBERATION;
+    node->name                       = "The Liberation Trial";
+    node->content                    = (int) subjugated;
+    node->map                        = map;
+    node->kingdom                    = map->kingdom;
+    node->revealed                   = true;
+
+    map->nodes.nodes[index].data     = node;
+    map->nodes.vertices_count        = index + 1;
+
+    graph_add_edge(&map->nodes, 0, index);
+}
+
+/// liberation_sync
+///
+/// Ensures every Subjugated kingdom has one Liberation Trial node on its
+/// lore-adjacent kingdom's active map, injecting one when missing. Re-homes
+/// a pending trial after the host tier advances, since the active map then
+/// differs; a stale node left in a completed tier is never emitted. Derives
+/// the trial purely from persisted chain and liberation state, so a reloaded
+/// run reconstructs it without saving the node.
+///
+/// Params:
+/// - run -> run whose maps are reconciled
+///
+static void liberation_sync(RunState* run) {
+    for (KingdomID k = 0; k < KINGDOM_COUNT; k++) {
+        if (run->kingdoms[k].chain != &CHAIN_REGISTRY[CHAIN_GOLD]) {
+            continue;
+        }
+
+        MapState* host    = active_map(run, KINGDOM_ADJACENT[k]);
+        bool      present = false;
+
+        for (size_t i = 0; i < host->nodes.vertices_count; i++) {
+            MapNode* node = map_node(host, i);
+
+            if (node->type == MAP_NODE_LIBERATION && node->content == (int) k) {
+                present = true;
+                break;
+            }
+        }
+
+        if (!present) {
+            liberation_inject(host, k);
+        }
+    }
+}
+
 /// run_emit_map
 ///
 /// Emits one line per node of the entered kingdom's active map: index,
@@ -944,6 +1032,8 @@ void run_emit_kingdoms(EngineState* engine) {
 /// - engine -> engine owning the run
 ///
 void run_emit_map(EngineState* engine) {
+    liberation_sync(engine->run);
+
     MapState* map = active_map(engine->run, ENTERED_KINGDOM);
 
     for (size_t i = 0; i < map->nodes.vertices_count; i++) {
@@ -985,6 +1075,13 @@ void run_emit_map(EngineState* engine) {
 ///
 bool run_select_node(EngineState* engine, size_t index) {
     RunState* run = engine->run;
+
+    liberation_sync(run);
+
+    if (run->kingdoms[ENTERED_KINGDOM].chain == &CHAIN_REGISTRY[CHAIN_GOLD]) {
+        return false;
+    }
+
     MapState* map = active_map(run, ENTERED_KINGDOM);
 
     if (index >= map->nodes.vertices_count || !node_selectable(map, index)) {
@@ -1164,7 +1261,25 @@ void run_battle_result(EngineState* engine, bool won) {
 
     run->battles_fought++;
 
-    if (won) {
+    if (node->type == MAP_NODE_LIBERATION) {
+        KingdomID subjugated = (KingdomID) node->content;
+
+        if (won) {
+            node->cleared                   = true;
+
+            reveal_from(node);
+            run->kingdoms[subjugated].chain = nullptr;
+            run->liberation_at[subjugated]  = 0;
+        } else {
+            run->liberation_at[subjugated] = run->battles_fought + 3;
+
+            run->vorath_counter++;
+
+            if (run->vorath_counter % 4 == 0) {
+                vorath_forbid_recipe(run);
+            }
+        }
+    } else if (won) {
         node->cleared = true;
 
         reveal_from(node);
@@ -1179,7 +1294,7 @@ void run_battle_result(EngineState* engine, bool won) {
         run->vorath_counter++;
 
         if (run->vorath_counter % 4 == 0) {
-            protocol_emit("log vorath forbid=1");
+            vorath_forbid_recipe(run);
         }
     }
 

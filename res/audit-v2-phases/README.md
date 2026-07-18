@@ -26,9 +26,9 @@ not a replacement for `res/audit-plan-v2.md` or `res/audit-baseline-v2.md`.
 | F4 | COMPLETE | `F4.md` | F5 |
 | F5 | COMPLETE | `F5.md` | F6 |
 | F6 | COMPLETE | `F6.md` | F7 |
-| F7 | NOT STARTED | none | Gold chain, recipe forbid |
+| F7 | COMPLETE | `F7.md` | F8 |
 
 ## Fresh-session entry
 
-Copy `res/audit-v2-session-prompt.md`, replace `<PHASE>` with `F7`, and include
+Copy `res/audit-v2-session-prompt.md`, replace `<PHASE>` with `F8`, and include
 any current receipt if the phase is resumed.

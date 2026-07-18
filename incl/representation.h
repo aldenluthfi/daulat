@@ -159,6 +159,11 @@
 ///                                                map; a held run item may
 ///                                                pre-reveal map information as
 ///                                                the map is entered
+/// QUERY_RECIPE_ALLOWED            x: bool*       base true; a combination is
+///                                                vetoed when an effect clears
+///                                                it; the candidate recipe
+///                                                index comes from
+///                                                battle_subject_recipe
 ///
 enum EffectTrigger {
     QUERY_CARD_DRAW_COUNT,
@@ -236,6 +241,8 @@ enum EffectTrigger {
     ON_ITEM_ACTIVATE,
 
     ON_MAP_ENTER,
+
+    QUERY_RECIPE_ALLOWED,
 };
 
 /// EffectDuration
@@ -1241,18 +1248,27 @@ struct AIPlan {
                                  RUN.C STRUCTS
 \*----------------------------------------------------------------------------*/
 
+/// RECIPE_COUNT
+///
+/// Number of combination recipes; must match the live RECIPES rows in
+/// battle.c, which carries a static assertion against this value.
+///
+#define RECIPE_COUNT 15
+
 /// RunState
 ///
 /// Tracks the state of a complete run including unlocked relics, pieces,
 /// synergies, kingdom progress, difficulty, and Vorath counter. Each
 /// liberation_at entry locks that kingdom's liberation battle until
-/// battles_fought reaches it after a failed attempt.
+/// battles_fought reaches it after a failed attempt. recipe_forbidden marks
+/// combination recipes banned by the Global Vorath Counter for the run.
 ///
 struct RunState {
     bool           relics[RELIC_COUNT];
     bool           pieces[PIECE_COUNT];
     bool           cards[CARD_COUNT];
     bool           synergies[KINGDOM_COUNT];
+    bool           recipe_forbidden[RECIPE_COUNT];
 
     KingdomState   kingdoms[KINGDOM_COUNT];
     EventChoice    events[EVENT_COUNT];
@@ -1465,6 +1481,8 @@ const Piece* battle_buy_piece(void);
 Square       battle_move_from(void);
 Square       battle_owner_square(void);
 int          battle_cascade_origin(void);
+int          battle_subject_recipe(void);
+int          battle_recipe_result(int index);
 RunState*    battle_run(void);
 PieceInfo**  battle_damagers(void);
 void         battle_draw(BattleState* battle, Side side, size_t count);
@@ -1685,6 +1703,10 @@ extern const Event* const        EVENT_REGISTRY[EVENT_COUNT];
 
 void                             vorath_setup(BattleState* battle);
 void vorath_attach_capacity(BattleState* battle, Side side);
+void vorath_attach_recipe(BattleState* battle, Side side);
+void vorath_forbid_recipe(RunState* run);
+
+void liberation_attach(BattleState* battle, Side side, KingdomID subjugated);
 
 /// Kingdom dispatch tables
 ///
