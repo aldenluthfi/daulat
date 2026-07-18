@@ -497,6 +497,50 @@ static bool eff_gilded_archive(EffectContext* context, void* x) {
     return true;
 }
 
+/// eff_librarians_notes
+///
+/// Librarian's Notes: once per turn, skip the top projected card. The skip
+/// discards slot zero of the upcoming hand and refills it from the same
+/// deterministic stream. args[1] stamps the turn served as turn + 1.
+///
+/// Params:
+/// - context -> once-per-turn stamp in args[1]
+/// - x       -> the acting seat's Side
+///
+/// Return: true, the skip always applies when usable
+///
+static bool eff_librarians_notes(EffectContext* context, void* x) {
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) x;
+
+    battle_next_hand_discard(battle, side, 0);
+
+    context->args[1] = (void*) (uintptr_t) (battle->turn + 1);
+
+    return true;
+}
+
+/// eff_deep_hand
+///
+/// Deep Hand: once per battle, draw two extra cards immediately onto the
+/// chosen turn. args[0] marks the single battle-long use as spent.
+///
+/// Params:
+/// - context -> once-per-battle used flag in args[0]
+/// - x       -> the acting seat's Side
+///
+/// Return: true, the bonus draw always applies when usable
+///
+static bool eff_deep_hand(EffectContext* context, void* x) {
+    Side side = (Side) (uintptr_t) x;
+
+    battle_draw(battle_current(), side, 2);
+
+    context->args[0] = (void*) 1;
+
+    return true;
+}
+
 /*----------------------------------------------------------------------------*\
                                  COMBINATIONS
 \*----------------------------------------------------------------------------*/
@@ -936,6 +980,12 @@ const Relic RELIC_REGISTRY[RELIC_COUNT] = {
             .name = "Librarian's Notes",
             .desc = "Once per turn, peek the top card and skip it.",
             .id   = RELIC_LIBRARIANS_NOTES,
+            .effects = {{
+                .func      = eff_librarians_notes,
+                .name      = "Librarian's Notes",
+                .trigger   = ON_ITEM_ACTIVATE,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [RELIC_COUNTRY_SEAL] =
         {
@@ -954,6 +1004,12 @@ const Relic RELIC_REGISTRY[RELIC_COUNT] = {
             .name = "Deep Hand",
             .desc = "Once per battle, draw 2 extra on a turn of your choice.",
             .id   = RELIC_DEEP_HAND,
+            .effects = {{
+                .func      = eff_deep_hand,
+                .name      = "Deep Hand",
+                .trigger   = ON_ITEM_ACTIVATE,
+                .lasts_for = ENTIRE_BATTLE,
+            }},
         },
     [RELIC_GILDED_ARCHIVE] =
         {

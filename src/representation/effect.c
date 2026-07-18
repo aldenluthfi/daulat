@@ -81,6 +81,9 @@ static const char* const TRIGGER_NAME[] = {
     "ON_EVENT_TARGET_SELECTED",
 
     "QUERY_ARCHIVE_REVEAL_COUNT",
+
+    "QUERY_NEXT_HAND",
+    "ON_ITEM_ACTIVATE",
 };
 
 /// effect_trigger_name

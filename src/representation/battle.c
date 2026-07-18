@@ -38,6 +38,9 @@ static PieceInfo*   DAMAGER_LIST[MAX_BOARD_SIZE + 1];
 #define TURN_LAST_MOVE ((uintptr_t) 3)
 #define TURN_LAST_FLIP ((uintptr_t) 4)
 
+#define NEXT_HAND      ((uintptr_t) 0x4E455854)
+#define NEXT_HAND_BASE 5
+
 static const PieceID COMBO_RESULTS[] = {
     PIECE_SANG,
     PIECE_NORTHERN_CAVALRY,
@@ -329,6 +332,362 @@ size_t battle_draw_pool(BattleState* battle, Side side, CardID* out) {
     return count;
 }
 
+/// next_hand_mark
+///
+/// Finds, or lazily attaches, the human seat's battle-long NEXT_HAND mark.
+/// The mark stores the projected upcoming hand: args[2] the count, args[3]
+/// the ready flag, and args[NEXT_HAND_BASE + i] each projected Card*.
+///
+/// Params:
+/// - battle -> battle whose human seat owns the mark
+/// - side   -> human seat the mark lives on
+///
+/// Return: the mark effect, nullptr on allocation failure
+///
+static Effect* next_hand_mark(BattleState* battle, Side side) {
+    LinkedList* list =
+        &battle_player(battle, side)->effects;
+    Effect*     mark =
+        effect_find_mark(list, NEXT_HAND, (void*) (uintptr_t) side);
+
+    if (mark) {
+        return mark;
+    }
+
+    Effect seed = {
+        .func      = eff_noop,
+        .trigger   = ON_TURN_START,
+        .lasts_for = ENTIRE_BATTLE,
+    };
+
+    mark = effect_attach(list, &seed);
+
+    if (mark) {
+        mark->context->args[0] = (void*) (uintptr_t) side;
+        mark->context->args[1] = (void*) NEXT_HAND;
+    }
+
+    return mark;
+}
+
+/// battle_roll_cards
+///
+/// Samples count borrowed cards from the side's eligible pool into out,
+/// each drawn with replacement from BATTLE_RNG. An empty pool leaves the
+/// remaining slots null. Shared by the projection build, the projection
+/// refill, and the immediate bonus draw.
+///
+/// Params:
+/// - battle -> battle whose pool is sampled
+/// - side   -> side the draw eligibility fires for
+/// - count  -> number of cards to sample
+/// - out    -> buffer receiving count borrowed Card*
+///
+static void battle_roll_cards(
+    BattleState* battle,
+    Side         side,
+    size_t       count,
+    Card**       out
+) {
+    CardID pool[CARD_COUNT];
+    size_t pool_size = battle_draw_pool(battle, side, pool);
+
+    for (size_t drawn = 0; drawn < count; drawn++) {
+        if (pool_size == 0) {
+            out[drawn] = nullptr;
+            continue;
+        }
+
+        CardID pick = pool[(size_t) rand_r(&BATTLE_RNG) % pool_size];
+
+        out[drawn]  = (Card*) CARD_REGISTRY[pick];
+    }
+}
+
+/// battle_project_hand
+///
+/// Pre-rolls the human seat's upcoming hand into the NEXT_HAND mark when it
+/// is not already ready: the queried draw count of cards, then fires
+/// QUERY_NEXT_HAND so preview effects edit the projection before it is
+/// realized. Idempotent while the mark is ready; a no-op off the human seat.
+///
+/// Params:
+/// - battle -> battle whose projection is built
+/// - side   -> side to project for
+///
+static void battle_project_hand(BattleState* battle, Side side) {
+    if (side != HUMAN_SIDE) {
+        return;
+    }
+
+    Effect* mark = next_hand_mark(battle, side);
+
+    if (!mark || mark->context->args[3]) {
+        return;
+    }
+
+    BattleState* saved_battle = CURRENT_BATTLE;
+
+    CURRENT_BATTLE            = battle;
+
+    int draw                  = 3;
+    effect_fire(battle, side, QUERY_CARD_DRAW_COUNT, &draw);
+
+    if (draw < 0) {
+        draw = 0;
+    }
+
+    if (draw > MAX_DRAWN_CARDS) {
+        draw = MAX_DRAWN_CARDS;
+    }
+
+    Card** cards           = (Card**) &mark->context->args[NEXT_HAND_BASE];
+    battle_roll_cards(battle, side, (size_t) draw, cards);
+
+    mark->context->args[2] = (void*) (uintptr_t) draw;
+    mark->context->args[3] = (void*) 1;
+
+    effect_fire(battle, side, QUERY_NEXT_HAND, cards);
+
+    CURRENT_BATTLE         = saved_battle;
+}
+
+/// battle_realize_hand
+///
+/// Moves the ready NEXT_HAND projection verbatim into the human seat's hand,
+/// clears the mark, and fires ON_CARDS_DRAWN on the realized hand. Because
+/// the projection was already edited by every preview effect, the realized
+/// hand equals what the player previewed.
+///
+/// Params:
+/// - battle -> battle whose hand is filled
+/// - side   -> side realizing its projection
+///
+static void battle_realize_hand(BattleState* battle, Side side) {
+    if (side != HUMAN_SIDE) {
+        return;
+    }
+
+    Effect* mark = next_hand_mark(battle, side);
+
+    if (!mark || !mark->context->args[3]) {
+        return;
+    }
+
+    PlayerState* player = battle_player(battle, side);
+    Card**       cards  = (Card**) &mark->context->args[NEXT_HAND_BASE];
+    size_t       count  = (size_t) (uintptr_t) mark->context->args[2];
+    bool         drew   = false;
+
+    for (size_t index = 0; index < count; index++) {
+        if (!cards[index]) {
+            continue;
+        }
+
+        size_t slot = 0;
+
+        while (slot < MAX_DRAWN_CARDS && player->hand[slot]) {
+            slot++;
+        }
+
+        if (slot >= MAX_DRAWN_CARDS) {
+            break;
+        }
+
+        player->hand[slot] = cards[index];
+        drew               = true;
+    }
+
+    mark->context->args[2] = 0;
+    mark->context->args[3] = 0;
+
+    if (drew) {
+        BattleState* saved_battle = CURRENT_BATTLE;
+
+        CURRENT_BATTLE            = battle;
+        effect_fire(battle, side, ON_CARDS_DRAWN, player->hand);
+        CURRENT_BATTLE            = saved_battle;
+    }
+}
+
+/// battle_next_hand
+///
+/// Returns the human seat's mutable projected hand and its count, or nullptr
+/// when no projection is ready. Preview effects and the protocol read and
+/// edit the cards in place through this view.
+///
+/// Params:
+/// - battle -> battle holding the projection mark
+/// - side   -> human seat whose projection is read
+/// - count  -> receives the projected card count
+///
+/// Return: the projected card list, nullptr when none is ready
+///
+Card** battle_next_hand(BattleState* battle, Side side, size_t* count) {
+    Effect* mark = next_hand_mark(battle, side);
+
+    if (!mark || !mark->context->args[3]) {
+        if (count) {
+            *count = 0;
+        }
+
+        return nullptr;
+    }
+
+    if (count) {
+        *count = (size_t) (uintptr_t) mark->context->args[2];
+    }
+
+    return (Card**) &mark->context->args[NEXT_HAND_BASE];
+}
+
+/// battle_next_hand_discard
+///
+/// Drops one projected slot and refills the tail from the same deterministic
+/// stream, so the projection keeps its count. When the pool is exhausted the
+/// count shrinks by one instead. Powers Counsel and Librarian's Notes.
+///
+/// Params:
+/// - battle -> battle holding the projection mark
+/// - side   -> human seat whose projection is edited
+/// - slot   -> projected index to discard
+///
+void battle_next_hand_discard(BattleState* battle, Side side, size_t slot) {
+    size_t count;
+    Card** cards = battle_next_hand(battle, side, &count);
+
+    if (!cards || slot >= count) {
+        return;
+    }
+
+    for (size_t index = slot; index + 1 < count; index++) {
+        cards[index] = cards[index + 1];
+    }
+
+    Card* refill = nullptr;
+    battle_roll_cards(battle, side, 1, &refill);
+
+    if (refill) {
+        cards[count - 1] = refill;
+        return;
+    }
+
+    Effect* mark           = next_hand_mark(battle, side);
+    mark->context->args[2] = (void*) (uintptr_t) (count - 1);
+}
+
+/// battle_item_list
+///
+/// Writes a side's activatable held effects, those carrying an
+/// ON_ITEM_ACTIVATE trigger, into out in stable list order up to cap.
+///
+/// Params:
+/// - battle -> battle whose seat is walked
+/// - side   -> seat holding the items
+/// - out    -> buffer receiving the activatable effects
+/// - cap    -> capacity of out
+///
+/// Return: the number of activatable items found
+///
+size_t battle_item_list(
+    BattleState* battle,
+    Side         side,
+    Effect**     out,
+    size_t       cap
+) {
+    LinkedList* list  = &battle_player(battle, side)->effects;
+    size_t      count = 0;
+
+    for (LLNode* node = list->head; node; node = node->next) {
+        Effect* effect = node->data;
+
+        if (effect->func && effect->trigger == ON_ITEM_ACTIVATE) {
+            if (count < cap) {
+                out[count] = effect;
+            }
+
+            count++;
+        }
+    }
+
+    return count;
+}
+
+/// battle_item_usable
+///
+/// Reports whether an activatable item may fire now, reading its own
+/// once-per-battle flag in args[0] and once-per-turn stamp in args[1].
+///
+/// Params:
+/// - battle -> battle supplying the current turn
+/// - item   -> activatable effect to test
+///
+/// Return: true when the item is not yet spent for its scope
+///
+bool battle_item_usable(BattleState* battle, Effect* item) {
+    if (!item) {
+        return false;
+    }
+
+    bool   used_battle = item->context->args[0];
+    size_t used_turn   = (size_t) (uintptr_t) item->context->args[1];
+
+    return !used_battle && used_turn != battle->turn + 1;
+}
+
+/// battle_item_activate
+///
+/// Fires the index-th activatable item for the side when it is still usable,
+/// passing the seat as x and logging the applied activation.
+///
+/// Params:
+/// - battle -> battle to act in
+/// - side   -> seat holding the item
+/// - index  -> ordinal in battle_item_list order
+///
+/// Return: true when the item activated
+///
+bool battle_item_activate(BattleState* battle, Side side, size_t index) {
+    LinkedList* list    = &battle_player(battle, side)->effects;
+    size_t      ordinal = 0;
+
+    for (LLNode* node = list->head; node; node = node->next) {
+        Effect* effect = node->data;
+
+        if (!effect->func || effect->trigger != ON_ITEM_ACTIVATE) {
+            continue;
+        }
+
+        if (ordinal++ != index) {
+            continue;
+        }
+
+        if (!battle_item_usable(battle, effect)) {
+            return false;
+        }
+
+        BattleState* saved_battle = CURRENT_BATTLE;
+        CURRENT_BATTLE            = battle;
+
+        bool applied              =
+            effect->func(effect->context, (void*) (uintptr_t) side);
+
+        CURRENT_BATTLE            = saved_battle;
+
+        if (applied && effect->name) {
+            protocol_emit(
+                "log effect name=\"%s\" trigger=%s",
+                effect->name,
+                effect_trigger_name(ON_ITEM_ACTIVATE)
+            );
+        }
+
+        return applied;
+    }
+
+    return false;
+}
+
 /// battle_find_king
 ///
 /// Finds a side's king on the board.
@@ -375,10 +734,10 @@ void battle_meter_gain(BattleState* battle, Side side, int amount) {
 
 /// battle_draw
 ///
-/// Draws cards into the side's hand from the run's unlocked, registered,
-/// drawable card set. Only the human holds a hand; the AI plays no cards
-/// in this build. Cards are sampled with replacement from the eligible
-/// pool, each gated by QUERY_CARD_CAN_DRAW.
+/// Immediately rolls count cards into the side's hand, the bonus-draw path
+/// used by active items such as Deep Hand. The regular per-turn hand comes
+/// from the realized NEXT_HAND projection instead. Only the human holds a
+/// hand; the AI plays no cards in this build.
 ///
 /// Params:
 /// - battle -> battle whose hand is filled
@@ -390,17 +749,26 @@ void battle_draw(BattleState* battle, Side side, size_t count) {
         return;
     }
 
+    if (count > MAX_DRAWN_CARDS) {
+        count = MAX_DRAWN_CARDS;
+    }
+
     BattleState* saved_battle = CURRENT_BATTLE;
     Card*        saved_card   = SUBJECT_CARD;
     PlayerState* player       = battle_player(battle, side);
 
     CURRENT_BATTLE            = battle;
 
-    CardID pool[CARD_COUNT];
-    size_t pool_size = battle_draw_pool(battle, side, pool);
-    bool   drew      = false;
+    Card* rolled[MAX_DRAWN_CARDS];
+    battle_roll_cards(battle, side, count, rolled);
 
-    for (size_t drawn = 0; drawn < count && pool_size > 0; drawn++) {
+    bool drew = false;
+
+    for (size_t drawn = 0; drawn < count; drawn++) {
+        if (!rolled[drawn]) {
+            continue;
+        }
+
         size_t slot = 0;
 
         while (slot < MAX_DRAWN_CARDS && player->hand[slot]) {
@@ -411,9 +779,7 @@ void battle_draw(BattleState* battle, Side side, size_t count) {
             break;
         }
 
-        CardID pick        = pool[(size_t) rand_r(&BATTLE_RNG) % pool_size];
-
-        player->hand[slot] = (Card*) CARD_REGISTRY[pick];
+        player->hand[slot] = rolled[drawn];
         drew               = true;
     }
 
@@ -462,15 +828,9 @@ static void turn_start(BattleState* battle, Side side) {
         KINGDOM_PLAYS[kingdom] = 0;
     }
 
-    int draw       = 3;
-
-    CURRENT_BATTLE = battle;
-    effect_fire(battle, side, QUERY_CARD_DRAW_COUNT, &draw);
-    CURRENT_BATTLE = nullptr;
-
-    if (draw > 0) {
-        battle_draw(battle, side, (size_t) draw);
-    }
+    battle_project_hand(battle, side);
+    battle_realize_hand(battle, side);
+    battle_project_hand(battle, side);
 }
 
 /// battle_finish

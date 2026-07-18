@@ -23,9 +23,10 @@ not a replacement for `res/audit-plan-v2.md` or `res/audit-baseline-v2.md`.
 | F1 | COMPLETE | `F1.md` | F2 |
 | F2 | COMPLETE | `F2.md` | F3 |
 | F3 | COMPLETE | `F3.md` | F4 |
-| F4 | NOT STARTED | none | next hand, Counsel, active relics |
+| F4 | COMPLETE | `F4.md` | F5 |
+| F5 | NOT STARTED | none | modifier visibility, Surveyor's Map |
 
 ## Fresh-session entry
 
-Copy `res/audit-v2-session-prompt.md`, replace `<PHASE>` with `F4`, and include
+Copy `res/audit-v2-session-prompt.md`, replace `<PHASE>` with `F5`, and include
 any current receipt if the phase is resumed.

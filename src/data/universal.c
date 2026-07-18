@@ -1222,27 +1222,22 @@ static bool eff_kingdom_purity(EffectContext* context, void* x) {
 
 /// eff_lucky_strike
 ///
-/// Lucky Strike: once per turn, the first drawn card becomes a random card
-/// of the highest tier in the available draw pool. args[1] stamps the turn
-/// already served as turn + 1, since a zeroed slot means untouched.
+/// Lucky Strike: the first card of the projected next hand becomes a random
+/// card of the highest tier in the available draw pool. Fired once per
+/// projection through QUERY_NEXT_HAND, so the promotion is already present
+/// when the hand is realized; bonus draws are not promoted.
 ///
 /// Params:
-/// - context -> args[0] beneficiary side, args[1] last served turn + 1
-/// - x       -> Card** hand whose first slot is rewritten
+/// - context -> args[0] beneficiary side
+/// - x       -> Card** projected hand whose first slot is rewritten
 ///
 /// Return: true when the first card was promoted
 ///
 static bool eff_lucky_strike(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
-    size_t       turn   = battle->turn;
-
-    if ((size_t) (uintptr_t) context->args[1] == turn + 1) {
-        return false;
-    }
-
-    Side   side = (Side) (uintptr_t) context->args[0];
-    CardID pool[CARD_COUNT];
-    size_t size = battle_draw_pool(battle, side, pool);
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    CardID       pool[CARD_COUNT];
+    size_t       size   = battle_draw_pool(battle, side, pool);
 
     if (size == 0) {
         return false;
@@ -1266,10 +1261,9 @@ static bool eff_lucky_strike(EffectContext* context, void* x) {
         }
     }
 
-    Card** hand      = x;
+    Card** hand = x;
 
-    hand[0]          = (Card*) CARD_REGISTRY[top[battle_rand() % count]];
-    context->args[1] = (void*) (uintptr_t) (turn + 1);
+    hand[0]     = (Card*) CARD_REGISTRY[top[battle_rand() % count]];
 
     return true;
 }
@@ -1571,7 +1565,7 @@ const BattleModifier MODIFIER_REGISTRY[MODIFIER_COUNT] = {
             .effects = {{
                 .func      = eff_lucky_strike,
                 .name      = "Lucky Strike",
-                .trigger   = ON_CARDS_DRAWN,
+                .trigger   = QUERY_NEXT_HAND,
                 .lasts_for = ENTIRE_BATTLE,
             }},
         },

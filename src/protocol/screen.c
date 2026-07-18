@@ -175,6 +175,73 @@ static void emit_hand(EngineState* engine) {
     }
 }
 
+/// emit_next
+///
+/// Emits one line per card in the human's projected next hand: index, id,
+/// name, kingdom, tier, and play and sell costs. The projection is the
+/// player's own preview, so no cards are masked.
+///
+/// Params:
+/// - engine -> engine owning the battle
+///
+static void emit_next(EngineState* engine) {
+    BattleState* battle = engine->battle;
+    Side side = engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
+
+    size_t count = 0;
+    Card** cards = battle_next_hand(battle, side, &count);
+
+    for (size_t i = 0; i < count; i++) {
+        Card* card = cards[i];
+
+        if (!card) {
+            continue;
+        }
+
+        protocol_emit(
+            "next i=%zu id=%d name=\"%s\" kingdom=%d tier=%d play=%d sell=%d",
+            i,
+            card->id,
+            card->name,
+            card->kingdom,
+            card->tier,
+            card->play_cost,
+            card->sell_cost
+        );
+    }
+}
+
+/// emit_activatable
+///
+/// Emits one line per activatable held item for the human: index, name, and
+/// whether it may be fired now. The index is the ordinal the activate
+/// command selects by.
+///
+/// Params:
+/// - engine -> engine owning the battle
+///
+static void emit_activatable(EngineState* engine) {
+    BattleState* battle = engine->battle;
+    Side side = engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
+
+    Effect* items[RELIC_COUNT];
+    size_t  count = battle_item_list(
+        battle,
+        side,
+        items,
+        RELIC_COUNT
+    );
+
+    for (size_t i = 0; i < count; i++) {
+        protocol_emit(
+            "item i=%zu name=\"%s\" usable=%d",
+            i,
+            items[i]->name ? items[i]->name : "?",
+            battle_item_usable(battle, items[i]) ? 1 : 0
+        );
+    }
+}
+
 /// handle_title
 ///
 /// Handles the title screen: new starts a fresh run and load restores a
@@ -310,6 +377,32 @@ static void handle_battle(EngineState* engine, ...) {
 
     if (strcmp(argv[0], "hand") == 0) {
         emit_hand(engine);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "next") == 0) {
+        emit_next(engine);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "activatable") == 0) {
+        emit_activatable(engine);
+        protocol_emit("ok");
+        return;
+    }
+
+    if (strcmp(argv[0], "activate") == 0) {
+        Side side =
+            engine->run->battles_fought % 2 ? SIDE_BLACK : SIDE_WHITE;
+        size_t index = (size_t) arg_long(argc, argv, "i", -1);
+
+        if (!battle_item_activate(battle, side, index)) {
+            protocol_emit("error msg=\"not activatable\"");
+            return;
+        }
+
         protocol_emit("ok");
         return;
     }

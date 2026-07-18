@@ -549,24 +549,53 @@ static Effect* zarqan_swap_pool(BattleState* battle, Side side) {
     return pool;
 }
 
-/// eff_counsel
+/// eff_counsel_peek
 ///
-/// Discards one card from next turn's hand by vetoing the first drawable
-/// card once.
+/// Advertises each projected next-hand slot as a TARGET_CARD choice, so the
+/// player peeks the upcoming hand and picks one card to discard.
 ///
 /// Params:
-/// - context -> spent flag in args[3]
-/// - x       -> can-draw flag to clear
+/// - context -> acting side in args[0]
+/// - x       -> CardTarget* list the projected slots are pushed onto
+///
+/// Return: true, the peek always offers its projection
+///
+static bool eff_counsel_peek(EffectContext* context, void* x) {
+    Side        side  = (Side) (uintptr_t) context->args[0];
+    CardTarget* list  = x;
+    size_t      count = 0;
+    Card**      cards = battle_next_hand(battle_current(), side, &count);
+
+    for (size_t index = 0; index < count; index++) {
+        if (cards[index]) {
+            card_target_push(list, TARGET_CARD, (int) index);
+        }
+    }
+
+    return true;
+}
+
+/// eff_counsel_discard
+///
+/// Discards the chosen projected card from the upcoming hand; the vacated
+/// slot refills from the same deterministic stream so the next hand keeps
+/// its count.
+///
+/// Params:
+/// - context -> acting side in args[0]
+/// - x       -> CardTarget* picks; the chosen slot is picks[0]
 ///
 /// Return: true when a card was discarded
 ///
-static bool eff_counsel(EffectContext* context, void* x) {
-    if (context->args[3]) {
-        return false;
-    }
+static bool eff_counsel_discard(EffectContext* context, void* x) {
+    Side        side  = (Side) (uintptr_t) context->args[0];
+    CardTarget* picks = x;
 
-    *(bool*) x       = false;
-    context->args[3] = (void*) 1;
+    battle_next_hand_discard(
+        battle_current(),
+        side,
+        (size_t) picks[0].value
+    );
 
     return true;
 }
@@ -1177,10 +1206,14 @@ const Card ZARQAN_CARDS[] = {
         .effects =
             {
                 {
-                    .func      = eff_counsel,
-                    .name      = "Counsel",
-                    .trigger   = QUERY_CARD_CAN_DRAW,
-                    .lasts_for = TURNS_2,
+                    .func    = eff_counsel_peek,
+                    .name    = "Counsel",
+                    .trigger = QUERY_CARD_TARGETS,
+                },
+                {
+                    .func    = eff_counsel_discard,
+                    .name    = "Counsel",
+                    .trigger = ON_CARD_TARGET_SELECTED,
                 },
             },
         .name      = "Counsel",

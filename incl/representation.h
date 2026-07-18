@@ -144,6 +144,17 @@
 ///                                                targets
 /// QUERY_ARCHIVE_REVEAL_COUNT      x: int*        base 1; archive reveal count
 ///                                                folded over held relics
+/// QUERY_NEXT_HAND                 x: Card**      the projected next hand;
+///                                                battle_next_hand gives its
+///                                                count; preview effects edit
+///                                                the cards in place before the
+///                                                projection is realized
+/// ON_ITEM_ACTIVATE                x: uintptr     a held active item fired by
+///                                                the player; x is the acting
+///                                                seat's Side; the effect's own
+///                                                context args[0] holds a
+///                                                once-per-battle used flag and
+///                                                args[1] a once-per-turn stamp
 ///
 enum EffectTrigger {
     QUERY_CARD_DRAW_COUNT,
@@ -216,6 +227,9 @@ enum EffectTrigger {
     ON_EVENT_TARGET_SELECTED,
 
     QUERY_ARCHIVE_REVEAL_COUNT,
+
+    QUERY_NEXT_HAND,
+    ON_ITEM_ACTIVATE,
 };
 
 /// EffectDuration
@@ -1331,6 +1345,49 @@ unsigned int battle_rand(void);
 /// Return: the number of eligible cards written to out
 ///
 size_t battle_draw_pool(BattleState* battle, Side side, CardID* out);
+
+/// Next-hand projection
+///
+/// The human seat's upcoming hand is pre-rolled once and stored in a
+/// battle-long NEXT_HAND mark so preview effects can edit it before it is
+/// realized. battle_next_hand returns the mark's mutable card list and writes
+/// its length through count. battle_next_hand_discard drops one projected slot
+/// and refills it from the same deterministic stream, keeping the count.
+///
+/// Params:
+/// - battle -> battle holding the projection mark
+/// - side   -> human seat whose projection is read
+/// - count  -> receives the projected card count
+/// - slot   -> projected index to discard before the refill
+///
+Card** battle_next_hand(BattleState* battle, Side side, size_t* count);
+void   battle_next_hand_discard(BattleState* battle, Side side, size_t slot);
+
+/// Active held items
+///
+/// A held effect item is activatable when it carries an ON_ITEM_ACTIVATE
+/// effect. battle_item_list writes those effects for a side in stable order
+/// (up to cap) and returns the count. battle_item_usable reads the effect's
+/// own once-per-battle and once-per-turn guards. battle_item_activate fires
+/// the index-th item's activation when it is still usable.
+///
+/// Params:
+/// - side  -> seat holding the items
+/// - out   -> buffer receiving the activatable effects
+/// - cap   -> capacity of out
+/// - item  -> one activatable effect to test
+/// - index -> ordinal in the same order battle_item_list produces
+///
+/// Return: item count, usability, or activation success
+///
+size_t battle_item_list(
+    BattleState* battle,
+    Side         side,
+    Effect**     out,
+    size_t       cap
+);
+bool   battle_item_usable(BattleState* battle, Effect* item);
+bool   battle_item_activate(BattleState* battle, Side side, size_t index);
 
 /// Direct damage and single-piece strike
 ///
