@@ -194,23 +194,13 @@ bool engine_save(EngineState* engine, const char* path) {
 
     for (size_t i = 0; i < EVENT_COUNT; i++) {
         if (run->events[i] != NO_CHOICE) {
-            fprintf(
-                file,
-                "event i=%zu choice=%d\n",
-                i,
-                run->events[i]
-            );
+            fprintf(file, "event i=%zu choice=%d\n", i, run->events[i]);
         }
     }
 
     for (size_t i = 0; i < EVENT_COUNT; i++) {
         if (run->event_picks[i] >= 0) {
-            fprintf(
-                file,
-                "eventpick i=%zu value=%d\n",
-                i,
-                run->event_picks[i]
-            );
+            fprintf(file, "eventpick i=%zu value=%d\n", i, run->event_picks[i]);
         }
     }
 

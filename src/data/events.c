@@ -522,145 +522,181 @@ static bool eff_enemy_army(EffectContext* context, void* x) {
 \*----------------------------------------------------------------------------*/
 
 #define EV_VORATH(n)                                                           \
-    {                                                                         \
-        .func = eff_ev_vorath, .name = "Vorath Reduction",                    \
-        .trigger = ON_EVENT_CHOOSE, .lasts_for = ENTIRE_BATTLE,               \
-        .context = &(EffectContext){.args = {(void*) (uintptr_t) (n)}}        \
+    {                                                                          \
+        .func = eff_ev_vorath, .name = "Vorath Reduction",                     \
+        .trigger = ON_EVENT_CHOOSE, .lasts_for = ENTIRE_BATTLE,                \
+        .context = &(EffectContext) {                                          \
+            .args = {(void*) (uintptr_t) (n) }                                 \
+        }                                                                      \
     }
 
 #define EV_REVEAL(n)                                                           \
-    {                                                                         \
-        .func = eff_ev_reveal, .name = "Reveal",                              \
-        .trigger = ON_EVENT_CHOOSE, .lasts_for = ENTIRE_BATTLE,               \
-        .context = &(EffectContext){.args = {(void*) (intptr_t) (n)}}         \
+    {                                                                          \
+        .func = eff_ev_reveal, .name = "Reveal", .trigger = ON_EVENT_CHOOSE,   \
+        .lasts_for = ENTIRE_BATTLE, .context = &(EffectContext) {              \
+            .args = {(void*) (intptr_t) (n) }                                  \
+        }                                                                      \
     }
 
 #define EV_TG_CARD                                                             \
-    {                                                                         \
-        .func = eff_ev_tg_card, .trigger = QUERY_EVENT_TARGETS,               \
-        .lasts_for = ENTIRE_BATTLE                                            \
-    }
+    {.func      = eff_ev_tg_card,                                              \
+     .trigger   = QUERY_EVENT_TARGETS,                                         \
+     .lasts_for = ENTIRE_BATTLE}
 
 #define EV_SEL_REMOVE                                                          \
-    {                                                                         \
-        .func = eff_ev_sel_remove, .name = "Card Removal",                    \
-        .trigger = ON_EVENT_TARGET_SELECTED, .lasts_for = ENTIRE_BATTLE       \
-    }
+    {.func      = eff_ev_sel_remove,                                           \
+     .name      = "Card Removal",                                              \
+     .trigger   = ON_EVENT_TARGET_SELECTED,                                    \
+     .lasts_for = ENTIRE_BATTLE}
 
 #define EV_TG_RELIC(a, b)                                                      \
-    {                                                                         \
-        .func = eff_ev_tg_relic, .trigger = QUERY_EVENT_TARGETS,              \
-        .lasts_for = ENTIRE_BATTLE,                                           \
-        .context = &(EffectContext){                                          \
-            .args = {(void*) (uintptr_t) (a), (void*) (uintptr_t) (b)}}       \
+    {                                                                          \
+        .func = eff_ev_tg_relic, .trigger = QUERY_EVENT_TARGETS,               \
+        .lasts_for = ENTIRE_BATTLE, .context = &(EffectContext) {              \
+            .args = {(void*) (uintptr_t) (a), (void*) (uintptr_t) (b) }        \
+        }                                                                      \
     }
 
 #define EV_SEL_RELIC                                                           \
-    {                                                                         \
-        .func = eff_ev_sel_relic, .name = "Relic Offer",                      \
-        .trigger = ON_EVENT_TARGET_SELECTED, .lasts_for = ENTIRE_BATTLE       \
-    }
+    {.func      = eff_ev_sel_relic,                                            \
+     .name      = "Relic Offer",                                               \
+     .trigger   = ON_EVENT_TARGET_SELECTED,                                    \
+     .lasts_for = ENTIRE_BATTLE}
 
 #define EV_TG_PIECE(k)                                                         \
-    {                                                                         \
-        .func = eff_ev_tg_piece, .trigger = QUERY_EVENT_TARGETS,              \
-        .lasts_for = ENTIRE_BATTLE,                                           \
-        .context = &(EffectContext){.args = {nullptr,                         \
-            (void*) (uintptr_t) (k)}}                                         \
+    {                                                                          \
+        .func = eff_ev_tg_piece, .trigger = QUERY_EVENT_TARGETS,               \
+        .lasts_for = ENTIRE_BATTLE, .context = &(EffectContext) {              \
+            .args = { nullptr, (void*) (uintptr_t) (k) }                       \
+        }                                                                      \
     }
 
 #define EV_SEL_PICK                                                            \
-    {                                                                         \
-        .func = eff_ev_sel_pick, .name = "Piece Focus",                       \
-        .trigger = ON_EVENT_TARGET_SELECTED, .lasts_for = ENTIRE_BATTLE       \
-    }
+    {.func      = eff_ev_sel_pick,                                             \
+     .name      = "Piece Focus",                                               \
+     .trigger   = ON_EVENT_TARGET_SELECTED,                                    \
+     .lasts_for = ENTIRE_BATTLE}
 
 #define EV_TG_NODE                                                             \
-    {                                                                         \
-        .func = eff_ev_tg_node, .trigger = QUERY_EVENT_TARGETS,               \
-        .lasts_for = ENTIRE_BATTLE                                            \
-    }
+    {.func      = eff_ev_tg_node,                                              \
+     .trigger   = QUERY_EVENT_TARGETS,                                         \
+     .lasts_for = ENTIRE_BATTLE}
 
 #define EV_SEL_SKIP                                                            \
-    {                                                                         \
-        .func = eff_ev_sel_skip, .name = "Skip Battle",                       \
-        .trigger = ON_EVENT_TARGET_SELECTED, .lasts_for = ENTIRE_BATTLE       \
-    }
+    {.func      = eff_ev_sel_skip,                                             \
+     .name      = "Skip Battle",                                               \
+     .trigger   = ON_EVENT_TARGET_SELECTED,                                    \
+     .lasts_for = ENTIRE_BATTLE}
 
 #define EV_TG_FIGUREHEAD                                                       \
-    {                                                                         \
-        .func = eff_ev_tg_figurehead, .trigger = QUERY_EVENT_TARGETS,         \
-        .lasts_for = ENTIRE_BATTLE                                            \
-    }
+    {.func      = eff_ev_tg_figurehead,                                        \
+     .trigger   = QUERY_EVENT_TARGETS,                                         \
+     .lasts_for = ENTIRE_BATTLE}
 
 #define EV_SEL_FIGUREHEAD                                                      \
-    {                                                                         \
-        .func = eff_ev_sel_figurehead, .name = "Chain Removal",               \
-        .trigger = ON_EVENT_TARGET_SELECTED, .lasts_for = ENTIRE_BATTLE       \
-    }
+    {.func      = eff_ev_sel_figurehead,                                       \
+     .name      = "Chain Removal",                                             \
+     .trigger   = ON_EVENT_TARGET_SELECTED,                                    \
+     .lasts_for = ENTIRE_BATTLE}
 
 #define EV_VAL_PIECE_PICK(v)                                                   \
-    {                                                                         \
-        .func = eff_val_piece, .name = "Value Bonus",                         \
-        .trigger = QUERY_PIECE_VALUE, .lasts_for = ENTIRE_BATTLE,             \
-        .context = &(EffectContext){.args = {nullptr,                         \
-            (void*) (intptr_t) (-1), (void*) (intptr_t) (v)}}                 \
+    {                                                                          \
+        .func = eff_val_piece, .name = "Value Bonus",                          \
+        .trigger = QUERY_PIECE_VALUE, .lasts_for = ENTIRE_BATTLE,              \
+        .context = &(EffectContext) {                                          \
+            .args = {                                                          \
+                nullptr,                                                       \
+                (void*) (intptr_t) (-1),                                       \
+                (void*) (intptr_t) (v)                                         \
+            }                                                                  \
+        }                                                                      \
     }
 
 #define EV_COST_PIECE_PICK(p)                                                  \
-    {                                                                         \
-        .func = eff_cost_piece, .name = "Cost Discount",                      \
-        .trigger = QUERY_PIECE_CP_COST_BUY, .lasts_for = ENTIRE_BATTLE,       \
-        .context = &(EffectContext){.args = {nullptr,                         \
-            (void*) (intptr_t) (-1), (void*) (intptr_t) (p)}}                 \
+    {                                                                          \
+        .func = eff_cost_piece, .name = "Cost Discount",                       \
+        .trigger = QUERY_PIECE_CP_COST_BUY, .lasts_for = ENTIRE_BATTLE,        \
+        .context = &(EffectContext) {                                          \
+            .args = {                                                          \
+                nullptr,                                                       \
+                (void*) (intptr_t) (-1),                                       \
+                (void*) (intptr_t) (p)                                         \
+            }                                                                  \
+        }                                                                      \
     }
 
 #define EV_ELITE(kind, a, b)                                                   \
-    {                                                                         \
-        .func = eff_ev_elite, .name = "Elite Battle",                         \
-        .trigger = ON_EVENT_CHOOSE, .lasts_for = ENTIRE_BATTLE,               \
-        .context = &(EffectContext){.args = {(void*) (intptr_t) (kind),       \
-            (void*) (uintptr_t) (a), (void*) (uintptr_t) (b)}}                \
+    {                                                                          \
+        .func = eff_ev_elite, .name = "Elite Battle",                          \
+        .trigger = ON_EVENT_CHOOSE, .lasts_for = ENTIRE_BATTLE,                \
+        .context = &(EffectContext) {                                          \
+            .args = {                                                          \
+                (void*) (intptr_t) (kind),                                     \
+                (void*) (uintptr_t) (a),                                       \
+                (void*) (uintptr_t) (b)                                        \
+            }                                                                  \
+        }                                                                      \
     }
 
 #define EV_VAL_KINGDOM(k, v)                                                   \
-    {                                                                         \
-        .func = eff_val_kingdom, .name = "Value Bonus",                       \
-        .trigger = QUERY_PIECE_VALUE, .lasts_for = ENTIRE_BATTLE,             \
-        .context = &(EffectContext){.args = {nullptr,                         \
-            (void*) (uintptr_t) (k), (void*) (intptr_t) (v)}}                 \
+    {                                                                          \
+        .func = eff_val_kingdom, .name = "Value Bonus",                        \
+        .trigger = QUERY_PIECE_VALUE, .lasts_for = ENTIRE_BATTLE,              \
+        .context = &(EffectContext) {                                          \
+            .args = {                                                          \
+                nullptr,                                                       \
+                (void*) (uintptr_t) (k),                                       \
+                (void*) (intptr_t) (v)                                         \
+            }                                                                  \
+        }                                                                      \
     }
 
 #define EV_VAL_PIECE(p, v)                                                     \
-    {                                                                         \
-        .func = eff_val_piece, .name = "Value Bonus",                         \
-        .trigger = QUERY_PIECE_VALUE, .lasts_for = ENTIRE_BATTLE,             \
-        .context = &(EffectContext){.args = {nullptr,                         \
-            (void*) (uintptr_t) (p), (void*) (intptr_t) (v)}}                 \
+    {                                                                          \
+        .func = eff_val_piece, .name = "Value Bonus",                          \
+        .trigger = QUERY_PIECE_VALUE, .lasts_for = ENTIRE_BATTLE,              \
+        .context = &(EffectContext) {                                          \
+            .args = {                                                          \
+                nullptr,                                                       \
+                (void*) (uintptr_t) (p),                                       \
+                (void*) (intptr_t) (v)                                         \
+            }                                                                  \
+        }                                                                      \
     }
 
-#define EV_VAL_PAWN(v)                                                        \
-    {                                                                         \
-        .func = eff_val_pawn, .name = "Value Bonus",                          \
-        .trigger = QUERY_PIECE_VALUE, .lasts_for = ENTIRE_BATTLE,             \
-        .context = &(EffectContext){.args = {nullptr, nullptr,                \
-            (void*) (intptr_t) (v)}}                                          \
+#define EV_VAL_PAWN(v)                                                         \
+    {                                                                          \
+        .func = eff_val_pawn, .name = "Value Bonus",                           \
+        .trigger = QUERY_PIECE_VALUE, .lasts_for = ENTIRE_BATTLE,              \
+        .context = &(EffectContext) {                                          \
+            .args = { nullptr, nullptr, (void*) (intptr_t) (v) }               \
+        }                                                                      \
     }
 
 #define EV_COST_KINGDOM(k, p)                                                  \
-    {                                                                         \
-        .func = eff_cost_kingdom, .name = "Cost Discount",                    \
-        .trigger = QUERY_PIECE_CP_COST_BUY, .lasts_for = ENTIRE_BATTLE,       \
-        .context = &(EffectContext){.args = {nullptr,                         \
-            (void*) (uintptr_t) (k), (void*) (intptr_t) (p)}}                 \
+    {                                                                          \
+        .func = eff_cost_kingdom, .name = "Cost Discount",                     \
+        .trigger = QUERY_PIECE_CP_COST_BUY, .lasts_for = ENTIRE_BATTLE,        \
+        .context = &(EffectContext) {                                          \
+            .args = {                                                          \
+                nullptr,                                                       \
+                (void*) (uintptr_t) (k),                                       \
+                (void*) (intptr_t) (p)                                         \
+            }                                                                  \
+        }                                                                      \
     }
 
 #define EV_ENEMY_ARMY(k, n)                                                    \
-    {                                                                         \
-        .func = eff_enemy_army, .name = "Enemy Reinforcement",                \
-        .trigger = QUERY_ENEMY_ARMY_COUNT, .lasts_for = ENTIRE_BATTLE,        \
-        .context = &(EffectContext){.args = {nullptr,                         \
-            (void*) (uintptr_t) (k), (void*) (intptr_t) (n)}}                 \
+    {                                                                          \
+        .func = eff_enemy_army, .name = "Enemy Reinforcement",                 \
+        .trigger = QUERY_ENEMY_ARMY_COUNT, .lasts_for = ENTIRE_BATTLE,         \
+        .context = &(EffectContext) {                                          \
+            .args = {                                                          \
+                nullptr,                                                       \
+                (void*) (uintptr_t) (k),                                       \
+                (void*) (intptr_t) (n)                                         \
+            }                                                                  \
+        }                                                                      \
     }
 
 /*----------------------------------------------------------------------------*\
@@ -673,7 +709,7 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "A sage weighs knowledge against fortune.",
          .id   = EVENT_SCHOLARS_OFFER,
          .options =
-             {{.text = "All Longwei pieces gain +3 value this run",
+             {{.text    = "All Longwei pieces gain +3 value this run",
                .effects = {EV_VAL_KINGDOM(KINGDOM_LONGWEI, 3)}},
               {.text = "Choose 1 relic from 2",
                .effects =
@@ -686,8 +722,10 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_DRAGON_COURT_TRIBUTE,
          .options =
              {{.text = "Remove 1 card; all Longwei pieces +5 value this run",
-               .effects = {EV_TG_CARD, EV_SEL_REMOVE,
-                   EV_VAL_KINGDOM(KINGDOM_LONGWEI, 5)}},
+               .effects =
+                   {EV_TG_CARD,
+                    EV_SEL_REMOVE,
+                    EV_VAL_KINGDOM(KINGDOM_LONGWEI, 5)}},
               {.text = "Choose 1 relic from 2",
                .effects =
                    {EV_TG_RELIC(RELIC_BULK_DISCOUNT, RELIC_FORTIFIED_LINE),
@@ -698,9 +736,9 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "A turncoat offers intelligence or a favour.",
          .id   = EVENT_DEFECTOR,
          .options =
-             {{.text = "Reveal the next battle's modifier",
+             {{.text    = "Reveal the next battle's modifier",
                .effects = {EV_REVEAL(1)}},
-              {.text = "Reduce Global Vorath Counter by 1",
+              {.text    = "Reduce Global Vorath Counter by 1",
                .effects = {EV_VORATH(1)}}}},
 
     [EVENT_JANGGI_ELDER] =
@@ -709,9 +747,11 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_JANGGI_ELDER,
          .options =
              {{.text = "One Longwei piece type gains +5 value this run",
-               .effects = {EV_TG_PIECE(KINGDOM_LONGWEI), EV_SEL_PICK,
-                   EV_VAL_PIECE_PICK(5)}},
-              {.text = "Reduce Global Vorath Counter by 1",
+               .effects =
+                   {EV_TG_PIECE(KINGDOM_LONGWEI),
+                    EV_SEL_PICK,
+                    EV_VAL_PIECE_PICK(5)}},
+              {.text    = "Reduce Global Vorath Counter by 1",
                .effects = {EV_VORATH(1)}}}},
 
     [EVENT_CANNON_SALUTE] =
@@ -719,9 +759,9 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "The artillery corps salutes a passing commander.",
          .id   = EVENT_CANNON_SALUTE,
          .options =
-             {{.text = "All Pao gain +5 value this run",
+             {{.text    = "All Pao gain +5 value this run",
                .effects = {EV_VAL_PIECE(PIECE_PAO, 5)}},
-              {.text = "Reduce Global Vorath Counter by 2",
+              {.text    = "Reduce Global Vorath Counter by 2",
                .effects = {EV_VORATH(2)}}}},
 
     [EVENT_MANSAS_COURT] =
@@ -729,9 +769,9 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "The Mansa asks a price for safe passage.",
          .id   = EVENT_MANSAS_COURT,
          .options =
-             {{.text = "Remove 1 card from card set",
+             {{.text    = "Remove 1 card from card set",
                .effects = {EV_TG_CARD, EV_SEL_REMOVE}},
-              {.text = "Refuse: Kewarani enemies gain +1 piece this run",
+              {.text    = "Refuse: Kewarani enemies gain +1 piece this run",
                .effects = {EV_ENEMY_ARMY(KINGDOM_KEWARANI, 1)}}}},
 
     [EVENT_SALT_ROAD_MERCHANT] =
@@ -743,7 +783,7 @@ static const Event EVENTS[EVENT_COUNT] = {
                .effects =
                    {EV_TG_RELIC(RELIC_SOUL_SHARD, RELIC_GILDED_ARCHIVE),
                     EV_SEL_RELIC}},
-              {.text = "All Medeq gain +3 value this run",
+              {.text    = "All Medeq gain +3 value this run",
                .effects = {EV_VAL_PIECE(PIECE_MEDEQ, 3)}}}},
 
     [EVENT_STOLEN_GUARD] =
@@ -751,9 +791,9 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "A captured guard can be freed by force.",
          .id   = EVENT_STOLEN_GUARD,
          .options =
-             {{.text = "Elite battle. Win: remove 1 Bronze chain",
+             {{.text    = "Elite battle. Win: remove 1 Bronze chain",
                .effects = {EV_ELITE(1, 0, 0)}},
-              {.text = "Reduce Global Vorath Counter by 1",
+              {.text    = "Reduce Global Vorath Counter by 1",
                .effects = {EV_VORATH(1)}}}},
 
     [EVENT_CAMEL_CARAVAN] =
@@ -761,9 +801,9 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "Caravaneers bargain over the season's rates.",
          .id   = EVENT_CAMEL_CARAVAN,
          .options =
-             {{.text = "Kewarani pieces cost 15% less this run",
+             {{.text    = "Kewarani pieces cost 15% less this run",
                .effects = {EV_COST_KINGDOM(KINGDOM_KEWARANI, 15)}},
-              {.text = "Reduce Global Vorath Counter by 2",
+              {.text    = "Reduce Global Vorath Counter by 2",
                .effects = {EV_VORATH(2)}}}},
 
     [EVENT_FEAST_OF_YOD_ABEGA] =
@@ -771,7 +811,7 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "A festival tempts the army to linger.",
          .id   = EVENT_FEAST_OF_YOD_ABEGA,
          .options =
-             {{.text = "Skip the next battle node",
+             {{.text    = "Skip the next battle node",
                .effects = {EV_TG_NODE, EV_SEL_SKIP}},
               {.text = "Choose 1 relic from 2",
                .effects =
@@ -786,7 +826,7 @@ static const Event EVENTS[EVENT_COUNT] = {
              {{.text = "Elite battle. Win: choose 1 relic from 2",
                .effects =
                    {EV_ELITE(0, RELIC_WARLORDS_BANNER, RELIC_IRON_KING)}},
-              {.text = "Reduce Global Vorath Counter by 2",
+              {.text    = "Reduce Global Vorath Counter by 2",
                .effects = {EV_VORATH(2)}}}},
 
     [EVENT_BAZAAR_OF_SAMARKAND] =
@@ -795,9 +835,12 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_BAZAAR_OF_SAMARKAND,
          .options =
              {{.text = "Remove 2 cards; Zarqan pieces cost 15% less this run",
-               .effects = {EV_TG_CARD, EV_TG_CARD, EV_SEL_REMOVE,
-                   EV_COST_KINGDOM(KINGDOM_ZARQAN, 15)}},
-              {.text = "Reduce Global Vorath Counter by 2",
+               .effects =
+                   {EV_TG_CARD,
+                    EV_TG_CARD,
+                    EV_SEL_REMOVE,
+                    EV_COST_KINGDOM(KINGDOM_ZARQAN, 15)}},
+              {.text    = "Reduce Global Vorath Counter by 2",
                .effects = {EV_VORATH(2)}}}},
 
     [EVENT_MIRAGE] =
@@ -808,24 +851,35 @@ static const Event EVENTS[EVENT_COUNT] = {
              {{.text = "Elite (Citadel enemies). Win: choose 1 relic from 2",
                .effects =
                    {EV_ELITE(0, RELIC_TRADE_ROUTES, RELIC_MERCHANTS_LEDGER)}},
-              {.text = "Gain +15 cp at the start of the next battle",
-               .effects = {{
-                   .func      = eff_ev_income_once,
-                   .name      = "Bonus Currency",
-                   .trigger   = QUERY_CP_INCOME,
-                   .lasts_for = ONE_BATTLE,
-                   .context   = &(EffectContext){.args = {nullptr, nullptr,
-                       (void*) (intptr_t) 15}},
-               }}}}},
+              {
+                  .text = "Gain +15 cp at the start of the next battle",
+                  .effects =
+                      {
+                          {
+                              .func      = eff_ev_income_once,
+                              .name      = "Bonus Currency",
+                              .trigger   = QUERY_CP_INCOME,
+                              .lasts_for = ONE_BATTLE,
+                              .context =
+                                  &(EffectContext) {
+                                      .args = {
+                                          nullptr,
+                                          nullptr,
+                                          (void*) (intptr_t) 15,
+                                      },
+                                  },
+                          },
+                      },
+              }}},
 
     [EVENT_SPY_REPORT] =
         {.name = "The Spy's Report",
          .desc = "An informant sells you the enemy's plans.",
          .id   = EVENT_SPY_REPORT,
          .options =
-             {{.text = "Reduce Global Vorath Counter by 2",
+             {{.text    = "Reduce Global Vorath Counter by 2",
                .effects = {EV_VORATH(2)}},
-              {.text = "Reduce Global Vorath Counter by 1",
+              {.text    = "Reduce Global Vorath Counter by 1",
                .effects = {EV_VORATH(1)}}}},
 
     [EVENT_DESERT_CROSSING] =
@@ -833,9 +887,8 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "A guide can scout ahead or lift a burden.",
          .id   = EVENT_DESERT_CROSSING,
          .options =
-             {{.text = "Reveal 3 map nodes ahead",
-               .effects = {EV_REVEAL(3)}},
-              {.text = "Remove 1 Bronze chain from any figurehead",
+             {{.text = "Reveal 3 map nodes ahead", .effects = {EV_REVEAL(3)}},
+              {.text    = "Remove 1 Bronze chain from any figurehead",
                .effects = {EV_TG_FIGUREHEAD, EV_SEL_FIGUREHEAD}}}},
 
     [EVENT_RONIN] =
@@ -847,7 +900,7 @@ static const Event EVENTS[EVENT_COUNT] = {
                .effects =
                    {EV_TG_RELIC(RELIC_EAGLE_EYE, RELIC_FORWARD_COMMAND),
                     EV_SEL_RELIC}},
-              {.text = "All Harushima pieces gain +3 value this run",
+              {.text    = "All Harushima pieces gain +3 value this run",
                .effects = {EV_VAL_KINGDOM(KINGDOM_HARUSHIMA, 3)}}}},
 
     [EVENT_SPY_NETWORK] =
@@ -855,7 +908,7 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "A network trades secrets for coin or sight.",
          .id   = EVENT_SPY_NETWORK,
          .options =
-             {{.text = "Reveal the next 3 map nodes",
+             {{.text    = "Reveal the next 3 map nodes",
                .effects = {EV_REVEAL(3)}},
               {.text = "Choose 1 relic from 2",
                .effects =
@@ -868,8 +921,11 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_BURNING_PORT,
          .options =
              {{.text = "Remove 2 cards; Harushima pieces cost 15% less",
-               .effects = {EV_TG_CARD, EV_TG_CARD, EV_SEL_REMOVE,
-                   EV_COST_KINGDOM(KINGDOM_HARUSHIMA, 15)}},
+               .effects =
+                   {EV_TG_CARD,
+                    EV_TG_CARD,
+                    EV_SEL_REMOVE,
+                    EV_COST_KINGDOM(KINGDOM_HARUSHIMA, 15)}},
               {.text = "Choose 1 relic from 2",
                .effects =
                    {EV_TG_RELIC(RELIC_COUNTRY_SEAL, RELIC_FORTIFIED_LINE),
@@ -881,8 +937,10 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_FORGE_MASTER,
          .options =
              {{.text = "One piece type costs 20% less this run",
-               .effects = {EV_TG_PIECE(KINGDOM_NONE), EV_SEL_PICK,
-                   EV_COST_PIECE_PICK(20)}},
+               .effects =
+                   {EV_TG_PIECE(KINGDOM_NONE),
+                    EV_SEL_PICK,
+                    EV_COST_PIECE_PICK(20)}},
               {.text = "Choose 1 relic from 2",
                .effects =
                    {EV_TG_RELIC(RELIC_VETERANS_BOND, RELIC_TACTICIANS_SCROLL),
@@ -893,9 +951,9 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "A decorated lancer drills your spears.",
          .id   = EVENT_VETERAN_LANCE,
          .options =
-             {{.text = "All Kyosha gain +5 value this run",
+             {{.text    = "All Kyosha gain +5 value this run",
                .effects = {EV_VAL_PIECE(PIECE_KYOSHA, 5)}},
-              {.text = "Reduce Global Vorath Counter by 1",
+              {.text    = "Reduce Global Vorath Counter by 1",
                .effects = {EV_VORATH(1)}}}},
 
     [EVENT_TOURNAMENT] =
@@ -907,21 +965,30 @@ static const Event EVENTS[EVENT_COUNT] = {
                .effects =
                    {EV_ELITE(0, RELIC_INHERITED_POWER, RELIC_BLOODTHIRST)}},
               {.text = "Gain +20 cp at the start of the next battle",
-               .effects = {{
-                   .func      = eff_ev_income_once,
-                   .name      = "Bonus Currency",
-                   .trigger   = QUERY_CP_INCOME,
-                   .lasts_for = ONE_BATTLE,
-                   .context   = &(EffectContext){.args = {nullptr, nullptr,
-                       (void*) (intptr_t) 20}},
-               }}}}},
+               .effects =
+                   {
+                       {
+                           .func      = eff_ev_income_once,
+                           .name      = "Bonus Currency",
+                           .trigger   = QUERY_CP_INCOME,
+                           .lasts_for = ONE_BATTLE,
+                           .context =
+                               &(EffectContext) {
+                                   .args = {
+                                       nullptr,
+                                       nullptr,
+                                       (void*) (intptr_t) 20,
+                                   },
+                               },
+                       },
+                   }}}},
 
     [EVENT_CHURCH_BLESSING] =
         {.name = "The Church's Blessing",
          .desc = "The cathedral blesses your treasury or your saints.",
          .id   = EVENT_CHURCH_BLESSING,
          .options =
-             {{.text = "Caelan pieces cost 10% less this run",
+             {{.text    = "Caelan pieces cost 10% less this run",
                .effects = {EV_COST_KINGDOM(KINGDOM_CAELAN, 10)}},
               {.text = "Choose 1 relic from 2",
                .effects =
@@ -937,7 +1004,7 @@ static const Event EVENTS[EVENT_COUNT] = {
                .effects =
                    {EV_TG_RELIC(RELIC_MASTERS_NOTES, RELIC_ALCHEMISTS_KIT),
                     EV_SEL_RELIC}},
-              {.text = "All Pao gain +5 value this run",
+              {.text    = "All Pao gain +5 value this run",
                .effects = {EV_VAL_PIECE(PIECE_PAO, 5)}}}},
 
     [EVENT_PRETENDER] =
@@ -945,7 +1012,7 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "A rival claimant mirrors your own banner.",
          .id   = EVENT_PRETENDER,
          .options =
-             {{.text = "Elite (mirror). Win: remove 1 Silver chain",
+             {{.text    = "Elite (mirror). Win: remove 1 Silver chain",
                .effects = {EV_ELITE(1, 0, 0)}},
               {.text = "Choose 1 relic from 2",
                .effects =
@@ -958,8 +1025,10 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_ROYAL_DECREE,
          .options =
              {{.text = "Remove 1 card; all Caelan pieces +3 value this run",
-               .effects = {EV_TG_CARD, EV_SEL_REMOVE,
-                   EV_VAL_KINGDOM(KINGDOM_CAELAN, 3)}},
+               .effects =
+                   {EV_TG_CARD,
+                    EV_SEL_REMOVE,
+                    EV_VAL_KINGDOM(KINGDOM_CAELAN, 3)}},
               {.text = "Choose 1 relic from 2",
                .effects =
                    {EV_TG_RELIC(RELIC_IRON_KING, RELIC_BLOODTHIRST),
@@ -971,15 +1040,22 @@ static const Event EVENTS[EVENT_COUNT] = {
          .id   = EVENT_QUEENS_FAVOR,
          .options =
              {{.text = "Gain +25 cp each remaining battle this map",
-               .effects = {{
-                   .func      = eff_ev_income_map,
-                   .name      = "Map Currency",
-                   .trigger   = QUERY_CP_INCOME,
-                   .lasts_for = ENTIRE_BATTLE,
-                   .context   = &(EffectContext){.args = {nullptr,
-                       (void*) (uintptr_t) KINGDOM_CAELAN,
-                       (void*) (intptr_t) 25}},
-               }}},
+               .effects =
+                   {
+                       {
+                           .func      = eff_ev_income_map,
+                           .name      = "Map Currency",
+                           .trigger   = QUERY_CP_INCOME,
+                           .lasts_for = ENTIRE_BATTLE,
+                           .context =
+                               &(EffectContext) {
+                                   .args = {
+                                       nullptr,
+                                       (void*) (uintptr_t) KINGDOM_CAELAN,
+                                       (void*) (intptr_t) 25},
+                               },
+                       }
+                   }},
               {.text = "Choose 1 relic from 2",
                .effects =
                    {EV_TG_RELIC(RELIC_VETERANS_BOND, RELIC_MINTED_COIN),
@@ -990,7 +1066,7 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "A lone piece wanders in from the wastes.",
          .id   = EVENT_WANDERING_PIECE,
          .options =
-             {{.text = "Reduce Global Vorath Counter by 2",
+             {{.text    = "Reduce Global Vorath Counter by 2",
                .effects = {EV_VORATH(2)}},
               {.text = "Choose 1 relic from 2",
                .effects =
@@ -1002,7 +1078,7 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "Vorath's heralds demand a sacrifice.",
          .id   = EVENT_VORATHS_DECREE,
          .options =
-             {{.text = "Remove 1 card; reduce Global Vorath Counter by 3",
+             {{.text    = "Remove 1 card; reduce Global Vorath Counter by 3",
                .effects = {EV_VORATH(3), EV_TG_CARD, EV_SEL_REMOVE}},
               {.text = "Choose 1 relic from 2",
                .effects =
@@ -1014,7 +1090,7 @@ static const Event EVENTS[EVENT_COUNT] = {
          .desc = "A deserter's tale rallies the rank and file.",
          .id   = EVENT_DESERTER,
          .options =
-             {{.text = "Remove 1 card; all pawns gain +3 value this run",
+             {{.text    = "Remove 1 card; all pawns gain +3 value this run",
                .effects = {EV_TG_CARD, EV_SEL_REMOVE, EV_VAL_PAWN(3)}},
               {.text = "Choose 1 relic from 2",
                .effects =
@@ -1028,8 +1104,10 @@ static const Event EVENTS[EVENT_COUNT] = {
          .options =
              {{.text = "Choose 1 relic from 2",
                .effects =
-                   {EV_TG_RELIC(RELIC_PHILOSOPHERS_STONE,
-                        RELIC_INHERITED_POWER),
+                   {EV_TG_RELIC(
+                        RELIC_PHILOSOPHERS_STONE,
+                        RELIC_INHERITED_POWER
+                    ),
                     EV_SEL_RELIC}},
               {.text = "Choose 1 relic from 2",
                .effects =
@@ -1038,34 +1116,34 @@ static const Event EVENTS[EVENT_COUNT] = {
 };
 
 const Event* const EVENT_REGISTRY[EVENT_COUNT] = {
-    [EVENT_SCHOLARS_OFFER]      = &EVENTS[EVENT_SCHOLARS_OFFER],
+    [EVENT_SCHOLARS_OFFER]       = &EVENTS[EVENT_SCHOLARS_OFFER],
     [EVENT_DRAGON_COURT_TRIBUTE] = &EVENTS[EVENT_DRAGON_COURT_TRIBUTE],
-    [EVENT_DEFECTOR]            = &EVENTS[EVENT_DEFECTOR],
-    [EVENT_JANGGI_ELDER]        = &EVENTS[EVENT_JANGGI_ELDER],
-    [EVENT_CANNON_SALUTE]       = &EVENTS[EVENT_CANNON_SALUTE],
-    [EVENT_MANSAS_COURT]        = &EVENTS[EVENT_MANSAS_COURT],
-    [EVENT_SALT_ROAD_MERCHANT]  = &EVENTS[EVENT_SALT_ROAD_MERCHANT],
-    [EVENT_STOLEN_GUARD]        = &EVENTS[EVENT_STOLEN_GUARD],
-    [EVENT_CAMEL_CARAVAN]       = &EVENTS[EVENT_CAMEL_CARAVAN],
-    [EVENT_FEAST_OF_YOD_ABEGA]  = &EVENTS[EVENT_FEAST_OF_YOD_ABEGA],
-    [EVENT_WARLORDS_CHALLENGE]  = &EVENTS[EVENT_WARLORDS_CHALLENGE],
-    [EVENT_BAZAAR_OF_SAMARKAND] = &EVENTS[EVENT_BAZAAR_OF_SAMARKAND],
-    [EVENT_MIRAGE]              = &EVENTS[EVENT_MIRAGE],
-    [EVENT_SPY_REPORT]          = &EVENTS[EVENT_SPY_REPORT],
-    [EVENT_DESERT_CROSSING]     = &EVENTS[EVENT_DESERT_CROSSING],
-    [EVENT_RONIN]               = &EVENTS[EVENT_RONIN],
-    [EVENT_SPY_NETWORK]         = &EVENTS[EVENT_SPY_NETWORK],
-    [EVENT_BURNING_PORT]        = &EVENTS[EVENT_BURNING_PORT],
-    [EVENT_FORGE_MASTER]        = &EVENTS[EVENT_FORGE_MASTER],
-    [EVENT_VETERAN_LANCE]       = &EVENTS[EVENT_VETERAN_LANCE],
-    [EVENT_TOURNAMENT]          = &EVENTS[EVENT_TOURNAMENT],
-    [EVENT_CHURCH_BLESSING]     = &EVENTS[EVENT_CHURCH_BLESSING],
-    [EVENT_SIEGE_ENGINEER]      = &EVENTS[EVENT_SIEGE_ENGINEER],
-    [EVENT_PRETENDER]           = &EVENTS[EVENT_PRETENDER],
-    [EVENT_ROYAL_DECREE]        = &EVENTS[EVENT_ROYAL_DECREE],
-    [EVENT_QUEENS_FAVOR]        = &EVENTS[EVENT_QUEENS_FAVOR],
-    [EVENT_WANDERING_PIECE]     = &EVENTS[EVENT_WANDERING_PIECE],
-    [EVENT_VORATHS_DECREE]      = &EVENTS[EVENT_VORATHS_DECREE],
-    [EVENT_DESERTER]            = &EVENTS[EVENT_DESERTER],
-    [EVENT_ARCHIVE]             = &EVENTS[EVENT_ARCHIVE],
+    [EVENT_DEFECTOR]             = &EVENTS[EVENT_DEFECTOR],
+    [EVENT_JANGGI_ELDER]         = &EVENTS[EVENT_JANGGI_ELDER],
+    [EVENT_CANNON_SALUTE]        = &EVENTS[EVENT_CANNON_SALUTE],
+    [EVENT_MANSAS_COURT]         = &EVENTS[EVENT_MANSAS_COURT],
+    [EVENT_SALT_ROAD_MERCHANT]   = &EVENTS[EVENT_SALT_ROAD_MERCHANT],
+    [EVENT_STOLEN_GUARD]         = &EVENTS[EVENT_STOLEN_GUARD],
+    [EVENT_CAMEL_CARAVAN]        = &EVENTS[EVENT_CAMEL_CARAVAN],
+    [EVENT_FEAST_OF_YOD_ABEGA]   = &EVENTS[EVENT_FEAST_OF_YOD_ABEGA],
+    [EVENT_WARLORDS_CHALLENGE]   = &EVENTS[EVENT_WARLORDS_CHALLENGE],
+    [EVENT_BAZAAR_OF_SAMARKAND]  = &EVENTS[EVENT_BAZAAR_OF_SAMARKAND],
+    [EVENT_MIRAGE]               = &EVENTS[EVENT_MIRAGE],
+    [EVENT_SPY_REPORT]           = &EVENTS[EVENT_SPY_REPORT],
+    [EVENT_DESERT_CROSSING]      = &EVENTS[EVENT_DESERT_CROSSING],
+    [EVENT_RONIN]                = &EVENTS[EVENT_RONIN],
+    [EVENT_SPY_NETWORK]          = &EVENTS[EVENT_SPY_NETWORK],
+    [EVENT_BURNING_PORT]         = &EVENTS[EVENT_BURNING_PORT],
+    [EVENT_FORGE_MASTER]         = &EVENTS[EVENT_FORGE_MASTER],
+    [EVENT_VETERAN_LANCE]        = &EVENTS[EVENT_VETERAN_LANCE],
+    [EVENT_TOURNAMENT]           = &EVENTS[EVENT_TOURNAMENT],
+    [EVENT_CHURCH_BLESSING]      = &EVENTS[EVENT_CHURCH_BLESSING],
+    [EVENT_SIEGE_ENGINEER]       = &EVENTS[EVENT_SIEGE_ENGINEER],
+    [EVENT_PRETENDER]            = &EVENTS[EVENT_PRETENDER],
+    [EVENT_ROYAL_DECREE]         = &EVENTS[EVENT_ROYAL_DECREE],
+    [EVENT_QUEENS_FAVOR]         = &EVENTS[EVENT_QUEENS_FAVOR],
+    [EVENT_WANDERING_PIECE]      = &EVENTS[EVENT_WANDERING_PIECE],
+    [EVENT_VORATHS_DECREE]       = &EVENTS[EVENT_VORATHS_DECREE],
+    [EVENT_DESERTER]             = &EVENTS[EVENT_DESERTER],
+    [EVENT_ARCHIVE]              = &EVENTS[EVENT_ARCHIVE],
 };

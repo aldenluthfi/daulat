@@ -571,8 +571,8 @@ PieceInfo* battle_spawn(BattleState* battle, PieceID id, Square at, Side side) {
         BattleState* saved_battle = CURRENT_BATTLE;
         int          value        = copy->value;
 
-        BUY_PIECE      = copy;
-        CURRENT_BATTLE = battle;
+        BUY_PIECE                 = copy;
+        CURRENT_BATTLE            = battle;
         effect_fire(battle, side, QUERY_PIECE_VALUE, &value);
         CURRENT_BATTLE = saved_battle;
         BUY_PIECE      = saved_buy;
@@ -1778,12 +1778,12 @@ static bool battle_half_turn(BattleState* battle, Side side) {
 
     CURRENT_BATTLE = battle;
     effect_fire(battle, enemy_side, QUERY_METER_DAMAGE_TAKEN, &total);
-    CURRENT_BATTLE  = nullptr;
+    CURRENT_BATTLE    = nullptr;
 
-    int saved_origin = CASCADE_ORIGIN;
+    int saved_origin  = CASCADE_ORIGIN;
 
-    CASCADE_ORIGIN   = enemy->meter;
-    enemy->meter    -= total;
+    CASCADE_ORIGIN    = enemy->meter;
+    enemy->meter     -= total;
 
     if (total > 0) {
         protocol_emit(
@@ -1793,10 +1793,10 @@ static bool battle_half_turn(BattleState* battle, Side side) {
         );
     }
 
-    bool over      = battle_cascade(battle, enemy_side);
+    bool over                            = battle_cascade(battle, enemy_side);
 
-    CASCADE_ORIGIN = saved_origin;
-    DAMAGERS       = nullptr;
+    CASCADE_ORIGIN                       = saved_origin;
+    DAMAGERS                             = nullptr;
 
     battle_player(battle, side)->actions = 0;
 
@@ -1827,9 +1827,9 @@ void battle_damage(BattleState* battle, Side side, int amount) {
     CURRENT_BATTLE     = battle;
     effect_fire(battle, side, QUERY_METER_DAMAGE_TAKEN, &dmg);
 
-    int saved_origin = CASCADE_ORIGIN;
+    int saved_origin                    = CASCADE_ORIGIN;
 
-    CASCADE_ORIGIN   = battle_player(battle, side)->meter;
+    CASCADE_ORIGIN                      = battle_player(battle, side)->meter;
     battle_player(battle, side)->meter -= dmg;
 
     if (dmg > 0) {
@@ -1998,7 +1998,8 @@ static void battle_walk_run_effects(BattleState* battle) {
             }
 
             Effect* attached = effect_attach(
-                &battle_player(battle, HUMAN_SIDE)->effects, effect
+                &battle_player(battle, HUMAN_SIDE)->effects,
+                effect
             );
 
             if (!attached) {
@@ -2235,7 +2236,10 @@ static void battle_walk_synergies(BattleState* battle) {
         }
 
         battle_attach_power(
-            battle, HUMAN_SIDE, &SYNERGY_REGISTRY[source], MASTERY_NONE
+            battle,
+            HUMAN_SIDE,
+            &SYNERGY_REGISTRY[source],
+            MASTERY_NONE
         );
     }
 }
@@ -2318,7 +2322,8 @@ static void battle_walk_combos(BattleState* battle) {
 
     for (size_t seat = 0; seat < 2; seat++) {
         Effect* refund = effect_attach(
-            &battle_player(battle, sides[seat])->effects, &COMBO_REFUND
+            &battle_player(battle, sides[seat])->effects,
+            &COMBO_REFUND
         );
 
         if (refund) {
@@ -2327,7 +2332,10 @@ static void battle_walk_combos(BattleState* battle) {
 
         for (size_t kingdom = 0; kingdom < KINGDOM_COUNT; kingdom++) {
             battle_attach_power(
-                battle, sides[seat], CLIMAX_REGISTRY[kingdom], MASTERY_NONE
+                battle,
+                sides[seat],
+                CLIMAX_REGISTRY[kingdom],
+                MASTERY_NONE
             );
         }
     }
@@ -2610,16 +2618,16 @@ void battle_begin(EngineState* engine, MapNode* node) {
 
     CURRENT_BATTLE = battle;
     effect_fire(battle, HUMAN_SIDE, ON_BATTLE_SETUP, node);
-    CURRENT_BATTLE      = nullptr;
+    CURRENT_BATTLE = nullptr;
 
     vorath_attach_capacity(battle, battle_enemy(HUMAN_SIDE));
 
     battle->white.meter = battle_meter_max(battle, SIDE_WHITE);
     battle->black.meter = battle_meter_max(battle, SIDE_BLACK);
 
-    ACTING_SIDE    = SIDE_WHITE;
+    ACTING_SIDE         = SIDE_WHITE;
 
-    CURRENT_BATTLE = battle;
+    CURRENT_BATTLE      = battle;
     effect_fire(battle, SIDE_WHITE, ON_BATTLE_START, node);
     effect_fire(battle, SIDE_BLACK, ON_BATTLE_START, node);
     CURRENT_BATTLE = nullptr;
@@ -2876,7 +2884,7 @@ int battle_meter_max(BattleState* battle, Side side) {
 
     CURRENT_BATTLE     = battle;
     effect_fire(battle, side, QUERY_METER_AMOUNT, &total);
-    CURRENT_BATTLE     = saved;
+    CURRENT_BATTLE = saved;
 
     return total;
 }

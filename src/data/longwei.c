@@ -1843,7 +1843,7 @@ static bool eff_longwei_combo(EffectContext* context, void* x) {
         return false;
     }
 
-    Side   side  = (Side) (uintptr_t) context->args[0];
+    Side   side   = (Side) (uintptr_t) context->args[0];
 
     Effect climax = {
         .func      = eff_longwei_climax,
@@ -1852,9 +1852,8 @@ static bool eff_longwei_combo(EffectContext* context, void* x) {
         .lasts_for = TURNS_1,
     };
 
-    Effect* attached = effect_attach(
-        &battle_player(battle_current(), side)->effects, &climax
-    );
+    Effect* attached =
+        effect_attach(&battle_player(battle_current(), side)->effects, &climax);
 
     if (attached) {
         attached->context->args[0] = (void*) (uintptr_t) side;
@@ -1874,8 +1873,8 @@ const KingdomPower LONGWEI_INNATE = {
         .trigger   = QUERY_PIECE_DAMAGE_TAKEN,
         .lasts_for = ENTIRE_BATTLE,
     }},
-    .name = "Bulwark",
-    .id   = KINGDOM_LONGWEI,
+    .name    = "Bulwark",
+    .id      = KINGDOM_LONGWEI,
 };
 
 /// LONGWEI_CLIMAX
@@ -1889,8 +1888,8 @@ const KingdomPower LONGWEI_CLIMAX = {
         .trigger   = ON_COMBO_CLIMAX,
         .lasts_for = ENTIRE_BATTLE,
     }},
-    .name = "Longwei Climax",
-    .id   = KINGDOM_LONGWEI,
+    .name    = "Longwei Climax",
+    .id      = KINGDOM_LONGWEI,
 };
 
 /// longwei_overseer
@@ -1904,4 +1903,3 @@ const KingdomPower LONGWEI_CLIMAX = {
 void longwei_overseer(BattleState* battle) {
     (void) battle;
 }
-

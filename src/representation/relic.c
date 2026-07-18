@@ -95,8 +95,7 @@ static bool eff_tax_stamp(EffectContext* context, void* x) {
 ///
 static Effect* bulk_mark(BattleState* battle, Side side) {
     LinkedList* list = &battle_player(battle, side)->effects;
-    Effect*     mark =
-        effect_find_mark(list, BULK_STATE, (void*) (uintptr_t) side);
+    Effect* mark = effect_find_mark(list, BULK_STATE, (void*) (uintptr_t) side);
 
     if (mark) {
         return mark;
@@ -165,14 +164,13 @@ static bool eff_bulk_buy(EffectContext* context, void* x) {
         return false;
     }
 
-    int    cost    = *(int*) x;
-    size_t count   = (size_t) (uintptr_t) mark->context->args[2];
-    int    lowest  = (int) (uintptr_t) mark->context->args[3];
-    int    granted = (int) (uintptr_t) mark->context->args[4];
+    int    cost            = *(int*) x;
+    size_t count           = (size_t) (uintptr_t) mark->context->args[2];
+    int    lowest          = (int) (uintptr_t) mark->context->args[3];
+    int    granted         = (int) (uintptr_t) mark->context->args[4];
 
     size_t pending_count   = count + 1;
-    int    pending_lowest  =
-        count == 0 || cost < lowest ? cost : lowest;
+    int    pending_lowest  = count == 0 || cost < lowest ? cost : lowest;
     int    pending_granted = pending_count >= 3 ? pending_lowest : 0;
     int    adjust          = granted - pending_granted;
 
@@ -729,6 +727,29 @@ static bool eff_warlords_banner(EffectContext* context, void* x) {
 }
 
 /*----------------------------------------------------------------------------*\
+                                    ARCHIVE
+\*----------------------------------------------------------------------------*/
+
+/// eff_masters_notes
+///
+/// Master's Notes: archive nodes reveal one extra recipe. Folds into the
+/// run-side archive reveal count.
+///
+/// Params:
+/// - context -> unused
+/// - x       -> int* archive reveal count to raise
+///
+/// Return: true, the extra reveal always applies
+///
+static bool eff_masters_notes(EffectContext* context, void* x) {
+    (void) context;
+
+    *(int*) x += 1;
+
+    return true;
+}
+
+/*----------------------------------------------------------------------------*\
                                    REGISTRY
 \*----------------------------------------------------------------------------*/
 
@@ -960,9 +981,14 @@ const Relic RELIC_REGISTRY[RELIC_COUNT] = {
         },
     [RELIC_MASTERS_NOTES] =
         {
-            .name = "Master's Notes",
-            .desc = "Archive nodes reveal 2 recipes instead of 1.",
-            .id   = RELIC_MASTERS_NOTES,
+            .name    = "Master's Notes",
+            .desc    = "Archive nodes reveal 2 recipes instead of 1.",
+            .id      = RELIC_MASTERS_NOTES,
+            .effects = {{
+                .func    = eff_masters_notes,
+                .name    = "Master's Notes",
+                .trigger = QUERY_ARCHIVE_REVEAL_COUNT,
+            }},
         },
     [RELIC_PHILOSOPHERS_STONE] =
         {

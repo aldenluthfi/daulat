@@ -1416,7 +1416,7 @@ static bool eff_caelan_combo(EffectContext* context, void* x) {
         return false;
     }
 
-    Side   side  = (Side) (uintptr_t) context->args[0];
+    Side   side   = (Side) (uintptr_t) context->args[0];
 
     Effect climax = {
         .func      = eff_caelan_climax,
@@ -1425,9 +1425,8 @@ static bool eff_caelan_combo(EffectContext* context, void* x) {
         .lasts_for = TURNS_1,
     };
 
-    Effect* attached = effect_attach(
-        &battle_player(battle_current(), side)->effects, &climax
-    );
+    Effect* attached =
+        effect_attach(&battle_player(battle_current(), side)->effects, &climax);
 
     if (attached) {
         attached->context->args[0] = (void*) (uintptr_t) side;
@@ -1448,8 +1447,8 @@ const KingdomPower CAELAN_INNATE = {
         .trigger   = ON_PIECE_FLIP,
         .lasts_for = ENTIRE_BATTLE,
     }},
-    .name = "Conqueror's Reward",
-    .id   = KINGDOM_CAELAN,
+    .name    = "Conqueror's Reward",
+    .id      = KINGDOM_CAELAN,
 };
 
 /// CAELAN_CLIMAX
@@ -1464,8 +1463,8 @@ const KingdomPower CAELAN_CLIMAX = {
         .trigger   = ON_COMBO_CLIMAX,
         .lasts_for = ENTIRE_BATTLE,
     }},
-    .name = "Caelan Climax",
-    .id   = KINGDOM_CAELAN,
+    .name    = "Caelan Climax",
+    .id      = KINGDOM_CAELAN,
 };
 
 /// caelan_overseer
@@ -1479,4 +1478,3 @@ const KingdomPower CAELAN_CLIMAX = {
 void caelan_overseer(BattleState* battle) {
     (void) battle;
 }
-

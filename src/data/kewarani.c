@@ -1201,8 +1201,7 @@ static bool eff_double_time_price_home(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
 
     if (!piece || piece->kingdom != KINGDOM_KEWARANI || !battle->node ||
-        !battle->node->kingdom ||
-        piece->kingdom != battle->node->kingdom->id) {
+        !battle->node->kingdom || piece->kingdom != battle->node->kingdom->id) {
         return false;
     }
 
@@ -1230,8 +1229,7 @@ static bool eff_double_time_price_foreign(EffectContext* context, void* x) {
     BattleState* battle = battle_current();
 
     if (!piece || piece->kingdom != KINGDOM_KEWARANI || !battle->node ||
-        !battle->node->kingdom ||
-        piece->kingdom == battle->node->kingdom->id ||
+        !battle->node->kingdom || piece->kingdom == battle->node->kingdom->id ||
         level >= MASTERY_LEVEL_3) {
         return false;
     }
@@ -1323,8 +1321,8 @@ const KingdomPower KEWARANI_CLIMAX = {
         .trigger   = ON_COMBO_CLIMAX,
         .lasts_for = ENTIRE_BATTLE,
     }},
-    .name = "Kewarani Climax",
-    .id   = KINGDOM_KEWARANI,
+    .name    = "Kewarani Climax",
+    .id      = KINGDOM_KEWARANI,
 };
 
 /// kewarani_overseer
@@ -1338,4 +1336,3 @@ const KingdomPower KEWARANI_CLIMAX = {
 void kewarani_overseer(BattleState* battle) {
     (void) battle;
 }
-

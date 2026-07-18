@@ -918,6 +918,50 @@ void run_emit_map(EngineState* engine) {
     }
 }
 
+/// run_fire_relics
+///
+/// Generic run-side relic dispatch: walks the run's held relics and invokes
+/// every relic effect matching the trigger through the shared invoke-and-log
+/// path, the run-side analogue of battle_walk_run. x is the value the trigger
+/// computes; relic identities are never named here.
+///
+/// Params:
+/// - engine  -> engine owning the run
+/// - trigger -> trigger to match relic effects against
+/// - x       -> queried value, type defined per trigger
+///
+static void
+run_fire_relics(EngineState* engine, EffectTrigger trigger, void* x) {
+    RunState* run = engine->run;
+
+    for (int id = 0; id < RELIC_COUNT; id++) {
+        if (!run->relics[id]) {
+            continue;
+        }
+
+        const Relic* relic = &RELIC_REGISTRY[id];
+
+        for (size_t slot = 0; slot < MAX_EFFECT_COUNT; slot++) {
+            const Effect* effect = &relic->effects[slot];
+
+            if (!effect->func || effect->trigger != trigger) {
+                continue;
+            }
+
+            EffectContext ctx =
+                effect->context ? *effect->context : (EffectContext){};
+
+            if (effect->func(&ctx, x) && effect->name) {
+                protocol_emit(
+                    "log effect name=\"%s\" trigger=%s",
+                    effect->name,
+                    effect_trigger_name(trigger)
+                );
+            }
+        }
+    }
+}
+
 /*----------------------------------------------------------------------------*\
                                   SELECTION
 \*----------------------------------------------------------------------------*/
@@ -948,19 +992,27 @@ bool run_select_node(EngineState* engine, size_t index) {
     PENDING_NODE  = node;
 
     switch (node->type) {
-    case MAP_NODE_ARCHIVE:
-        run->pieces[node->content] = true;
+    case MAP_NODE_ARCHIVE: {
+        int reveal_count = 1;
 
-        protocol_emit("log recipe result=%d", node->content);
+        run_fire_relics(engine, QUERY_ARCHIVE_REVEAL_COUNT, &reveal_count);
 
-        if (run->relics[RELIC_MASTERS_NOTES]) {
-            for (PieceID id = 0; id < PIECE_COUNT; id++) {
-                if (battle_is_recipe_result(id) && !run->pieces[id]) {
-                    run->pieces[id] = true;
+        int revealed = 0;
 
-                    protocol_emit("log recipe result=%d", id);
-                    break;
-                }
+        if (!run->pieces[node->content]) {
+            run->pieces[node->content] = true;
+
+            protocol_emit("log recipe result=%d", node->content);
+            revealed++;
+        }
+
+        for (PieceID id = 0; id < PIECE_COUNT && revealed < reveal_count;
+             id++) {
+            if (battle_is_recipe_result(id) && !run->pieces[id]) {
+                run->pieces[id] = true;
+
+                protocol_emit("log recipe result=%d", id);
+                revealed++;
             }
         }
 
@@ -970,6 +1022,7 @@ bool run_select_node(EngineState* engine, size_t index) {
         reveal_successors(map, index);
         run_emit_map(engine);
         break;
+    }
 
     case MAP_NODE_OFFERING:
         protocol_emit("log offering name=\"%s\"", node->name);
@@ -1551,7 +1604,7 @@ void run_relic_pick(EngineState* engine, RelicID relic) {
         PENDING_NODE->cleared = true;
 
         reveal_from(PENDING_NODE);
-        PENDING_NODE          = nullptr;
+        PENDING_NODE = nullptr;
 
         run_emit_map(engine);
     }

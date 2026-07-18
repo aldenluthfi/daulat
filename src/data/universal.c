@@ -2130,8 +2130,8 @@ const KingdomPower SYNERGY_REGISTRY[KINGDOM_COUNT] = {
                 .trigger   = QUERY_PIECE_DAMAGE_DEALT,
                 .lasts_for = ENTIRE_BATTLE,
             }},
-            .name = "Longwei Synergy",
-            .id   = KINGDOM_LONGWEI,
+            .name    = "Longwei Synergy",
+            .id      = KINGDOM_LONGWEI,
         },
     [KINGDOM_KEWARANI] =
         {
@@ -2141,8 +2141,8 @@ const KingdomPower SYNERGY_REGISTRY[KINGDOM_COUNT] = {
                 .trigger   = QUERY_PIECE_CP_COST_BUY,
                 .lasts_for = ENTIRE_BATTLE,
             }},
-            .name = "Kewarani Synergy",
-            .id   = KINGDOM_KEWARANI,
+            .name    = "Kewarani Synergy",
+            .id      = KINGDOM_KEWARANI,
         },
     [KINGDOM_ZARQAN] =
         {
@@ -2152,8 +2152,8 @@ const KingdomPower SYNERGY_REGISTRY[KINGDOM_COUNT] = {
                 .trigger   = QUERY_PIECE_DAMAGE_DEALT,
                 .lasts_for = ENTIRE_BATTLE,
             }},
-            .name = "Zarqan Synergy",
-            .id   = KINGDOM_ZARQAN,
+            .name    = "Zarqan Synergy",
+            .id      = KINGDOM_ZARQAN,
         },
     [KINGDOM_HARUSHIMA] =
         {
@@ -2163,8 +2163,8 @@ const KingdomPower SYNERGY_REGISTRY[KINGDOM_COUNT] = {
                 .trigger   = ON_CARD_PLAY,
                 .lasts_for = ENTIRE_BATTLE,
             }},
-            .name = "Harushima Synergy",
-            .id   = KINGDOM_HARUSHIMA,
+            .name    = "Harushima Synergy",
+            .id      = KINGDOM_HARUSHIMA,
         },
     [KINGDOM_CAELAN] =
         {
@@ -2174,8 +2174,8 @@ const KingdomPower SYNERGY_REGISTRY[KINGDOM_COUNT] = {
                 .trigger   = ON_CARD_PLAY,
                 .lasts_for = ENTIRE_BATTLE,
             }},
-            .name = "Caelan Synergy",
-            .id   = KINGDOM_CAELAN,
+            .name    = "Caelan Synergy",
+            .id      = KINGDOM_CAELAN,
         },
 };
 

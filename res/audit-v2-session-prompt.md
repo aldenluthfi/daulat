@@ -154,6 +154,8 @@ Before ending session, receipt must state:
 - explicit statement no downstream phase began;
 - only allowed next phase plus copy-ready next-session directive.
 
+End the session by committing (without attributing yourself).
+
 [START DIRECTIVE]
 
 Execute `<PHASE>` only. Read its receipt, plan section, fixture contract, GDD, and relevant source. Preserve existing work. Do not begin later phases.

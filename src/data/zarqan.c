@@ -72,7 +72,7 @@ static void jamal_gen(BattleState* battle, PieceInfo* self, bool threat) {
     mg_leap(
         battle,
         self,
-        (const Square[]) {
+        (const Square[]){
             {1, 3},
             {1, -3},
             {-1, 3},
@@ -334,7 +334,7 @@ static void cataphract_gen(BattleState* battle, PieceInfo* self, bool threat) {
     mg_compound(
         battle,
         self,
-        (const PieceID[]) {PIECE_KNIGHT, PIECE_JAMAL, PIECE_NONE},
+        (const PieceID[]){PIECE_KNIGHT, PIECE_JAMAL, PIECE_NONE},
         threat
     );
 }
@@ -418,7 +418,7 @@ static Square* elephant_mv(BattleState* battle, PieceInfo* self) {
     mg_compound(
         battle,
         self,
-        (const PieceID[]) {PIECE_ZIRAAFA, PIECE_NONE},
+        (const PieceID[]){PIECE_ZIRAAFA, PIECE_NONE},
         false
     );
 
@@ -471,11 +471,11 @@ static bool eff_shahzadeh_swap(EffectContext* context, void* x) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t sx = 0; sx < battle->board.width; sx++) {
-            PieceInfo* cell = battle_at(battle, (Square) {sx, y});
+            PieceInfo* cell = battle_at(battle, (Square){sx, y});
 
             if (cell && cell->side == self->side &&
                 cell->piece->id == PIECE_KING) {
-                mg_push((Square) {sx, y});
+                mg_push((Square){sx, y});
                 mg_end();
 
                 return true;
@@ -591,7 +591,7 @@ static bool eff_pillage(EffectContext* context, void* x) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t sx = 0; sx < battle->board.width; sx++) {
-            PieceInfo* cell = battle_at(battle, (Square) {sx, y});
+            PieceInfo* cell = battle_at(battle, (Square){sx, y});
 
             if (cell && cell->side == side) {
                 count++;
@@ -756,7 +756,7 @@ static bool eff_steppe_riders(EffectContext* context, void* x) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t sx = 0; sx < battle->board.width; sx++) {
-            PieceInfo* cell = battle_at(battle, (Square) {sx, y});
+            PieceInfo* cell = battle_at(battle, (Square){sx, y});
 
             if (!cell || cell->side != side) {
                 continue;
@@ -1032,13 +1032,13 @@ static bool eff_timur_watch(EffectContext* context, void* x) {
 static bool eff_timur(EffectContext* context, void* x) {
     (void) x;
 
-    BattleState*        battle  = battle_current();
-    Side                side    = (Side) (uintptr_t) context->args[0];
-    RunState*           run     = battle_run();
-    MasteryLevel        mastery =
+    BattleState* battle = battle_current();
+    Side         side   = (Side) (uintptr_t) context->args[0];
+    RunState*    run    = battle_run();
+    MasteryLevel mastery =
         run ? run->kingdoms[KINGDOM_ZARQAN].mastery : MASTERY_NONE;
 
-    static const Effect watch   = {
+    static const Effect watch = {
         .func      = eff_timur_watch,
         .name      = "Timur's Conquest",
         .trigger   = ON_CASCADE_END,
@@ -1588,8 +1588,7 @@ static bool eff_royal_sub_use(EffectContext* context, void* x) {
         return false;
     }
 
-    pool->context->args[2] =
-        (void*) ((uintptr_t) pool->context->args[2] + 1);
+    pool->context->args[2] = (void*) ((uintptr_t) pool->context->args[2] + 1);
 
     return true;
 }
@@ -1618,7 +1617,7 @@ static bool eff_zarqan_combo(EffectContext* context, void* x) {
 
     for (int8_t y = 0; y < battle->board.height; y++) {
         for (int8_t x2 = 0; x2 < battle->board.width; x2++) {
-            PieceInfo* cell = battle_at(battle, (Square) {x2, y});
+            PieceInfo* cell = battle_at(battle, (Square){x2, y});
 
             if (!cell || cell->side != side || cell->piece->id == PIECE_KING) {
                 continue;
@@ -1678,8 +1677,8 @@ const KingdomPower ZARQAN_CLIMAX = {
         .trigger   = ON_COMBO_CLIMAX,
         .lasts_for = ENTIRE_BATTLE,
     }},
-    .name = "Zarqan Climax",
-    .id   = KINGDOM_ZARQAN,
+    .name    = "Zarqan Climax",
+    .id      = KINGDOM_ZARQAN,
 };
 
 /// zarqan_overseer
@@ -1693,4 +1692,3 @@ const KingdomPower ZARQAN_CLIMAX = {
 void zarqan_overseer(BattleState* battle) {
     (void) battle;
 }
-

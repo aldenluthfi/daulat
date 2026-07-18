@@ -1580,8 +1580,8 @@ const KingdomPower HARUSHIMA_INNATE = {
         .trigger   = QUERY_PIECE_CP_COST_RECLAIM,
         .lasts_for = ENTIRE_BATTLE,
     }},
-    .name = "Reclaim",
-    .id   = KINGDOM_HARUSHIMA,
+    .name    = "Reclaim",
+    .id      = KINGDOM_HARUSHIMA,
 };
 
 /// HARUSHIMA_CLIMAX
@@ -1595,8 +1595,8 @@ const KingdomPower HARUSHIMA_CLIMAX = {
         .trigger   = ON_COMBO_CLIMAX,
         .lasts_for = ENTIRE_BATTLE,
     }},
-    .name = "Harushima Climax",
-    .id   = KINGDOM_HARUSHIMA,
+    .name    = "Harushima Climax",
+    .id      = KINGDOM_HARUSHIMA,
 };
 
 /// harushima_overseer
@@ -1610,4 +1610,3 @@ const KingdomPower HARUSHIMA_CLIMAX = {
 void harushima_overseer(BattleState* battle) {
     (void) battle;
 }
-

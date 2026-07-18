@@ -142,6 +142,8 @@
 ///                                                picks; the option resolves
 ///                                                against the chosen run
 ///                                                targets
+/// QUERY_ARCHIVE_REVEAL_COUNT      x: int*        base 1; archive reveal count
+///                                                folded over held relics
 ///
 enum EffectTrigger {
     QUERY_CARD_DRAW_COUNT,
@@ -212,6 +214,8 @@ enum EffectTrigger {
     ON_EVENT_CHOOSE,
     QUERY_EVENT_TARGETS,
     ON_EVENT_TARGET_SELECTED,
+
+    QUERY_ARCHIVE_REVEAL_COUNT,
 };
 
 /// EffectDuration
@@ -1231,11 +1235,11 @@ void    effect_fire(
     EffectTrigger trigger,
     void*         x
 );
-void    effect_tick(LinkedList* list);
-void    effect_clear(LinkedList* list);
+void        effect_tick(LinkedList* list);
+void        effect_clear(LinkedList* list);
 const char* effect_trigger_name(EffectTrigger trigger);
-bool    eff_noop(EffectContext* context, void* x);
-Effect* effect_find_mark(LinkedList* list, uintptr_t tag, void* subject);
+bool        eff_noop(EffectContext* context, void* x);
+Effect*     effect_find_mark(LinkedList* list, uintptr_t tag, void* subject);
 
 /*----------------------------------------------------------------------------*\
                                     BATTLE.C
@@ -1496,31 +1500,31 @@ void   run_new(
     Difficulty     difficulty,
     ChallengeRunID challenge
 );
-void   run_free(RunState* run);
-void   run_enter_map(EngineState* engine, KingdomID kingdom);
-bool   run_select_node(EngineState* engine, size_t index);
-void   run_fire(EngineState* engine, EffectTrigger trigger, void* x);
+void              run_free(RunState* run);
+void              run_enter_map(EngineState* engine, KingdomID kingdom);
+bool              run_select_node(EngineState* engine, size_t index);
+void              run_fire(EngineState* engine, EffectTrigger trigger, void* x);
 EngineState*      run_engine(void);
 const CardTarget* run_pending_picks(void);
-void   run_battle_result(EngineState* engine, bool won);
-void   run_event_choose(EngineState* engine, EventChoice choice);
-bool   run_event_target(EngineState* engine, size_t index);
-void   run_targets_battle_nodes(CardTarget* list);
-void   run_targets_figureheads(CardTarget* list);
-void   run_event_pick(int value);
-void   run_skip_node(size_t index);
-void   run_unchain(KingdomID kingdom);
-void   run_offering(EngineState* engine, CardID card);
-void   run_relic_pick(EngineState* engine, RelicID relic);
-size_t run_pressure(RunState* run, KingdomID kingdom);
-bool   run_innate_ready(RunState* run, KingdomID kingdom);
-void   run_reduce_vorath(RunState* run, size_t amount);
-void   run_node_reveal(EngineState* engine, size_t count);
-void   run_remove_chain(RunState* run);
-void   run_begin_elite(EngineState* engine, int reward, RelicID a, RelicID b);
-void   run_emit_kingdoms(EngineState* engine);
-void   run_emit_map(EngineState* engine);
-bool   run_enter_vorath(EngineState* engine);
+void              run_battle_result(EngineState* engine, bool won);
+void              run_event_choose(EngineState* engine, EventChoice choice);
+bool              run_event_target(EngineState* engine, size_t index);
+void              run_targets_battle_nodes(CardTarget* list);
+void              run_targets_figureheads(CardTarget* list);
+void              run_event_pick(int value);
+void              run_skip_node(size_t index);
+void              run_unchain(KingdomID kingdom);
+void              run_offering(EngineState* engine, CardID card);
+void              run_relic_pick(EngineState* engine, RelicID relic);
+size_t            run_pressure(RunState* run, KingdomID kingdom);
+bool              run_innate_ready(RunState* run, KingdomID kingdom);
+void              run_reduce_vorath(RunState* run, size_t amount);
+void              run_node_reveal(EngineState* engine, size_t count);
+void              run_remove_chain(RunState* run);
+void run_begin_elite(EngineState* engine, int reward, RelicID a, RelicID b);
+void run_emit_kingdoms(EngineState* engine);
+void run_emit_map(EngineState* engine);
+bool run_enter_vorath(EngineState* engine);
 
 /*----------------------------------------------------------------------------*\
                                    ENGINE.C
@@ -1554,27 +1558,27 @@ extern const Relic RELIC_REGISTRY[RELIC_COUNT];
 /// KINGDOM_ADJACENT maps each kingdom to its synergy neighbor and the
 /// EVENT_* tables hold narrative strings indexed by EventID.
 ///
-extern const Piece             UNIVERSAL_PIECES[];
-extern const Card              UNIVERSAL_CARDS[];
+extern const Piece               UNIVERSAL_PIECES[];
+extern const Card                UNIVERSAL_CARDS[];
 
-extern const BattleModifier    MODIFIER_REGISTRY[MODIFIER_COUNT];
-extern const ChainPenalty      CHAIN_REGISTRY[CHAIN_PENALTY_COUNT];
-extern const DifficultyMode    DIFFICULTY_REGISTRY[DIFFICULTY_NONE];
-extern const ChallengeRun      CHALLENGE_REGISTRY[CHALLENGE_COUNT];
+extern const BattleModifier      MODIFIER_REGISTRY[MODIFIER_COUNT];
+extern const ChainPenalty        CHAIN_REGISTRY[CHAIN_PENALTY_COUNT];
+extern const DifficultyMode      DIFFICULTY_REGISTRY[DIFFICULTY_NONE];
+extern const ChallengeRun        CHALLENGE_REGISTRY[CHALLENGE_COUNT];
 
-extern const Piece* const      PIECE_REGISTRY[PIECE_COUNT];
-extern const Card* const       CARD_REGISTRY[CARD_COUNT];
-extern const BoardTrait* const TRAIT_REGISTRY[BOARD_TRAIT_COUNT];
+extern const Piece* const        PIECE_REGISTRY[PIECE_COUNT];
+extern const Card* const         CARD_REGISTRY[CARD_COUNT];
+extern const BoardTrait* const   TRAIT_REGISTRY[BOARD_TRAIT_COUNT];
 
-extern const KingdomID            KINGDOM_ADJACENT[KINGDOM_COUNT];
-extern const KingdomPower         SYNERGY_REGISTRY[KINGDOM_COUNT];
-extern const KingdomPower* const  INNATE_REGISTRY[KINGDOM_COUNT];
-extern const KingdomPower* const  CLIMAX_REGISTRY[KINGDOM_COUNT];
+extern const KingdomID           KINGDOM_ADJACENT[KINGDOM_COUNT];
+extern const KingdomPower        SYNERGY_REGISTRY[KINGDOM_COUNT];
+extern const KingdomPower* const INNATE_REGISTRY[KINGDOM_COUNT];
+extern const KingdomPower* const CLIMAX_REGISTRY[KINGDOM_COUNT];
 
-extern const Event* const      EVENT_REGISTRY[EVENT_COUNT];
+extern const Event* const        EVENT_REGISTRY[EVENT_COUNT];
 
-void                           vorath_setup(BattleState* battle);
-void   vorath_attach_capacity(BattleState* battle, Side side);
+void                             vorath_setup(BattleState* battle);
+void vorath_attach_capacity(BattleState* battle, Side side);
 
 /// Kingdom dispatch tables
 ///
@@ -1593,7 +1597,7 @@ extern const BoardTrait   LONGWEI_TRAITS[];
 extern const KingdomPower LONGWEI_INNATE;
 extern const KingdomPower LONGWEI_CLIMAX;
 
-void longwei_overseer(BattleState* battle);
+void                      longwei_overseer(BattleState* battle);
 
 /*----------------------------------------------------------------------------*\
                               KINGDOM/KEWARANI.C
@@ -1605,7 +1609,7 @@ extern const BoardTrait   KEWARANI_TRAITS[];
 extern const KingdomPower KEWARANI_INNATE;
 extern const KingdomPower KEWARANI_CLIMAX;
 
-void kewarani_overseer(BattleState* battle);
+void                      kewarani_overseer(BattleState* battle);
 
 /*----------------------------------------------------------------------------*\
                                KINGDOM/ZARQAN.C
@@ -1617,7 +1621,7 @@ extern const BoardTrait   ZARQAN_TRAITS[];
 extern const KingdomPower ZARQAN_INNATE;
 extern const KingdomPower ZARQAN_CLIMAX;
 
-void zarqan_overseer(BattleState* battle);
+void                      zarqan_overseer(BattleState* battle);
 
 /*----------------------------------------------------------------------------*\
                              KINGDOM/HARUSHIMA.C
@@ -1629,7 +1633,7 @@ extern const BoardTrait   HARUSHIMA_TRAITS[];
 extern const KingdomPower HARUSHIMA_INNATE;
 extern const KingdomPower HARUSHIMA_CLIMAX;
 
-void harushima_overseer(BattleState* battle);
+void                      harushima_overseer(BattleState* battle);
 
 /*----------------------------------------------------------------------------*\
                                KINGDOM/CAELAN.C
@@ -1641,4 +1645,4 @@ extern const BoardTrait   CAELAN_TRAITS[];
 extern const KingdomPower CAELAN_INNATE;
 extern const KingdomPower CAELAN_CLIMAX;
 
-void caelan_overseer(BattleState* battle);
+void                      caelan_overseer(BattleState* battle);
