@@ -12,19 +12,7 @@
 #include <forward.h>
 #include <prelude.h>
 
-static Protocol* BOUND_PROTOCOL;
-
-/// protocol_bind
-///
-/// Binds the protocol as the static sink protocol_emit writes through.
-/// Only one protocol can be bound at a time.
-///
-/// Params:
-/// - protocol -> protocol to bind
-///
-void protocol_bind(Protocol* protocol) {
-    BOUND_PROTOCOL = protocol;
-}
+static Protocol *BOUND_PROTOCOL;
 
 /// protocol_emit
 ///
@@ -36,19 +24,19 @@ void protocol_bind(Protocol* protocol) {
 /// - format -> printf-style format string
 /// - ...    -> format arguments
 ///
-void protocol_emit(const char* format, ...) {
-    if (!BOUND_PROTOCOL) {
-        return;
-    }
+void protocol_emit(const char *format, ...) {
+  if (!BOUND_PROTOCOL) {
+    return;
+  }
 
-    va_list args;
+  va_list args;
 
-    va_start(args, format);
-    vfprintf(BOUND_PROTOCOL->out, format, args);
-    va_end(args);
+  va_start(args, format);
+  vfprintf(BOUND_PROTOCOL->out, format, args);
+  va_end(args);
 
-    fputc('\n', BOUND_PROTOCOL->out);
-    fflush(BOUND_PROTOCOL->out);
+  fputc('\n', BOUND_PROTOCOL->out);
+  fflush(BOUND_PROTOCOL->out);
 }
 
 /// arg_value
@@ -62,16 +50,16 @@ void protocol_emit(const char* format, ...) {
 ///
 /// Return: value string, nullptr when the key is absent
 ///
-const char* arg_value(int argc, char** argv, const char* key) {
-    size_t length = strlen(key);
+const char *arg_value(int argc, char **argv, const char *key) {
+  size_t length = strlen(key);
 
-    for (int i = 1; i < argc; i++) {
-        if (strncmp(argv[i], key, length) == 0 && argv[i][length] == '=') {
-            return argv[i] + length + 1;
-        }
+  for (int i = 1; i < argc; i++) {
+    if (strncmp(argv[i], key, length) == 0 && argv[i][length] == '=') {
+      return argv[i] + length + 1;
     }
+  }
 
-    return nullptr;
+  return nullptr;
 }
 
 /// arg_long
@@ -87,17 +75,17 @@ const char* arg_value(int argc, char** argv, const char* key) {
 ///
 /// Return: parsed value or the fallback
 ///
-long arg_long(int argc, char** argv, const char* key, long fallback) {
-    const char* value = arg_value(argc, argv, key);
+int32_t arg_long(int argc, char **argv, const char *key, long fallback) {
+  const char *value = arg_value(argc, argv, key);
 
-    if (!value) {
-        return fallback;
-    }
+  if (!value) {
+    return fallback;
+  }
 
-    char* end;
-    long  parsed = strtol(value, &end, 10);
+  char *end;
+  int32_t parsed = strtol(value, &end, 10);
 
-    return end == value ? fallback : parsed;
+  return end == value ? fallback : parsed;
 }
 
 /// protocol_run
@@ -110,35 +98,35 @@ long arg_long(int argc, char** argv, const char* key, long fallback) {
 /// Params:
 /// - protocol -> protocol whose streams and engine drive the loop
 ///
-void protocol_run(Protocol* protocol) {
-    protocol_bind(protocol);
-    protocol_emit("screen %s", protocol->engine->screen->name);
+void protocol_run(Protocol *protocol) {
+  BOUND_PROTOCOL = protocol;
+  protocol_emit("screen %s", protocol->engine->screen->name);
 
-    char line[PROTOCOL_LINE_MAX];
+  char line[PROTOCOL_LINE_MAX];
 
-    while (fgets(line, PROTOCOL_LINE_MAX, protocol->in)) {
-        char* argv[PROTOCOL_MAX_ARGS];
-        int   argc  = 0;
+  while (fgets(line, PROTOCOL_LINE_MAX, protocol->in)) {
+    char *argv[PROTOCOL_MAX_ARGS];
+    int argc = 0;
 
-        char* token = strtok(line, " \t\r\n");
+    char *token = strtok_r(line, " \t\r\n");
 
-        while (token && argc < PROTOCOL_MAX_ARGS) {
-            argv[argc] = token;
-            argc++;
+    while (token && argc < PROTOCOL_MAX_ARGS) {
+      argv[argc] = token;
+      argc++;
 
-            token = strtok(nullptr, " \t\r\n");
-        }
-
-        if (argc == 0 || argv[0][0] == '#') {
-            continue;
-        }
-
-        if (strcmp(argv[0], "quit") == 0) {
-            break;
-        }
-
-        protocol->engine->screen->handle(protocol->engine, argc, argv);
+      token = strtok_r(nullptr, " \t\r\n");
     }
 
-    protocol_emit("bye");
+    if (argc == 0) {
+      continue;
+    }
+
+    if (strcmp(argv[0], "quit") == 0) {
+      break;
+    }
+
+    protocol->engine->screen->handle(protocol->engine, argc, argv);
+  }
+
+  protocol_emit("bye");
 }

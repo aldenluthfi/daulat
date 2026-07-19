@@ -16,11 +16,11 @@
 /// and zero size. The returned list is safe to pass to ll_free.
 ///
 LinkedList ll_init() {
-    LinkedList list;
-    list.head = nullptr;
-    list.tail = nullptr;
-    list.size = 0;
-    return list;
+  LinkedList list;
+  list.head = nullptr;
+  list.tail = nullptr;
+  list.size = 0;
+  return list;
 }
 
 /// ll_push
@@ -34,28 +34,28 @@ LinkedList ll_init() {
 /// - list -> pointer to list to append to
 /// - data -> heap-allocated data to transfer ownership of
 ///
-void ll_push(LinkedList* list, void* data) {
-    LLNode* node = malloc(sizeof(LLNode));
+void ll_push(LinkedList *list, void *data) {
+  LLNode *node = malloc(sizeof(LLNode));
 
-    if (!node) {
-        return;
-    }
+  if (!node) {
+    return;
+  }
 
-    node->data = data;
-    node->next = nullptr;
-    node->prev = list->tail;
+  node->data = data;
+  node->next = nullptr;
+  node->prev = list->tail;
 
-    if (list->tail) {
-        list->tail->next = node;
-    }
+  if (list->tail) {
+    list->tail->next = node;
+  }
 
-    list->tail = node;
+  list->tail = node;
 
-    if (!list->head) {
-        list->head = node;
-    }
+  if (!list->head) {
+    list->head = node;
+  }
 
-    list->size++;
+  list->size++;
 }
 
 /// ll_poll
@@ -69,27 +69,27 @@ void ll_push(LinkedList* list, void* data) {
 /// - list -> pointer to list containing the node
 /// - node -> node to remove and free
 ///
-void ll_poll(LinkedList* list, LLNode* node) {
-    if (!node) {
-        return;
-    }
+void ll_poll(LinkedList *list, LLNode *node) {
+  if (!node) {
+    return;
+  }
 
-    if (node->prev) {
-        node->prev->next = node->next;
-    } else {
-        list->head = node->next;
-    }
+  if (node->prev) {
+    node->prev->next = node->next;
+  } else {
+    list->head = node->next;
+  }
 
-    if (node->next) {
-        node->next->prev = node->prev;
-    } else {
-        list->tail = node->prev;
-    }
+  if (node->next) {
+    node->next->prev = node->prev;
+  } else {
+    list->tail = node->prev;
+  }
 
-    free(node->data);
-    free(node);
+  free(node->data);
+  free(node);
 
-    list->size--;
+  list->size--;
 }
 
 /// ll_free
@@ -102,19 +102,19 @@ void ll_poll(LinkedList* list, LLNode* node) {
 /// Params:
 /// - list -> pointer to list to deallocate
 ///
-void ll_free(LinkedList* list) {
-    LLNode* node = list->head;
+void ll_free(LinkedList *list) {
+  LLNode *node = list->head;
 
-    while (node) {
-        LLNode* next = node->next;
+  while (node) {
+    LLNode *next = node->next;
 
-        free(node->data);
-        free(node);
+    free(node->data);
+    free(node);
 
-        node = next;
-    }
+    node = next;
+  }
 
-    list->head = nullptr;
-    list->tail = nullptr;
-    list->size = 0;
+  list->head = nullptr;
+  list->tail = nullptr;
+  list->size = 0;
 }

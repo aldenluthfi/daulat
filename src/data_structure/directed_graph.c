@@ -16,12 +16,12 @@
 /// The returned graph is safe to pass to dag_free regardless of state.
 ///
 DirectedGraph dag_init() {
-    DirectedGraph graph;
-    graph.nodes          = nullptr;
-    graph.vertices_count = 0;
-    graph.edges_count    = 0;
+  DirectedGraph graph;
+  graph.nodes = nullptr;
+  graph.vertices_count = 0;
+  graph.edges_count = 0;
 
-    return graph;
+  return graph;
 }
 
 /// dag_rand
@@ -37,51 +37,47 @@ DirectedGraph dag_init() {
 /// - edges    -> number of edges to create
 /// - seed     -> seed value for deterministic generation
 ///
-void dag_rand(
-    DirectedGraph* graph,
-    size_t         vertices,
-    size_t         edges,
-    size_t         seed
-) {
-    graph->nodes          = calloc(vertices, sizeof(DGNode));
-    graph->vertices_count = vertices;
-    graph->edges_count    = 0;
+void dag_rand(DirectedGraph *graph, size_t vertices, size_t edges,
+              size_t seed) {
+  graph->nodes = calloc(vertices, sizeof(DGNode));
+  graph->vertices_count = vertices;
+  graph->edges_count = 0;
 
-    unsigned int state    = (unsigned int) seed;
+  unsigned int state = (unsigned int)seed;
 
-    while (graph->edges_count < edges) {
-        size_t to = rand_r(&state) % vertices;
+  while (graph->edges_count < edges) {
+    size_t to = rand_r(&state) % vertices;
 
-        if (to == 0) {
-            continue;
-        }
-
-        size_t  from = rand_r(&state) % to;
-
-        DGEdge* prev = nullptr;
-        DGEdge* curr = graph->nodes[from].edges;
-
-        while (curr && curr->to < to) {
-            prev = curr;
-            curr = curr->next;
-        }
-
-        if (curr && curr->to == to) {
-            continue;
-        }
-
-        DGEdge* edge = malloc(sizeof(DGEdge));
-        edge->to     = to;
-        edge->next   = curr;
-
-        if (prev) {
-            prev->next = edge;
-        } else {
-            graph->nodes[from].edges = edge;
-        }
-
-        graph->edges_count++;
+    if (to == 0) {
+      continue;
     }
+
+    size_t from = rand_r(&state) % to;
+
+    DGEdge *prev = nullptr;
+    DGEdge *curr = graph->nodes[from].edges;
+
+    while (curr && curr->to < to) {
+      prev = curr;
+      curr = curr->next;
+    }
+
+    if (curr && curr->to == to) {
+      continue;
+    }
+
+    DGEdge *edge = malloc(sizeof(DGEdge));
+    edge->to = to;
+    edge->next = curr;
+
+    if (prev) {
+      prev->next = edge;
+    } else {
+      graph->nodes[from].edges = edge;
+    }
+
+    graph->edges_count++;
+  }
 }
 
 /// dag_free
@@ -93,22 +89,22 @@ void dag_rand(
 /// Params:
 /// - graph -> pointer to graph to deallocate
 ///
-void dag_free(DirectedGraph* graph) {
-    for (size_t i = 0; i < graph->vertices_count; i++) {
-        DGEdge* edge = graph->nodes[i].edges;
+void dag_free(DirectedGraph *graph) {
+  for (size_t i = 0; i < graph->vertices_count; i++) {
+    DGEdge *edge = graph->nodes[i].edges;
 
-        while (edge) {
-            DGEdge* next = edge->next;
-            free(edge);
-            edge = next;
-        }
-
-        free(graph->nodes[i].data);
+    while (edge) {
+      DGEdge *next = edge->next;
+      free(edge);
+      edge = next;
     }
 
-    free(graph->nodes);
+    free(graph->nodes[i].data);
+  }
 
-    graph->nodes          = nullptr;
-    graph->vertices_count = 0;
-    graph->edges_count    = 0;
+  free(graph->nodes);
+
+  graph->nodes = nullptr;
+  graph->vertices_count = 0;
+  graph->edges_count = 0;
 }

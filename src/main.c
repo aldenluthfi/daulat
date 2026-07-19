@@ -22,17 +22,17 @@
 ///
 /// Return: process exit status
 ///
-int main(int argc, char* argv[]) {
-    (void) argc;
-    (void) argv;
+int main(int argc, char *argv[]) {
+  (void)argc;
+  (void)argv;
 
-    EngineState engine;
-    engine_init(&engine);
+  EngineState engine;
+  engine_init(&engine);
 
-    Protocol protocol = {&engine, stdin, stdout};
-    protocol_run(&protocol);
+  Protocol protocol = {&engine, stdin, stdout};
+  protocol_run(&protocol);
 
-    engine_free(&engine);
+  engine_free(&engine);
 
-    return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }
